@@ -1,13 +1,24 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>hyzen-labs-web</title>
+    <title>Hyzen Labs | ME, REALITY, AND AI</title>
+    <!-- 구글 폰트 사전 로드 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   </head>
-  <body>
-    <div id="root"></div>
+  <body style="margin: 0; background-color: #050505;">
+    <!-- React 앱이 렌더링될 지점 -->
+    <div id="root">
+      <!-- JS가 로드되기 전까지 보여줄 임시 로딩 상태 (하얀 화면 방지) -->
+      <div style="height: 100vh; display: flex; items-center; justify-content: center; color: #333; font-family: sans-serif;">
+        <p>Initializing Hyzen Labs...</p>
+      </div>
+    </div>
+    
+    <!-- 진입점 스크립트: 경로가 반드시 /src/main.jsx 인지 확인하세요 -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
