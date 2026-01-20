@@ -1,264 +1,205 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Github, 
-  Linkedin, 
-  Mail, 
-  ExternalLink, 
+  Terminal, 
+  Cpu, 
+  Layers, 
+  Zap, 
   ChevronRight, 
-  Code, 
-  Palette, 
-  TrendingUp,
-  Monitor,
-  Cpu,
-  Layers,
-  Sparkles,
-  ArrowRight
+  Github, 
+  Twitter, 
+  Mail, 
+  ExternalLink,
+  Box,
+  Camera,
+  Share2,
+  Globe
 } from 'lucide-react';
-import { Chart, registerables } from 'chart.js';
-
-// Chart.js Plugins Registration
-Chart.register(...registerables);
+import { 
+  Radar, 
+  RadarChart, 
+  PolarGrid, 
+  PolarAngleAxis, 
+  ResponsiveContainer 
+} from 'recharts';
 
 const App = () => {
-  const [activeView, setActiveView] = useState('roadmap');
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const chartRef = useRef(null);
+  const [activeTab, setActiveTab] = useState('projects');
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    setIsVisible(true);
   }, []);
 
-  // Project Data v0.3
+  // Hyzen Labs.의 성장을 나타내는 융합 역량 지표
+  const growthData = [
+    { subject: 'Reality Capture', A: 95, fullMark: 100 },
+    { subject: 'AI Synthesis', A: 90, fullMark: 100 },
+    { subject: 'Spatial Logic', A: 85, fullMark: 100 },
+    { subject: 'Humanities', A: 80, fullMark: 100 },
+    { subject: 'Visual Arts', A: 88, fullMark: 100 },
+    { subject: 'Engineering', A: 92, fullMark: 100 },
+  ];
+
+  // 현실과 AI의 융합 콘텐츠 중심 프로젝트 데이터
   const projects = [
     {
-      id: 1,
-      tag: "Visual Synthesis",
-      title: "잠재적 공간의 초상",
-      desc: "매니페스토에서 강조한 '유한한 직관'을 AI 데이터로 변환하여 생성한 추상적 비주얼 실험.",
-      goal: "인간의 무의식적인 시각적 직관을 수치화하여 AI 모델의 잠재 공간(Latent Space)과 연결합니다.",
-      process: "SDXL과 자체 파인튜닝된 가중치를 사용하여 현실의 질감이 살아있는 이미지를 생성했습니다.",
-      result: "기존의 무작위적인 생성물과 차별화된 작가 고유의 미학적 질서가 담긴 합성 시각 언어 구축.",
-      notes: ["Model: SDXL Custom", "Token: Reality-V1", "Seed: 1,200 samples"]
+      title: "Reality Refraction",
+      category: "Visual Synthesis",
+      description: "현실의 물리적 오브젝트를 3D 가우시안 스플래팅으로 디지털화하고, AI 지능을 결합하여 새로운 서사를 부여합니다.",
+      tags: ["3D Scanning", "AI Persona", "Digital Twin"],
+      icon: <Camera className="w-5 h-5" />
     },
     {
-      id: 2,
-      tag: "UX Architecture",
-      title: "지능형 인터페이스",
-      desc: "'기술의 지능'을 수용하여 사용자의 의도를 예측하고 가변하는 적응형 레이아웃 설계.",
-      goal: "고정된 레이아웃에서 벗어나 사용자의 맥락에 따라 인터페이스 스스로 조형을 변경하는 지능형 도구 제안.",
-      process: "사용자 로그 데이터를 LLM이 실시간 분석하여 최적화된 레이아웃 프롬프트를 생성하고 렌더링합니다.",
-      result: "정적인 웹페이지를 넘어 사용자와 실시간으로 대화하고 진화하는 유동적 인터페이스 엔진 구현.",
-      notes: ["LLM: GPT-4o Integration", "Library: Tailwind Dynamic", "Latency: < 400ms"]
+      title: "Latent Space Objects",
+      category: "Spatial Intelligence",
+      description: "물리적 공간을 촬영한 데이터 위에 AI가 생성한 가상 객체를 조화롭게 융합하여 현실의 경계를 확장합니다.",
+      tags: ["Mixed Reality", "Spatial Computing", "Generative AI"],
+      icon: <Box className="w-5 h-5" />
     },
     {
-      id: 3,
-      tag: "Material Study",
-      title: "물질과 비물질의 경계",
-      desc: "'현실의 질감'을 데이터화하여 AI 텍스처 합성을 통해 구현한 초현실적 오브젝트.",
-      goal: "현실의 물리적 한계를 디지털에서 해체하고 AI를 통해 재정의된 '새로운 물질성'을 탐구합니다.",
-      process: "금속, 유리, 스톤의 고해상도 촬영 데이터를 뉴럴 텍스처 합성 기술로 교차 융합했습니다.",
-      result: "현실과 가상 사이의 심미적 간극을 좁히고 AI가 제안하는 새로운 조형의 가능성 입증.",
-      notes: ["Engine: Unreal Engine 5", "Output: 8K High Fidelity", "Tech: Neural Synth"]
+      title: "Digital Mirroring",
+      category: "Object Archive",
+      description: "아날로그 사물의 본질과 질감을 정교하게 캡처하여 AI 데이터로 보존하고, 지능형 아카이브로 재탄생시킵니다.",
+      tags: ["Archiving", "Texture Synthesis", "Neural Rendering"],
+      icon: <Layers className="w-5 h-5" />
     }
   ];
 
-  // Radar Chart Initialization
-  useEffect(() => {
-    if (activeView === 'archive') {
-      const ctx = document.getElementById('growthRadarChart');
-      if (ctx) {
-        if (chartRef.current) chartRef.current.destroy();
-        chartRef.current = new Chart(ctx, {
-          type: 'radar',
-          data: {
-            labels: ['PROMPT', 'AESTHETIC', 'LOGIC', 'INTUITION', 'DATA'],
-            datasets: [{
-              data: [95, 85, 90, 75, 85],
-              backgroundColor: 'rgba(6, 182, 212, 0.15)',
-              borderColor: '#06b6d4',
-              borderWidth: 2,
-              pointBackgroundColor: '#06b6d4',
-              pointBorderColor: '#fff',
-              pointRadius: 5
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              r: {
-                angleLines: { color: 'rgba(255,255,255,0.1)' },
-                grid: { color: 'rgba(255,255,255,0.1)' },
-                suggestedMin: 0, suggestedMax: 100,
-                ticks: { display: false },
-                pointLabels: { font: { size: 11, family: 'Orbitron', weight: 'bold' }, color: '#94a3b8' }
-              }
-            },
-            plugins: { legend: { display: false } }
-          }
-        });
-      }
-    }
-    return () => { if (chartRef.current) chartRef.current.destroy(); };
-  }, [activeView]);
-
-  const openModal = (p) => { setSelectedProject(p); setIsModalOpen(true); document.body.style.overflow = 'hidden'; };
-  const closeModal = () => { setIsModalOpen(false); document.body.style.overflow = 'auto'; };
-
   return (
-    <div className="bg-[#050505] text-white min-h-screen font-sans selection:bg-cyan-500/30">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Syncopate:wght@400;700&display=swap');
-        .font-brand { font-family: 'Orbitron', sans-serif; }
-        .font-tech { font-family: 'Syncopate', sans-serif; }
-        .reveal-text { animation: reveal 2.2s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
-        @keyframes reveal {
-          0% { transform: translateY(40px); opacity: 0; filter: blur(20px); }
-          100% { transform: translateY(0); opacity: 1; filter: blur(0); }
-        }
-        .ai-text-glow { text-shadow: 0 0 40px rgba(6, 182, 212, 0.9), 0 0 10px rgba(6, 182, 212, 0.4); }
-        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
-      `}</style>
-
-      {/* Ambient Background */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-[-15%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-cyan-500/10 blur-[100px] animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-5%] w-[50vw] h-[50vw] rounded-full bg-blue-600/10 blur-[100px] animate-pulse"></div>
+    <div className="min-h-screen bg-[#050505] text-gray-100 font-sans selection:bg-blue-500/30">
+      {/* Background Effect */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-900/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-900/10 rounded-full blur-[120px]" />
       </div>
 
-      {/* Navigation */}
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${isScrolled ? 'bg-black/80 backdrop-blur-2xl py-4 border-b border-white/5' : 'bg-transparent py-8'}`}>
-        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-          <div className="flex items-center cursor-pointer" onClick={() => setActiveView('roadmap')}>
-            <span className="font-brand font-black text-xl tracking-tighter">
-              <span className="text-cyan-500">H</span>YZEN LABS.
-            </span>
-          </div>
-          <div className="hidden md:flex space-x-12 text-[10px] font-bold uppercase tracking-[0.3em] text-white/30">
-            <button onClick={() => setActiveView('roadmap')} className={`hover:text-white transition-colors ${activeView === 'roadmap' ? 'text-cyan-400' : ''}`}>Vision</button>
-            <button onClick={() => setActiveView('archive')} className={`hover:text-white transition-colors ${activeView === 'archive' ? 'text-cyan-400' : ''}`}>Archive</button>
-          </div>
-          <a href="mailto:jini2aix@gmail.com" className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-cyan-500 transition-all">
-            <Mail size={16} />
-          </a>
-        </div>
-      </nav>
-
-      {activeView === 'roadmap' ? (
-        <main className="reveal-text">
-          {/* Hero */}
-          <section className="h-screen flex flex-col items-center justify-center px-6 text-center">
-            <span className="font-tech text-cyan-500 text-[9px] font-bold tracking-[0.6em] mb-12 opacity-80 uppercase tracking-widest">Me, Reality, and AI</span>
-            <h1 className="text-5xl md:text-8xl lg:text-[8.5rem] tracking-tighter leading-none mb-16 font-brand font-black">
-              REALITY<br/>
-              <span className="text-white/20 font-light italic tracking-[0.2em] text-[0.4em]">ME'S</span> <span className="text-cyan-500 ai-text-glow">AI</span>
-            </h1>
-            <p className="text-sm md:text-lg text-white/40 max-w-xl mx-auto font-light leading-relaxed">
-              기술이 감각을 넘어서는 순간을 기록합니다. <br/>
-              논리와 직관이 교차하는 지점에서 탄생한 나만의 새로운 창작 문법.
-            </p>
-          </section>
-
-          {/* Manifesto */}
-          <section id="manifesto" className="min-h-screen flex items-center justify-center bg-white text-black px-8 py-32">
-            <div className="max-w-4xl w-full text-left">
-              <h2 className="font-brand text-4xl sm:text-6xl font-black mb-20 tracking-tighter">THE MANIFESTO</h2>
-              <div className="grid md:grid-cols-2 gap-20 text-lg leading-relaxed font-light">
-                <p>
-                  <span className="text-cyan-600 font-bold">Hyzen Labs</span>는 단순히 <strong>AI를 도구로 사용하는 것</strong>에 그치지 않습니다. 우리는 인공지능이 제시하는 <strong>무한한 연산</strong>과 인간이 가진 <strong>유한한 직관</strong>이 충돌할 때 발생하는 <strong>'의외성'</strong>에 주목합니다.
-                </p>
-                <p className="text-black/40">
-                  이 공간은 그 충돌의 결과물을 담아내는 <strong>아카이브</strong>이자, 미래의 창의성을 설계하는 <strong>실험실</strong>입니다. 우리는 <strong>현실의 질감</strong>을 잃지 않으면서 <strong>기술의 지능</strong>을 기꺼이 수용합니다.
-                </p>
+      <div className="max-w-6xl mx-auto px-6 py-12 relative z-10">
+        {/* Header */}
+        <header className={`transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+          <div className="flex justify-between items-center mb-16">
+            <div className="flex items-center space-x-3 group">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20 group-hover:rotate-12 transition-transform">
+                <Cpu className="text-white w-6 h-6" />
               </div>
-              <div className="mt-24 border-t border-black/10 pt-12 flex flex-col gap-2">
-                <span className="font-brand text-[10px] text-black/30 uppercase tracking-widest">Build Version 0.3</span>
-                <span className="font-brand text-sm font-black tracking-widest text-cyan-600 uppercase">Founder Young Ji. Park</span>
-              </div>
-            </div>
-          </section>
-
-          {/* Pipeline */}
-          <section className="py-32 bg-zinc-900 border-y border-white/5 text-left">
-            <div className="max-w-7xl mx-auto px-8">
-                <h2 className="font-brand text-cyan-500 text-[10px] font-bold tracking-[0.4em] uppercase mb-12">Workflow</h2>
-                <h3 className="text-4xl sm:text-5xl font-black mb-16 tracking-tighter">Convergence Pipeline</h3>
-                <div className="grid md:grid-cols-3 gap-8">
-                    {[
-                        { icon: <Monitor size={24}/>, num: "01", title: "Context Extraction", body: "현실의 질감을 AI가 이해할 수 있는 고해상도 데이터로 치환합니다." },
-                        { icon: <Cpu size={24}/>, num: "02", title: "AI Augmentation", body: "추출된 데이터를 바탕으로 수천 개의 시각적 변주를 생성하고 연산합니다." },
-                        { icon: <Layers size={24}/>, num: "03", title: "Human Synthesis", body: "인간의 감각 필터로 최종 산출물을 선별하고 완성합니다." }
-                    ].map(step => (
-                        <div key={step.num} className="glass-panel p-10 group hover:border-cyan-500/50 transition-all rounded-[2rem]">
-                            <div className="text-cyan-500 mb-8 opacity-40 group-hover:opacity-100 transition-opacity">{step.icon}</div>
-                            <span className="font-brand text-3xl text-white/5 block mb-4 font-black">{step.num}</span>
-                            <h4 className="text-xl font-bold mb-4 text-white group-hover:text-cyan-400 transition-colors">{step.title}</h4>
-                            <p className="text-sm text-white/40 leading-relaxed font-light">{step.body}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-          </section>
-        </main>
-      ) : (
-        <main className="pt-32 reveal-text max-w-7xl mx-auto px-8 pb-32">
-          {/* Archive Grid */}
-          <div className="flex justify-between items-end mb-24 text-left">
-            <div>
-              <h2 className="font-brand text-4xl sm:text-5xl font-black uppercase tracking-tighter">Synthetic Artifacts</h2>
-              <p className="text-white/30 text-sm mt-4">매니페스토가 실현된 기술과 감각의 교차점들</p>
-            </div>
-          </div>
-          <div className="grid md:grid-cols-3 gap-12 text-left">
-            {projects.map(p => (
-              <div key={p.id} className="group cursor-pointer" onClick={() => openModal(p)}>
-                <div className="aspect-[16/10] glass-panel rounded-[2.5rem] mb-8 border border-white/10 group-hover:border-cyan-500/50 transition-all flex items-center justify-center relative overflow-hidden">
-                   <Sparkles className="text-white/5 group-hover:text-cyan-500/20" size={40} />
-                </div>
-                <span className="text-cyan-500 font-brand text-[10px] font-bold uppercase tracking-widest">{p.tag}</span>
-                <h4 className="text-2xl font-bold mt-2 group-hover:text-cyan-400 transition-colors uppercase tracking-tighter">{p.title}</h4>
-                <p className="text-sm text-white/30 mt-4 font-light leading-relaxed">{p.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Radar Chart */}
-          <div className="mt-40 bg-white/5 p-10 rounded-[3rem] border border-white/10 lg:grid lg:grid-cols-2 gap-20 items-center text-left">
               <div>
-                <h2 className="font-brand text-cyan-600 text-[10px] font-bold tracking-[0.6em] uppercase mb-10">Capabilities</h2>
-                <h3 className="text-4xl sm:text-5xl font-black mb-10 tracking-tighter leading-tight">데이터와 예술의 <br/>교차점 분석.</h3>
-                <p className="text-white/30 font-light leading-relaxed mb-8">Hyzen Labs는 기술적 완성도와 미적 직관의 밸런스를 측정합니다. 기계의 연산력과 인간의 감각이 결합된 하이브리드 지표입니다.</p>
+                <h1 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+                  Hyzen Labs. Tech
+                </h1>
+                <p className="text-xs text-blue-500 font-mono tracking-widest uppercase">CTO Arche's Nexus</p>
               </div>
-              <div className="h-[350px]"><canvas id="growthRadarChart"></canvas></div>
+            </div>
+            
+            <nav className="hidden md:flex items-center space-x-8 text-sm font-medium text-gray-400">
+              <button onClick={() => setActiveTab('projects')} className={`hover:text-blue-400 transition-colors ${activeTab === 'projects' ? 'text-blue-400' : ''}`}>Projects</button>
+              <button onClick={() => setActiveTab('capabilities')} className={`hover:text-blue-400 transition-colors ${activeTab === 'capabilities' ? 'text-blue-400' : ''}`}>Capabilities</button>
+              <a href="https://hyzen-labs-web.vercel.app/" target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-all">Launch Nexus</a>
+            </nav>
           </div>
-        </main>
-      )}
 
-      {/* Modal */}
-      {isModalOpen && selectedProject && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4" onClick={closeModal}>
-          <div className="max-w-4xl w-full glass-panel rounded-[3rem] p-10 relative overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
-            <button onClick={closeModal} className="absolute top-8 right-10 text-white/20 hover:text-white text-4xl">&times;</button>
-            <div className="text-left">
-              <span className="text-cyan-500 font-brand text-[10px] font-bold uppercase mb-4 block tracking-widest">{selectedProject.tag}</span>
-              <h2 className="text-4xl font-black mb-10 uppercase tracking-tighter">{selectedProject.title}</h2>
-              <div className="text-white/60 space-y-6 font-light">
-                <p><strong>GOAL:</strong> {selectedProject.goal}</p>
-                <p><strong>PROCESS:</strong> {selectedProject.process}</p>
-                <p><strong>RESULT:</strong> {selectedProject.result}</p>
+          <div className="mb-24">
+            <h2 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+              Grounded in Reality,<br />
+              <span className="text-blue-600">Augmented by Intelligence.</span>
+            </h2>
+            <p className="max-w-2xl text-lg text-gray-400 leading-relaxed italic">
+              "우리는 현실 세계의 본질을 촬영하고, AI의 지능을 통해 그 가치를 재해석하여 실재와 가상이 조화롭게 공존하는 새로운 미래를 설계합니다."
+            </p>
+          </div>
+        </header>
+
+        {/* Main Section */}
+        <main className={`transition-all duration-1000 delay-300 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* Left: Project Feed */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold flex items-center">
+                  <Terminal className="w-5 h-5 mr-2 text-blue-500" />
+                  Fusion Projects
+                </h3>
+                <div className="h-[1px] flex-grow mx-4 bg-white/10" />
+              </div>
+
+              {projects.map((project, idx) => (
+                <div key={idx} className="group p-6 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.05] hover:border-blue-500/30 transition-all duration-500">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
+                      {project.icon}
+                    </div>
+                    <span className="text-xs font-mono text-gray-500 px-3 py-1 border border-white/10 rounded-full">
+                      {project.category}
+                    </span>
+                  </div>
+                  <h4 className="text-xl font-bold mb-2 group-hover:text-blue-400 transition-colors">{project.title}</h4>
+                  <p className="text-gray-400 text-sm mb-4 leading-relaxed">{project.description}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {project.tags.map((tag, tIdx) => (
+                      <span key={tIdx} className="text-[10px] font-medium text-gray-500 bg-white/5 px-2 py-1 rounded">
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Right: Growth Chart & Vision Info */}
+            <div className="space-y-6">
+              <div className="p-6 bg-gradient-to-br from-blue-600/10 to-purple-600/10 border border-blue-500/20 rounded-3xl">
+                <h3 className="text-lg font-bold mb-6 text-center">Convergence Growth Radar</h3>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={growthData}>
+                      <PolarGrid stroke="#ffffff10" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                      <Radar
+                        name="Arche"
+                        dataKey="A"
+                        stroke="#3b82f6"
+                        fill="#3b82f6"
+                        fillOpacity={0.5}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl">
+                <h4 className="font-bold mb-4 flex items-center">
+                  <Zap className="w-4 h-4 mr-2 text-yellow-500" />
+                  Mission Focus
+                </h4>
+                <ul className="space-y-4 text-sm text-gray-400 font-mono">
+                  <li className="flex items-start">
+                    <ChevronRight className="w-4 h-4 mr-1 text-blue-500 mt-0.5" />
+                    현실 오브젝트의 초정밀 캡처 기술 확보
+                  </li>
+                  <li className="flex items-start">
+                    <ChevronRight className="w-4 h-4 mr-1 text-blue-500 mt-0.5" />
+                    AI 추론 기반의 공간 지능 콘텐츠 생성
+                  </li>
+                  <li className="flex items-start">
+                    <ChevronRight className="w-4 h-4 mr-1 text-blue-500 mt-0.5" />
+                    인문학적 서사를 품은 디지털 아카이빙
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        </main>
 
-      <footer className="py-20 text-center opacity-20 border-t border-white/5">
-        <span className="font-brand text-xs tracking-[0.5em] uppercase">Hyzen Labs. Archive</span>
-      </footer>
+        {/* Footer */}
+        <footer className="mt-32 pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center text-gray-500 text-sm">
+          <p>© 2026 Hyzen Labs. Tech. All rights reserved.</p>
+          <div className="flex space-x-6 mt-6 md:mt-0">
+            <Github className="w-5 h-5 hover:text-white cursor-pointer transition-colors" />
+            <Twitter className="w-5 h-5 hover:text-white cursor-pointer transition-colors" />
+            <Mail className="w-5 h-5 hover:text-white cursor-pointer transition-colors" />
+            <Globe className="w-5 h-5 hover:text-white cursor-pointer transition-colors" />
+          </div>
+        </footer>
+      </div>
     </div>
   );
 };
