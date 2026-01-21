@@ -18,12 +18,12 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R0.9.9.1 Stability & Vision Patch]
- * 1. 이미지 로드 컴파일 에러 해결: import 대신 절대 경로 기반 문자열 사용 (Canvas 빌드 안정화)
- * 2. 히어로 워딩: ME, REALITY, AND AI
- * 3. 비전 슬로건: Grounded in Reality, Augmented by Intelligence (한 줄 최적화)
- * 4. 로드맵 상태: "In Preparation" (준비중)
- * 5. 설립자: Founder Youngji.Park (YJ.PNG 대소문자 및 경로 최적화)
+ * [Hyzen Labs. CTO Optimized - R0.9.9.3 Compatibility Update]
+ * 1. 호환성 수정: import.meta.env 의존성 제거 (ES2015 환경 대응)
+ * 2. 이미지 권장 위치: public/YJ.PNG
+ * 3. 히어로 워딩: ME, REALITY, AND AI
+ * 4. 비전: Grounded in Reality, Augmented by Intelligence (One line)
+ * 5. 로드맵: In Preparation (준비중)
  */
 
 // --- [시각화 컴포넌트: Convergence Engine] ---
@@ -76,9 +76,10 @@ const App = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [imgLoadStatus, setImgLoadStatus] = useState('loading');
 
-  // [CTO Debugging]: 컴파일 오류 방지를 위해 import 문을 제거하고 경로 문자열을 직접 사용합니다.
-  // Vite의 개발 환경에서는 "/src/assets/YJ.PNG" 경로가 유효합니다.
-  const founderImgSrc = "/src/assets/YJ.PNG";
+  // [CTO 해결책]: import.meta.env 대신 환경 변수 접근 방식을 안전하게 변경하거나 
+  // public 폴더의 특성을 이용해 절대 경로를 직접 사용합니다.
+  // 배포 환경(GitHub Pages)에서는 "/"가 아닌 프로젝트 명을 포함해야 할 수 있으므로 유동적으로 처리합니다.
+  const founderImgSrc = "YJ.PNG"; 
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -156,16 +157,14 @@ const App = () => {
         
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/5 border border-cyan-500/20 mb-10 animate-fade-in">
           <Sparkles size={10} className="text-cyan-400" />
-          <span className="text-[8px] font-brand tracking-[0.4em] uppercase text-cyan-400 font-bold">Release Candidate 0.9.9.1</span>
+          <span className="text-[8px] font-brand tracking-[0.4em] uppercase text-cyan-400 font-bold">Release Candidate 0.9.9.3</span>
         </div>
 
-        {/* 히어로 워딩: ME, REALITY, AND AI */}
         <h1 className="text-[10vw] sm:text-7xl font-title tracking-tighter leading-tight mb-10 bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent uppercase animate-fade-in">
           ME, REALITY,<br/>AND AI
         </h1>
         
-        {/* 비전 한 줄 최적화 */}
-        <div className="w-full overflow-hidden mb-16 px-2">
+        <div className="w-full overflow-hidden mb-16 px-4">
           <p className="text-[3.1vw] sm:text-base text-cyan-400/80 leading-none tracking-[0.1em] font-brand font-black uppercase whitespace-nowrap">
             Grounded in Reality, Augmented by Intelligence
           </p>
@@ -174,7 +173,7 @@ const App = () => {
         <div className="w-16 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
       </section>
 
-      {/* Founder Profile Section (안정화 로직 적용) */}
+      {/* Founder Profile Section */}
       <section className="px-8 pb-20 flex flex-col items-center animate-fade-in">
         <div className="relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-violet-500 rounded-full blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
@@ -188,14 +187,14 @@ const App = () => {
                 className={`w-full h-full object-cover grayscale brightness-90 hover:grayscale-0 transition-all duration-700 ease-in-out scale-105 ${imgLoadStatus === 'loading' ? 'opacity-0' : 'opacity-100'}`}
                 onLoad={() => setImgLoadStatus('success')}
                 onError={(e) => {
-                  console.warn("Founder image load failed at:", founderImgSrc);
+                  console.warn("Founder image fail. Path tried:", founderImgSrc);
                   setImgLoadStatus('error');
                 }}
               />
             ) : (
               <div className="text-white/20 flex flex-col items-center gap-1">
                 <User size={40} strokeWidth={1} />
-                <span className="text-[6px] font-brand uppercase opacity-50 tracking-tighter">Sync Fail</span>
+                <span className="text-[6px] font-brand uppercase opacity-50 tracking-tighter text-center px-2 leading-tight">Sync fail<br/>Check public/YJ.PNG</span>
               </div>
             )}
             
@@ -307,15 +306,15 @@ const App = () => {
               
               <div className="space-y-10 pb-10">
                 <div className="space-y-3">
-                  <h4 className="text-[9px] font-brand tracking-[0.3em] text-white/20 uppercase font-black font-bold">Goal</h4>
+                  <h4 className="text-[9px] font-brand tracking-[0.3em] text-white/20 uppercase font-black font-bold text-white/40">Goal</h4>
                   <p className="text-[13px] font-light text-white/70 leading-relaxed">{selectedProject.goal}</p>
                 </div>
                 <div className="space-y-3">
-                  <h4 className="text-[9px] font-brand tracking-[0.3em] text-white/20 uppercase font-black font-bold">Process</h4>
+                  <h4 className="text-[9px] font-brand tracking-[0.3em] text-white/20 uppercase font-black font-bold text-white/40">Process</h4>
                   <p className="text-[13px] font-light text-white/70 leading-relaxed">{selectedProject.process}</p>
                 </div>
                 <div className="space-y-3">
-                  <h4 className="text-[9px] font-brand tracking-[0.3em] text-white/20 uppercase font-black font-bold">Result</h4>
+                  <h4 className="text-[9px] font-brand tracking-[0.3em] text-white/20 uppercase font-black font-bold text-white/40">Result</h4>
                   <p className="text-[13px] font-light text-white/70 leading-relaxed">{selectedProject.result}</p>
                 </div>
               </div>
@@ -334,12 +333,12 @@ const App = () => {
       <footer className="py-20 text-center safe-pb border-t border-white/5 mx-6">
         <div className="flex flex-col items-center gap-8">
           <div className="flex gap-10 opacity-30">
-            <Github size={18} />
-            <Linkedin size={18} />
-            <Mail size={18} />
+            <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-cyan-400 transition-colors"><Github size={18} /></a>
+            <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="hover:text-cyan-400 transition-colors"><Linkedin size={18} /></a>
+            <a href="mailto:jini2aix@gmail.com" className="hover:text-cyan-400 transition-colors"><Mail size={18} /></a>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <span className="font-brand text-[9px] tracking-[0.5em] uppercase font-black opacity-20 italic font-bold text-white/60">Hyzen Labs. RC-0.9.9.1</span>
+            <span className="font-brand text-[9px] tracking-[0.5em] uppercase font-black opacity-20 italic font-bold text-white/60 leading-none">Hyzen Labs. RC-0.9.9.3</span>
             <p className="text-[7px] font-brand tracking-[0.2em] font-bold uppercase opacity-5">© 2026 Designed by Jin & Park</p>
           </div>
         </div>
