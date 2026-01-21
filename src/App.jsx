@@ -13,27 +13,26 @@ import {
   Activity,
   Box,
   BrainCircuit,
-  Zap
+  Zap,
+  User
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R0.9.8.3 Stability & Vision Final]
- * 비전: Grounded in Reality, Augmented by Intelligence (Single Line)
- * 히어로: ME, REALITY, AND AI
- * 설립자: Founder Youngji.Park (Path resolution fix applied)
- * 로드맵: In Preparation (준비중)
+ * [Hyzen Labs. CTO Optimized - R0.9.8.5 Stability Fix]
+ * 1. 이미지 로드 컴파일 에러 해결 (import 대신 경로 문자열 사용)
+ * 2. 히어로 워딩: ME, REALITY, AND AI
+ * 3. 비전 슬로건: 한 줄 구성 (Grounded in Reality, Augmented by Intelligence)
+ * 4. 로드맵 상태: "In Preparation" (준비중)
  */
 
 // --- [시각화 컴포넌트: Convergence Engine] ---
 const ConvergenceEngine = () => {
   return (
     <div className="relative w-full h-[300px] flex items-center justify-center overflow-hidden">
-      {/* Intelligence Network (Augmented) */}
+      {/* Intelligence Network */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="w-48 h-48 border border-cyan-500/20 rounded-full animate-[spin_15s_linear_infinite]" />
         <div className="w-64 h-64 border border-violet-500/10 rounded-full animate-[spin_25s_linear_infinite_reverse]" />
-        
-        {/* Intelligence Nodes */}
         {[0, 72, 144, 216, 288].map((angle, i) => (
           <div 
             key={i}
@@ -46,20 +45,10 @@ const ConvergenceEngine = () => {
         ))}
       </div>
 
-      {/* Reality Core (Grounded) */}
+      {/* Reality Core */}
       <div className="relative z-10 w-24 h-24 bg-gradient-to-br from-zinc-800 to-black rounded-3xl border border-white/20 flex items-center justify-center shadow-[0_0_40px_rgba(0,0,0,1)]">
         <Box size={32} className="text-white opacity-80" />
         <div className="absolute inset-0 border border-cyan-500/40 rounded-3xl animate-[ping_3s_infinite]" />
-      </div>
-
-      {/* Labels */}
-      <div className="absolute top-10 left-10 flex items-center gap-2 opacity-30">
-        <BrainCircuit size={12} className="text-cyan-400" />
-        <span className="text-[8px] font-brand tracking-[0.2em] uppercase font-bold">Intelligence</span>
-      </div>
-      <div className="absolute bottom-10 right-10 flex items-center gap-2 opacity-30">
-        <span className="text-[8px] font-brand tracking-[0.2em] uppercase font-bold">Reality</span>
-        <Zap size={12} className="text-violet-400" />
       </div>
 
       <style>{`
@@ -78,9 +67,8 @@ const App = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // [CTO 해결책]: 샌드박스 컴파일 오류를 방지하기 위해 import 대신 절대 경로 기반 문자열을 사용합니다.
-  // 실제 VS Code 환경에서는 Vite가 src/assets 폴더를 처리하므로, 
-  // 배포 시에는 "/assets/yj.png" 또는 본 프로젝트의 빌드 경로를 확인하십시오.
+  // 컴파일 에러 방지를 위해 이미지 경로를 상수로 관리
+  // VS Code 환경의 src/assets/yj.png 파일을 가리킵니다.
   const founderImgSrc = "/src/assets/yj.png";
 
   useEffect(() => {
@@ -136,7 +124,7 @@ const App = () => {
         .glass-panel { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
         ::-webkit-scrollbar { display: none; }
         .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
-        .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
+        .animate-fade-in { animation: fadeIn 1s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
 
@@ -147,12 +135,9 @@ const App = () => {
             <span className="font-brand text-[10px] tracking-[0.4em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
             <span className="text-[8px] opacity-20 mt-1 uppercase tracking-widest font-brand font-bold text-white">Me, Reality, and AI</span>
           </div>
-          <div className="flex items-center gap-3">
-            <Activity size={14} className="text-cyan-400/50" />
-            <button className="p-2 bg-white/5 rounded-full border border-white/10 active:scale-90 transition-transform">
-              <Share2 size={16} className="text-white/40" />
-            </button>
-          </div>
+          <button className="p-2 bg-white/5 rounded-full border border-white/10 active:scale-90 transition-transform">
+            <Share2 size={16} className="text-white/40" />
+          </button>
         </div>
       </nav>
 
@@ -162,15 +147,13 @@ const App = () => {
         
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/5 border border-cyan-500/20 mb-10 animate-fade-in">
           <Sparkles size={10} className="text-cyan-400" />
-          <span className="text-[8px] font-brand tracking-[0.4em] uppercase text-cyan-400 font-bold">Release Candidate 0.9.8.3</span>
+          <span className="text-[8px] font-brand tracking-[0.4em] uppercase text-cyan-400 font-bold">Release Candidate 0.9.8.5</span>
         </div>
 
-        {/* 히어로 워딩: ME, REALITY, AND AI */}
-        <h1 className="text-[10vw] sm:text-7xl font-title tracking-tighter leading-tight mb-10 bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent uppercase animate-fade-in">
+        <h1 className="text-[10vw] sm:text-7xl font-title tracking-tighter leading-tight mb-10 bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent uppercase">
           ME, REALITY,<br/>AND AI
         </h1>
         
-        {/* 비전 한 줄 표기 */}
         <div className="w-full overflow-hidden mb-16 px-4">
           <p className="text-[3.1vw] sm:text-base text-cyan-400/80 leading-none tracking-[0.12em] font-brand font-black uppercase whitespace-nowrap">
             Grounded in Reality, Augmented by Intelligence
@@ -186,28 +169,30 @@ const App = () => {
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-violet-500 rounded-full blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
           
           <div className="relative w-28 h-28 rounded-full border border-white/10 overflow-hidden glass-panel shadow-2xl bg-zinc-900 flex items-center justify-center">
-            {/* [CTO Fix]: 샌드박스 오류 방지용 동적 경로 로직 */}
             <img 
               src={founderImgSrc} 
               alt="Founder Youngji.Park"
+              loading="lazy"
               className="w-full h-full object-cover grayscale brightness-90 hover:grayscale-0 transition-all duration-700 ease-in-out scale-105"
               onError={(e) => {
-                // 이미지 로드 실패 시 대체 비주얼 (아이콘)
+                // 이미지 로드 실패 시 대체 아이콘 표시 (공백 방지)
                 e.target.style.display = 'none';
-                const parent = e.target.parentNode;
-                if (parent) {
-                  parent.innerHTML = '<div class="text-white/20"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>';
+                const container = e.target.parentElement;
+                if (container && !container.querySelector('.placeholder-icon')) {
+                  const iconDiv = document.createElement('div');
+                  iconDiv.className = "placeholder-icon text-white/20";
+                  iconDiv.innerHTML = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+                  container.appendChild(iconDiv);
                 }
               }}
             />
           </div>
-          
           <div className="absolute -bottom-1 -right-1 p-1 bg-[#050505] rounded-full border border-cyan-500/30">
             <Sparkles size={10} className="text-cyan-400 animate-pulse" />
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col items-center gap-1.5">
+        <div className="mt-8 flex flex-col items-center gap-1.5 text-center">
           <span className="text-[9px] font-brand tracking-[0.4em] text-cyan-400 font-black uppercase font-bold">Founder</span>
           <h3 className="text-sm sm:text-lg font-title tracking-tight text-white/90 font-bold">Youngji.Park</h3>
           <div className="w-10 h-[1px] bg-white/10 mt-2"></div>
@@ -255,7 +240,6 @@ const App = () => {
               ))}
             </div>
 
-            {/* Convergence Engine Visual */}
             <div className="glass-panel p-10 rounded-[3.5rem] relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-cyan-500/5 to-transparent pointer-events-none" />
               <div className="flex flex-col mb-4 text-center">
@@ -338,7 +322,7 @@ const App = () => {
             <Mail size={18} />
           </div>
           <div className="flex flex-col items-center gap-2">
-            <span className="font-brand text-[9px] tracking-[0.5em] uppercase font-black opacity-20 italic font-bold">Hyzen Labs. RC-0.9.8.3</span>
+            <span className="font-brand text-[9px] tracking-[0.5em] uppercase font-black opacity-20 italic font-bold">Hyzen Labs. RC-0.9.8.5</span>
             <p className="text-[7px] font-brand tracking-[0.2em] font-bold uppercase opacity-5">© 2026 Designed by Jin & Park</p>
           </div>
         </div>
