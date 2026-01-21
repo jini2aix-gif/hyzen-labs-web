@@ -69,7 +69,7 @@ const App = () => {
 
   // 컴파일 에러 방지를 위해 이미지 경로를 상수로 관리
   // VS Code 환경의 src/assets/yj.png 파일을 가리킵니다.
-  const founderImgSrc = "/src/assets/yj.png";
+  const founderImgSrc = "/src/assets/YJ.png";
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
