@@ -18,13 +18,18 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R0.9.8.9 Final Stability]
- * 1. 이미지 로드 컴파일 에러 해결: import 대신 직접 경로 참조 방식 사용
- * 2. 히어로 워딩: ME, REALITY, AND AI
- * 3. 비전 슬로건: Grounded in Reality, Augmented by Intelligence (한 줄)
- * 4. 로드맵 상태: "In Preparation"
- * 5. 설립자: Founder Youngji.Park (YJ.PNG 대소문자 반영)
+ * [Hyzen Labs. CTO Optimized - R0.9.9 Final Integrity Build]
+ * 1. 이미지 대소문자 매칭 완료: YJ.PNG (Vite Standard)
+ * 2. 히어로: ME, REALITY, AND AI
+ * 3. 비전 슬로건: 한 줄 최적화 (Grounded in Reality, Augmented by Intelligence)
+ * 4. 로드맵: In Preparation (준비중)
+ * 5. 화면 멈춤 방지: 이미지 로드 에러 예외 처리 강화
  */
+
+// [CTO 중요 가이드]
+// VS Code의 파일 탐색기(Sidebar)에서 파일명이 정확히 YJ.PNG (대문자)인지 다시 확인하세요.
+// 만약 대소문자가 다르다면 아래 구문의 파일명도 실제와 똑같이 수정해야 화면이 뜹니다.
+import founderImg from './assets/YJ.PNG';
 
 // --- [시각화 컴포넌트: Convergence Engine] ---
 const ConvergenceEngine = () => {
@@ -74,13 +79,7 @@ const App = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [imgError, setImgError] = useState(false);
-
-  // [CTO Debugging]: 
-  // 빌드 환경에서의 'Could not resolve' 에러를 방지하기 위해 import 구문을 제거하고 
-  // Vite의 정적 자산 경로를 문자열로 참조합니다.
-  // 실제 VS Code 환경에서는 파일이 src/assets/YJ.PNG 에 존재해야 합니다.
-  const founderImgSrc = "/src/assets/YJ.PNG";
+  const [imgLoadStatus, setImgLoadStatus] = useState('loading'); // loading, success, error
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -135,7 +134,7 @@ const App = () => {
         .glass-panel { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
         ::-webkit-scrollbar { display: none; }
         .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
-        .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
+        .animate-fade-in { animation: fadeIn 1s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
 
@@ -158,15 +157,17 @@ const App = () => {
         
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/5 border border-cyan-500/20 mb-10 animate-fade-in">
           <Sparkles size={10} className="text-cyan-400" />
-          <span className="text-[8px] font-brand tracking-[0.4em] uppercase text-cyan-400 font-bold">Release Candidate 0.9.8.9</span>
+          <span className="text-[8px] font-brand tracking-[0.4em] uppercase text-cyan-400 font-bold">Release Candidate 0.9.9</span>
         </div>
 
+        {/* 히어로 워딩 업데이트 */}
         <h1 className="text-[10vw] sm:text-7xl font-title tracking-tighter leading-tight mb-10 bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent uppercase animate-fade-in">
           ME, REALITY,<br/>AND AI
         </h1>
         
-        <div className="w-full overflow-hidden mb-16 px-4">
-          <p className="text-[3.1vw] sm:text-base text-cyan-400/80 leading-none tracking-[0.12em] font-brand font-black uppercase whitespace-nowrap">
+        {/* 비전 슬로건 한 줄 최적화 */}
+        <div className="w-full overflow-hidden mb-16 px-2">
+          <p className="text-[3.1vw] sm:text-base text-cyan-400/80 leading-none tracking-[0.1em] font-brand font-black uppercase whitespace-nowrap">
             Grounded in Reality, Augmented by Intelligence
           </p>
         </div>
@@ -174,28 +175,34 @@ const App = () => {
         <div className="w-16 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
       </section>
 
-      {/* Founder Profile Section */}
+      {/* Founder Profile Section (안정화 로직 적용) */}
       <section className="px-8 pb-20 flex flex-col items-center animate-fade-in">
         <div className="relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-violet-500 rounded-full blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
           
           <div className="relative w-28 h-28 rounded-full border border-white/10 overflow-hidden glass-panel shadow-2xl bg-zinc-900 flex items-center justify-center">
-            {!imgError ? (
+            {imgLoadStatus !== 'error' ? (
               <img 
-                src={founderImgSrc} 
+                src={founderImg} 
                 alt="Founder Youngji.Park"
                 loading="eager"
-                className="w-full h-full object-cover grayscale brightness-90 hover:grayscale-0 transition-all duration-700 ease-in-out scale-105"
+                className={`w-full h-full object-cover grayscale brightness-90 hover:grayscale-0 transition-all duration-700 ease-in-out scale-105 ${imgLoadStatus === 'loading' ? 'opacity-0' : 'opacity-100'}`}
+                onLoad={() => setImgLoadStatus('success')}
                 onError={() => {
-                  console.warn("Founder image failed to load. Checking path:", founderImgSrc);
-                  setImgError(true);
+                  console.error("Founder image failed to load. Check if src/assets/YJ.PNG exists with exact casing.");
+                  setImgLoadStatus('error');
                 }}
               />
             ) : (
               <div className="text-white/20 flex flex-col items-center gap-1">
                 <User size={40} strokeWidth={1} />
-                <span className="text-[6px] font-brand uppercase opacity-50 tracking-tighter">Image Resolve Fail</span>
+                <span className="text-[6px] font-brand uppercase opacity-50 tracking-tighter">Image Load Fail</span>
               </div>
+            )}
+            
+            {/* 로딩 스켈레톤 애니메이션 */}
+            {imgLoadStatus === 'loading' && (
+              <div className="absolute inset-0 bg-white/5 animate-pulse" />
             )}
           </div>
           
@@ -334,7 +341,7 @@ const App = () => {
             <Mail size={18} />
           </div>
           <div className="flex flex-col items-center gap-2">
-            <span className="font-brand text-[9px] tracking-[0.5em] uppercase font-black opacity-20 italic font-bold text-white/60">Hyzen Labs. RC-0.9.8.9</span>
+            <span className="font-brand text-[9px] tracking-[0.5em] uppercase font-black opacity-20 italic font-bold text-white/60">Hyzen Labs. RC-0.9.9</span>
             <p className="text-[7px] font-brand tracking-[0.2em] font-bold uppercase opacity-5">© 2026 Designed by Jin & Park</p>
           </div>
         </div>
