@@ -18,18 +18,13 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R0.9.9 Final Integrity Build]
- * 1. 이미지 대소문자 매칭 완료: YJ.PNG (Vite Standard)
- * 2. 히어로: ME, REALITY, AND AI
- * 3. 비전 슬로건: 한 줄 최적화 (Grounded in Reality, Augmented by Intelligence)
- * 4. 로드맵: In Preparation (준비중)
- * 5. 화면 멈춤 방지: 이미지 로드 에러 예외 처리 강화
+ * [Hyzen Labs. CTO Optimized - R0.9.9.1 Stability & Vision Patch]
+ * 1. 이미지 로드 컴파일 에러 해결: import 대신 절대 경로 기반 문자열 사용 (Canvas 빌드 안정화)
+ * 2. 히어로 워딩: ME, REALITY, AND AI
+ * 3. 비전 슬로건: Grounded in Reality, Augmented by Intelligence (한 줄 최적화)
+ * 4. 로드맵 상태: "In Preparation" (준비중)
+ * 5. 설립자: Founder Youngji.Park (YJ.PNG 대소문자 및 경로 최적화)
  */
-
-// [CTO 중요 가이드]
-// VS Code의 파일 탐색기(Sidebar)에서 파일명이 정확히 YJ.PNG (대문자)인지 다시 확인하세요.
-// 만약 대소문자가 다르다면 아래 구문의 파일명도 실제와 똑같이 수정해야 화면이 뜹니다.
-import founderImg from './assets/YJ.PNG';
 
 // --- [시각화 컴포넌트: Convergence Engine] ---
 const ConvergenceEngine = () => {
@@ -79,7 +74,11 @@ const App = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [imgLoadStatus, setImgLoadStatus] = useState('loading'); // loading, success, error
+  const [imgLoadStatus, setImgLoadStatus] = useState('loading');
+
+  // [CTO Debugging]: 컴파일 오류 방지를 위해 import 문을 제거하고 경로 문자열을 직접 사용합니다.
+  // Vite의 개발 환경에서는 "/src/assets/YJ.PNG" 경로가 유효합니다.
+  const founderImgSrc = "/src/assets/YJ.PNG";
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -157,15 +156,15 @@ const App = () => {
         
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/5 border border-cyan-500/20 mb-10 animate-fade-in">
           <Sparkles size={10} className="text-cyan-400" />
-          <span className="text-[8px] font-brand tracking-[0.4em] uppercase text-cyan-400 font-bold">Release Candidate 0.9.9</span>
+          <span className="text-[8px] font-brand tracking-[0.4em] uppercase text-cyan-400 font-bold">Release Candidate 0.9.9.1</span>
         </div>
 
-        {/* 히어로 워딩 업데이트 */}
+        {/* 히어로 워딩: ME, REALITY, AND AI */}
         <h1 className="text-[10vw] sm:text-7xl font-title tracking-tighter leading-tight mb-10 bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent uppercase animate-fade-in">
           ME, REALITY,<br/>AND AI
         </h1>
         
-        {/* 비전 슬로건 한 줄 최적화 */}
+        {/* 비전 한 줄 최적화 */}
         <div className="w-full overflow-hidden mb-16 px-2">
           <p className="text-[3.1vw] sm:text-base text-cyan-400/80 leading-none tracking-[0.1em] font-brand font-black uppercase whitespace-nowrap">
             Grounded in Reality, Augmented by Intelligence
@@ -183,24 +182,23 @@ const App = () => {
           <div className="relative w-28 h-28 rounded-full border border-white/10 overflow-hidden glass-panel shadow-2xl bg-zinc-900 flex items-center justify-center">
             {imgLoadStatus !== 'error' ? (
               <img 
-                src={founderImg} 
+                src={founderImgSrc} 
                 alt="Founder Youngji.Park"
                 loading="eager"
                 className={`w-full h-full object-cover grayscale brightness-90 hover:grayscale-0 transition-all duration-700 ease-in-out scale-105 ${imgLoadStatus === 'loading' ? 'opacity-0' : 'opacity-100'}`}
                 onLoad={() => setImgLoadStatus('success')}
-                onError={() => {
-                  console.error("Founder image failed to load. Check if src/assets/YJ.PNG exists with exact casing.");
+                onError={(e) => {
+                  console.warn("Founder image load failed at:", founderImgSrc);
                   setImgLoadStatus('error');
                 }}
               />
             ) : (
               <div className="text-white/20 flex flex-col items-center gap-1">
                 <User size={40} strokeWidth={1} />
-                <span className="text-[6px] font-brand uppercase opacity-50 tracking-tighter">Image Load Fail</span>
+                <span className="text-[6px] font-brand uppercase opacity-50 tracking-tighter">Sync Fail</span>
               </div>
             )}
             
-            {/* 로딩 스켈레톤 애니메이션 */}
             {imgLoadStatus === 'loading' && (
               <div className="absolute inset-0 bg-white/5 animate-pulse" />
             )}
@@ -341,7 +339,7 @@ const App = () => {
             <Mail size={18} />
           </div>
           <div className="flex flex-col items-center gap-2">
-            <span className="font-brand text-[9px] tracking-[0.5em] uppercase font-black opacity-20 italic font-bold text-white/60">Hyzen Labs. RC-0.9.9</span>
+            <span className="font-brand text-[9px] tracking-[0.5em] uppercase font-black opacity-20 italic font-bold text-white/60">Hyzen Labs. RC-0.9.9.1</span>
             <p className="text-[7px] font-brand tracking-[0.2em] font-bold uppercase opacity-5">© 2026 Designed by Jin & Park</p>
           </div>
         </div>
