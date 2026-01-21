@@ -18,11 +18,12 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R0.9.8.5 Stability Fix]
- * 1. 이미지 로드 컴파일 에러 해결 (import 대신 경로 문자열 사용)
+ * [Hyzen Labs. CTO Optimized - R0.9.8.9 Final Stability]
+ * 1. 이미지 로드 컴파일 에러 해결: import 대신 직접 경로 참조 방식 사용
  * 2. 히어로 워딩: ME, REALITY, AND AI
- * 3. 비전 슬로건: 한 줄 구성 (Grounded in Reality, Augmented by Intelligence)
- * 4. 로드맵 상태: "In Preparation" (준비중)
+ * 3. 비전 슬로건: Grounded in Reality, Augmented by Intelligence (한 줄)
+ * 4. 로드맵 상태: "In Preparation"
+ * 5. 설립자: Founder Youngji.Park (YJ.PNG 대소문자 반영)
  */
 
 // --- [시각화 컴포넌트: Convergence Engine] ---
@@ -31,8 +32,9 @@ const ConvergenceEngine = () => {
     <div className="relative w-full h-[300px] flex items-center justify-center overflow-hidden">
       {/* Intelligence Network */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-48 h-48 border border-cyan-500/20 rounded-full animate-[spin_15s_linear_infinite]" />
-        <div className="w-64 h-64 border border-violet-500/10 rounded-full animate-[spin_25s_linear_infinite_reverse]" />
+        <div className="w-48 h-48 border border-cyan-500/20 rounded-full animate-spin-slow" />
+        <div className="w-64 h-64 border border-violet-500/10 rounded-full animate-spin-reverse" />
+        
         {[0, 72, 144, 216, 288].map((angle, i) => (
           <div 
             key={i}
@@ -48,13 +50,19 @@ const ConvergenceEngine = () => {
       {/* Reality Core */}
       <div className="relative z-10 w-24 h-24 bg-gradient-to-br from-zinc-800 to-black rounded-3xl border border-white/20 flex items-center justify-center shadow-[0_0_40px_rgba(0,0,0,1)]">
         <Box size={32} className="text-white opacity-80" />
-        <div className="absolute inset-0 border border-cyan-500/40 rounded-3xl animate-[ping_3s_infinite]" />
+        <div className="absolute inset-0 border border-cyan-500/40 rounded-3xl animate-ping-slow" />
       </div>
 
       <style>{`
+        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes spin-reverse { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+        .animate-spin-slow { animation: spin-slow 15s linear infinite; }
+        .animate-spin-reverse { animation: spin-reverse 25s linear infinite; }
+        @keyframes ping-slow { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+        .animate-ping-slow { animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite; }
         @keyframes pulse {
-          0%, 100% { opacity: 0.3; transform: scale(1) rotate(var(--tw-rotate)) translate(100px) rotate(calc(-1 * var(--tw-rotate))); }
-          50% { opacity: 1; transform: scale(1.5) rotate(var(--tw-rotate)) translate(100px) rotate(calc(-1 * var(--tw-rotate))); }
+          0%, 100% { opacity: 0.3; transform: rotate(var(--tw-rotate)) translate(100px) scale(1); }
+          50% { opacity: 1; transform: rotate(var(--tw-rotate)) translate(100px) scale(1.5); }
         }
       `}</style>
     </div>
@@ -66,9 +74,12 @@ const App = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
-  // 컴파일 에러 방지를 위해 이미지 경로를 상수로 관리
-  // VS Code 환경의 src/assets/yj.png 파일을 가리킵니다.
+  // [CTO Debugging]: 
+  // 빌드 환경에서의 'Could not resolve' 에러를 방지하기 위해 import 구문을 제거하고 
+  // Vite의 정적 자산 경로를 문자열로 참조합니다.
+  // 실제 VS Code 환경에서는 파일이 src/assets/YJ.PNG 에 존재해야 합니다.
   const founderImgSrc = "/src/assets/YJ.PNG";
 
   useEffect(() => {
@@ -121,17 +132,17 @@ const App = () => {
         @import url('https://fonts.googleapis.com/css2?family=Michroma&family=Orbitron:wght@400;700;900&family=JetBrains+Mono&display=swap');
         .font-brand { font-family: 'Orbitron', sans-serif; }
         .font-title { font-family: 'Michroma', sans-serif; }
-        .glass-panel { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .glass-panel { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
         ::-webkit-scrollbar { display: none; }
         .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
-        .animate-fade-in { animation: fadeIn 1s ease-out forwards; }
+        .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
 
       {/* Navigation */}
       <nav className={`fixed top-0 left-0 w-full z-[1000] transition-all duration-500 px-6 py-5 ${isScrolled ? 'glass-panel border-b border-white/10' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex flex-col">
+          <div className="flex flex-col text-left">
             <span className="font-brand text-[10px] tracking-[0.4em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
             <span className="text-[8px] opacity-20 mt-1 uppercase tracking-widest font-brand font-bold text-white">Me, Reality, and AI</span>
           </div>
@@ -147,10 +158,10 @@ const App = () => {
         
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/5 border border-cyan-500/20 mb-10 animate-fade-in">
           <Sparkles size={10} className="text-cyan-400" />
-          <span className="text-[8px] font-brand tracking-[0.4em] uppercase text-cyan-400 font-bold">Release Candidate 0.9.8.5</span>
+          <span className="text-[8px] font-brand tracking-[0.4em] uppercase text-cyan-400 font-bold">Release Candidate 0.9.8.9</span>
         </div>
 
-        <h1 className="text-[10vw] sm:text-7xl font-title tracking-tighter leading-tight mb-10 bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent uppercase">
+        <h1 className="text-[10vw] sm:text-7xl font-title tracking-tighter leading-tight mb-10 bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent uppercase animate-fade-in">
           ME, REALITY,<br/>AND AI
         </h1>
         
@@ -169,24 +180,25 @@ const App = () => {
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-violet-500 rounded-full blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
           
           <div className="relative w-28 h-28 rounded-full border border-white/10 overflow-hidden glass-panel shadow-2xl bg-zinc-900 flex items-center justify-center">
-            <img 
-              src={founderImgSrc} 
-              alt="Founder Youngji.Park"
-              loading="lazy"
-              className="w-full h-full object-cover grayscale brightness-90 hover:grayscale-0 transition-all duration-700 ease-in-out scale-105"
-              onError={(e) => {
-                // 이미지 로드 실패 시 대체 아이콘 표시 (공백 방지)
-                e.target.style.display = 'none';
-                const container = e.target.parentElement;
-                if (container && !container.querySelector('.placeholder-icon')) {
-                  const iconDiv = document.createElement('div');
-                  iconDiv.className = "placeholder-icon text-white/20";
-                  iconDiv.innerHTML = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-                  container.appendChild(iconDiv);
-                }
-              }}
-            />
+            {!imgError ? (
+              <img 
+                src={founderImgSrc} 
+                alt="Founder Youngji.Park"
+                loading="eager"
+                className="w-full h-full object-cover grayscale brightness-90 hover:grayscale-0 transition-all duration-700 ease-in-out scale-105"
+                onError={() => {
+                  console.warn("Founder image failed to load. Checking path:", founderImgSrc);
+                  setImgError(true);
+                }}
+              />
+            ) : (
+              <div className="text-white/20 flex flex-col items-center gap-1">
+                <User size={40} strokeWidth={1} />
+                <span className="text-[6px] font-brand uppercase opacity-50 tracking-tighter">Image Resolve Fail</span>
+              </div>
+            )}
           </div>
+          
           <div className="absolute -bottom-1 -right-1 p-1 bg-[#050505] rounded-full border border-cyan-500/30">
             <Sparkles size={10} className="text-cyan-400 animate-pulse" />
           </div>
@@ -220,10 +232,10 @@ const App = () => {
       {/* Main Content Areas */}
       <main className="px-6 max-w-7xl mx-auto pb-32">
         {activeView === 'roadmap' ? (
-          <div className="space-y-12 animate-fade-in">
+          <div className="space-y-12 animate-fade-in text-left">
             <div className="grid gap-3">
               {roadmapSteps.map((step, idx) => (
-                <div key={idx} className="glass-panel p-5 rounded-[2rem] flex items-center justify-between">
+                <div key={idx} className="glass-panel p-5 rounded-[2rem] flex items-center justify-between transition-all active:scale-[0.98]">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-white/5 rounded-2xl border border-white/5">
                       {step.icon}
@@ -254,7 +266,7 @@ const App = () => {
             </div>
           </div>
         ) : (
-          <div className="grid gap-5 animate-fade-in">
+          <div className="grid gap-5 animate-fade-in text-left">
             {projects.map(project => (
               <div 
                 key={project.id} 
@@ -322,7 +334,7 @@ const App = () => {
             <Mail size={18} />
           </div>
           <div className="flex flex-col items-center gap-2">
-            <span className="font-brand text-[9px] tracking-[0.5em] uppercase font-black opacity-20 italic font-bold">Hyzen Labs. RC-0.9.8.5</span>
+            <span className="font-brand text-[9px] tracking-[0.5em] uppercase font-black opacity-20 italic font-bold text-white/60">Hyzen Labs. RC-0.9.8.9</span>
             <p className="text-[7px] font-brand tracking-[0.2em] font-bold uppercase opacity-5">© 2026 Designed by Jin & Park</p>
           </div>
         </div>
