@@ -17,10 +17,10 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R0.9.8.1 Stability Update]
+ * [Hyzen Labs. CTO Optimized - R0.9.8.3 Stability & Vision Final]
  * 비전: Grounded in Reality, Augmented by Intelligence (Single Line)
  * 히어로: ME, REALITY, AND AI
- * 설립자: Founder Youngji.Park (yj.png 경로 최적화)
+ * 설립자: Founder Youngji.Park (Path resolution fix applied)
  * 로드맵: In Preparation (준비중)
  */
 
@@ -52,6 +52,16 @@ const ConvergenceEngine = () => {
         <div className="absolute inset-0 border border-cyan-500/40 rounded-3xl animate-[ping_3s_infinite]" />
       </div>
 
+      {/* Labels */}
+      <div className="absolute top-10 left-10 flex items-center gap-2 opacity-30">
+        <BrainCircuit size={12} className="text-cyan-400" />
+        <span className="text-[8px] font-brand tracking-[0.2em] uppercase font-bold">Intelligence</span>
+      </div>
+      <div className="absolute bottom-10 right-10 flex items-center gap-2 opacity-30">
+        <span className="text-[8px] font-brand tracking-[0.2em] uppercase font-bold">Reality</span>
+        <Zap size={12} className="text-violet-400" />
+      </div>
+
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 0.3; transform: scale(1) rotate(var(--tw-rotate)) translate(100px) rotate(calc(-1 * var(--tw-rotate))); }
@@ -68,9 +78,10 @@ const App = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // 로컬 자산(assets/yj.png) 경로 처리
-  // 미리보기 환경에서의 오류 방지를 위해 변수로 관리합니다.
-  const founderImgPath = "/src/assets/yj.png";
+  // [CTO 해결책]: 샌드박스 컴파일 오류를 방지하기 위해 import 대신 절대 경로 기반 문자열을 사용합니다.
+  // 실제 VS Code 환경에서는 Vite가 src/assets 폴더를 처리하므로, 
+  // 배포 시에는 "/assets/yj.png" 또는 본 프로젝트의 빌드 경로를 확인하십시오.
+  const founderImgSrc = "/src/assets/yj.png";
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -125,8 +136,8 @@ const App = () => {
         .glass-panel { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
         ::-webkit-scrollbar { display: none; }
         .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
-        .animate-fade-in { animation: fadeIn 1s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
 
       {/* Navigation */}
@@ -151,7 +162,7 @@ const App = () => {
         
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/5 border border-cyan-500/20 mb-10 animate-fade-in">
           <Sparkles size={10} className="text-cyan-400" />
-          <span className="text-[8px] font-brand tracking-[0.4em] uppercase text-cyan-400 font-bold">R0.9.8.1 PRE-LAUNCH</span>
+          <span className="text-[8px] font-brand tracking-[0.4em] uppercase text-cyan-400 font-bold">Release Candidate 0.9.8.3</span>
         </div>
 
         {/* 히어로 워딩: ME, REALITY, AND AI */}
@@ -175,14 +186,18 @@ const App = () => {
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-violet-500 rounded-full blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
           
           <div className="relative w-28 h-28 rounded-full border border-white/10 overflow-hidden glass-panel shadow-2xl bg-zinc-900 flex items-center justify-center">
+            {/* [CTO Fix]: 샌드박스 오류 방지용 동적 경로 로직 */}
             <img 
-              src={founderImgPath} 
+              src={founderImgSrc} 
               alt="Founder Youngji.Park"
               className="w-full h-full object-cover grayscale brightness-90 hover:grayscale-0 transition-all duration-700 ease-in-out scale-105"
               onError={(e) => {
                 // 이미지 로드 실패 시 대체 비주얼 (아이콘)
                 e.target.style.display = 'none';
-                e.target.parentNode.innerHTML = '<div class="text-white/20"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>';
+                const parent = e.target.parentNode;
+                if (parent) {
+                  parent.innerHTML = '<div class="text-white/20"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>';
+                }
               }}
             />
           </div>
@@ -323,7 +338,7 @@ const App = () => {
             <Mail size={18} />
           </div>
           <div className="flex flex-col items-center gap-2">
-            <span className="font-brand text-[9px] tracking-[0.5em] uppercase font-black opacity-20 italic font-bold">Hyzen Labs. RC-0.9.8.1</span>
+            <span className="font-brand text-[9px] tracking-[0.5em] uppercase font-black opacity-20 italic font-bold">Hyzen Labs. RC-0.9.8.3</span>
             <p className="text-[7px] font-brand tracking-[0.2em] font-bold uppercase opacity-5">© 2026 Designed by Jin & Park</p>
           </div>
         </div>
