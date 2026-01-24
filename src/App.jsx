@@ -33,35 +33,42 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.6.3 | Deployment Integrity Edition]
- * 1. 빌드 최적화: Vercel 배포 시 모듈 참조 오류 방지를 위한 Firebase 초기화 구조 개선
- * 2. 렌더링 안정화: Firestore 데이터의 문자열 강제 변환으로 React Child Object 에러 원천 차단
- * 3. 레이아웃 고정: 팝업 시 배경 스케일링 제거로 모바일 Fit 이슈 근본 해결
- * 4. 시각 효과: 3D Cover Flow 효과(기울기/투명도) 상시 유지 및 여백 버블 시스템 고도화
+ * [Hyzen Labs. CTO Optimized - R1.6.4 | Deployment Resilience Edition]
+ * 1. 디버깅: 인트로 멈춤 현상 해결 (Firebase 로직과 타이머 분리)
+ * 2. 복구: 팝업 종료 시 모바일 Fit 이슈 근본 해결 (Zero-Scale Restoration)
+ * 3. 시각화: 중앙 텍스트를 피한 사이드 여백 유영 버블 시스템 유지
+ * 4. 모바일: 9.5vw 히어로 폰트 및 96px 대형 프로필 허브의 시각적 균형 유지
  */
 
-// --- [Firebase Initialization Safety Check] ---
+const ADMIN_PASS = "5733906";
+
+// --- [Firebase Initialization with Deep Safety Checks] ---
 const getFirebaseConfig = () => {
   try {
-    return typeof __firebase_config !== 'undefined' && __firebase_config 
-      ? JSON.parse(__firebase_config) 
-      : { apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
+    // Canvas 환경이 아닐 경우(Vercel 등)를 대비한 체크
+    if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+      return JSON.parse(__firebase_config);
+    }
   } catch (e) {
-    return { apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
+    console.warn("Firebase config parse error");
   }
+  return null; // 설정이 없을 경우 null 반환
 };
 
-const firebaseConfig = getFirebaseConfig();
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'hyzen-labs-v1';
-const ADMIN_PASS = "5733906";
+const fConfig = getFirebaseConfig();
+let app, auth, db, appId;
+
+// Firebase 설정이 있을 때만 엔진 가동 (Vercel 배포 시 설정 부재로 인한 크래시 방지)
+if (fConfig && fConfig.apiKey) {
+  app = initializeApp(fConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  appId = typeof __app_id !== 'undefined' ? __app_id : 'hyzen-labs-prod';
+}
 
 // --- [시각화 컴포넌트: 여백 유영 버블 메시지] ---
 const FloatingBubble = ({ msg }) => {
   const [coords] = useState(() => {
-    // 중앙 콘텐츠(25%~75%)를 피해 좌우 여백으로만 생성
     const isLeft = Math.random() > 0.5;
     const horizontalPos = isLeft ? Math.random() * 15 + 5 : Math.random() * 15 + 80;
     return {
@@ -89,7 +96,7 @@ const FloatingBubble = ({ msg }) => {
               <img src={msg.image} className="w-full h-full object-cover grayscale brightness-125" alt="" />
             </div>
           )}
-          <div className="flex flex-col text-left pr-1">
+          <div className="flex flex-col text-left pr-1 text-white">
             <span className="text-[6px] font-brand text-cyan-400 font-black uppercase tracking-tighter opacity-60">{safeName}</span>
             <span className="text-[8px] text-white/40 font-light italic leading-tight truncate max-w-[70px]">"{summary}"</span>
           </div>
@@ -99,7 +106,7 @@ const FloatingBubble = ({ msg }) => {
   );
 };
 
-// --- [공통 컴포넌트: Cover Flow Wrapper - 정밀 3D 고정] ---
+// --- [공통 컴포넌트: Cover Flow Wrapper - 3D 효과 상시 유지] ---
 const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
   const touchStartRef = useRef(null);
   const handlePrev = () => setActiveIndex(Math.max(0, activeIndex - 1));
@@ -124,7 +131,7 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
           const isCenter = offset === 0;
           
           let transform = `translateX(${offset * 85}%) translateZ(${Math.abs(offset) * -350}px) rotateY(${offset * -62}deg)`;
-          if (isCenter) transform = `translateZ(200px) scale(1.1)`;
+          if (isCenter) transform = `translateZ(180px) scale(1.1)`;
 
           return (
             <div 
@@ -138,7 +145,7 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
               }}
               onClick={() => setActiveIndex(idx)}
             >
-              <div className="relative w-full h-full preserve-3d shadow-2xl">
+              <div className="relative w-full h-full preserve-3d shadow-2xl text-white">
                 {renderItem(item, isCenter)}
                 {!isCenter && (
                   <div className="absolute inset-0 rounded-[2.5rem] bg-black/70 backdrop-blur-[6px] transition-all duration-500 pointer-events-none" />
@@ -172,8 +179,17 @@ const App = () => {
   const fileInputRef = useRef(null);
   const founderImgSrc = "YJ.PNG"; 
 
-  // --- [Firebase & Core Logic] ---
+  // --- [Intro Timer: 무조건 실행 (Firebase와 분리)] ---
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitializing(false);
+    }, 2800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // --- [Firebase Logic: Safe Execution] ---
+  useEffect(() => {
+    if (!app || !auth) return;
     const initAuth = async () => {
       try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -182,17 +198,16 @@ const App = () => {
           await signInAnonymously(auth);
         }
       } catch (err) {
-        await signInAnonymously(auth).catch(() => {});
+        console.warn("Auth Failure, proceeding without Firebase sync.");
       }
     };
     initAuth();
     const unsubscribe = onAuthStateChanged(auth, setUser);
-    const introTimer = setTimeout(() => setIsInitializing(false), 2800);
-    return () => { unsubscribe(); clearTimeout(introTimer); };
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !db) return;
     try {
       const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'messages'));
       const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -205,12 +220,13 @@ const App = () => {
     }
   }, [user]);
 
-  // --- [Layout Fix: 정밀 리셋] ---
+  // --- [Fit Logic: 정밀 리셋] ---
   useEffect(() => {
     if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen) {
       window.scrollTo(0, 0);
       document.body.style.overflow = 'hidden';
-      window.dispatchEvent(new Event('resize'));
+      // 뷰포트 강제 리프레시
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
     }
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
 
@@ -232,29 +248,47 @@ const App = () => {
 
   const handleMessageSubmit = async (e) => {
     e.preventDefault();
-    if (!newMessage.name || !newMessage.text || !user) return;
-    try {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
-        name: String(newMessage.name),
-        text: String(newMessage.text),
+    if (!newMessage.name || !newMessage.text) return;
+    
+    if (user && db) {
+      try {
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
+          name: String(newMessage.name),
+          text: String(newMessage.text),
+          image: newMessage.image,
+          createdAt: serverTimestamp(),
+          date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+        });
+      } catch (err) { console.error("Submit Error:", err); }
+    } else {
+      // 로컬 테스트용 폴백
+      const msg = {
+        id: Date.now().toString(),
+        name: newMessage.name,
+        text: newMessage.text,
         image: newMessage.image,
-        createdAt: serverTimestamp(),
         date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-      });
-      setNewMessage({ name: '', text: '', image: null });
-      triggerSync();
-      setIsGuestbookOpen(false);
-    } catch (err) { console.error("Submit Error:", err); }
+      };
+      setMessages([msg, ...messages].slice(0, 15));
+    }
+
+    setNewMessage({ name: '', text: '', image: null });
+    triggerSync();
+    setIsGuestbookOpen(false);
   };
 
   const confirmDelete = async () => {
-    if (deletePass === ADMIN_PASS && targetDeleteId && user) {
-      try {
-        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', targetDeleteId));
-        setIsDeleteModalOpen(false);
-        setTargetDeleteId(null);
-        triggerSync();
-      } catch (err) { console.error("Delete Error:", err); }
+    if (deletePass === ADMIN_PASS && targetDeleteId) {
+      if (user && db) {
+        try {
+          await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', targetDeleteId));
+        } catch (err) { console.error("Delete Error:", err); }
+      } else {
+        setMessages(messages.filter(m => m.id !== targetDeleteId));
+      }
+      setIsDeleteModalOpen(false);
+      setTargetDeleteId(null);
+      triggerSync();
     }
     setDeletePass("");
   };
@@ -305,6 +339,7 @@ const App = () => {
         .animate-init-progress { animation: initProgress 2.2s ease-in-out forwards; }
       `}</style>
 
+      {/* --- [Entry Sequence] --- */}
       {isInitializing && (
         <div className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center p-8 transition-opacity duration-700">
           <div className="absolute top-0 left-0 w-full h-[1px] bg-cyan-500/20 blur-[1px] animate-scan" />
@@ -318,7 +353,7 @@ const App = () => {
             </div>
             <div className="flex flex-col items-center gap-1 opacity-40">
               <span className="text-[7px] font-brand tracking-widest uppercase">Reality Data Synchronization...</span>
-              <span className="text-[6px] font-mono italic">CODE: HYZEN-RC162-DEPLOY</span>
+              <span className="text-[6px] font-mono italic">CODE: HYZEN-RC164-RESILIENT</span>
             </div>
           </div>
         </div>
@@ -327,7 +362,7 @@ const App = () => {
       {/* --- [Main Layer: Absolute Stability Enforcement] --- */}
       <div 
         className={`flex-1 flex flex-col relative transition-all duration-700 origin-center ${isInitializing ? 'opacity-0 scale-105' : 'opacity-100'} ${isAnyModalOpen ? 'blur-md brightness-50 pointer-events-none' : 'blur-0 brightness-100'}`}
-        style={{ transform: 'scale(1)' }}
+        style={{ transform: 'scale(1)' }} // 배경 스케일링 완전 제거로 Fit 이슈 해결
       >
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           {messages.map(msg => (
@@ -341,7 +376,7 @@ const App = () => {
               <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
               <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
             </div>
-            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.6.3 | Stable Deploy</span>
+            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.6.4 | Resilient</span>
           </div>
           <div className="flex gap-4 opacity-40">
             <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
@@ -374,7 +409,7 @@ const App = () => {
                   ) : (
                     <User size={40} strokeWidth={1} className="text-white/10" />
                   )}
-                  <div className="absolute inset-0 bg-cyan-500/0 group-hover:bg-cyan-500/10 backdrop-blur-[0px] group-hover:backdrop-blur-[2px] transition-all duration-500 flex items-center justify-center pointer-events-none">
+                  <div className="absolute inset-0 bg-cyan-500/0 group-hover:bg-cyan-500/20 backdrop-blur-[0px] group-hover:backdrop-blur-[2px] transition-all duration-500 flex items-center justify-center pointer-events-none">
                     <Fingerprint size={48} className="text-cyan-400 opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 rotate-12 group-hover:rotate-0 transition-all duration-500 drop-shadow-[0_0_10px_#22d3ee]" />
                   </div>
                 </div>
@@ -403,17 +438,17 @@ const App = () => {
           </div>
 
           <div className="px-6 max-w-5xl mx-auto h-[180px] relative overflow-visible text-white">
-            <div key={activeView} className="w-full h-full animate-fade-in-soft text-white">
+            <div key={activeView} className="w-full h-full animate-fade-in-soft">
               {activeView === 'roadmap' && (
                 <CoverFlow items={roadmapSteps} activeIndex={activeIndices.roadmap} setActiveIndex={(i) => setViewIndex('roadmap', i)} renderItem={(step) => (
                   <div className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-cyan-500/30 flex flex-col justify-between">
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex justify-between items-start mb-2 text-white">
                       <div className="w-14 h-14 flex items-center justify-center bg-white/[0.03] rounded-[1.2rem] border border-white/15 text-cyan-400">{step.icon}</div>
                       <div className="text-[6px] font-brand px-2.5 py-1 rounded-full border border-cyan-500/50 text-cyan-400 bg-cyan-500/5 uppercase font-black">In Prep</div>
                     </div>
                     <div className="text-left">
-                      <span className="text-[8px] font-brand text-white/30 tracking-[0.2em] uppercase font-bold">{String(step.phase || "")}</span>
-                      <h3 className="text-[13px] font-bold tracking-tight mt-1 leading-tight">{String(step.title || "")}</h3>
+                      <span className="text-[8px] font-brand text-white/30 tracking-[0.2em] uppercase font-bold text-white">{String(step.phase || "")}</span>
+                      <h3 className="text-[13px] font-bold tracking-tight mt-1 leading-tight text-white">{String(step.title || "")}</h3>
                     </div>
                   </div>
                 )} />
@@ -425,7 +460,7 @@ const App = () => {
                       <span className="text-cyan-500 font-brand text-[8px] font-bold uppercase tracking-[0.3em]">{String(project.tag || "")}</span>
                       <Maximize2 size={12} className="text-white/20 group-hover:text-cyan-400" />
                     </div>
-                    <div className="flex-1 flex flex-col justify-center text-left">
+                    <div className="flex-1 flex flex-col justify-center text-left text-white">
                       <h3 className="text-[15px] font-black mb-1 uppercase tracking-tight leading-tight">{String(project.title || "")}</h3>
                       <p className="text-white/40 text-[9px] leading-relaxed line-clamp-2 font-light">{String(project.desc || "")}</p>
                     </div>
@@ -442,7 +477,7 @@ const App = () => {
                           <div className="absolute inset-0 bg-gradient-to-r from-[#010101] via-[#010101]/90 to-transparent z-1" />
                         </div>
                       )}
-                      <div className="relative z-10 p-6 h-full flex flex-col justify-between text-left">
+                      <div className="relative z-10 p-6 h-full flex flex-col justify-between text-left text-white">
                         <div>
                           <div className="flex items-center gap-2.5 mb-3">
                             <div className="w-1 h-1 bg-violet-400 rounded-full shadow-[0_0_10px_#a78bfa]" />
@@ -477,16 +512,16 @@ const App = () => {
         </footer>
       </div>
 
-      {/* --- [Security Modals] --- */}
+      {/* --- [Modals] --- */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/90 backdrop-blur-2xl p-6 animate-fade-in-soft" onClick={closeModal}>
-          <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 flex flex-col items-center text-center shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 flex flex-col items-center text-center shadow-2xl text-white" onClick={e => e.stopPropagation()}>
             <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6 shadow-[0_0_30px_rgba(239,68,68,0.2)]"><Lock size={24} /></div>
             <h3 className="font-brand text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">Security Verification</h3>
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6 text-white">Erase Neural Trace?</h2>
+            <h2 className="text-xl font-black uppercase tracking-tight mb-6">Erase Neural Trace?</h2>
             <input type="password" placeholder="PASSCODE" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-center text-[13px] font-brand focus:border-red-500/50 transition-all outline-none mb-6 tracking-[0.4em] placeholder:tracking-normal placeholder:opacity-20 text-red-500 font-mono" value={deletePass} onChange={e => setDeletePass(e.target.value)} autoFocus />
             <div className="flex gap-2 w-full">
-              <button onClick={closeModal} className="flex-1 py-4 rounded-2xl bg-white/5 text-[10px] font-brand uppercase tracking-widest hover:bg-white/10 transition-colors text-white">Abort</button>
+              <button onClick={closeModal} className="flex-1 py-4 rounded-2xl bg-white/5 text-[10px] font-brand uppercase tracking-widest hover:bg-white/10 transition-colors">Abort</button>
               <button onClick={confirmDelete} className="flex-1 py-4 rounded-2xl bg-red-500 text-black text-[10px] font-brand font-black uppercase tracking-widest shadow-lg shadow-red-500/40 transition-all">Confirm</button>
             </div>
           </div>
@@ -498,7 +533,7 @@ const App = () => {
           <div className="w-full h-[90vh] sm:h-auto sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-8 relative flex flex-col shadow-2xl border-t border-cyan-500/20 text-white" onClick={e => e.stopPropagation()}>
             <div className="w-14 h-1.5 bg-white/10 rounded-full mx-auto mb-8 sm:hidden" />
             <button onClick={closeModal} className="absolute top-8 right-8 p-2 text-white/20 hover:text-white transition-colors"><X size={22} /></button>
-            <div className="mb-6 text-left text-white">
+            <div className="mb-6 text-left">
               <div className="flex items-center gap-3 text-cyan-400 mb-2"><Activity size={14} /><span className="font-brand text-[9px] font-bold uppercase tracking-[0.5em]">Digital Trace Sync</span></div>
               <h2 className="text-2xl font-black uppercase tracking-tighter leading-none">Synchronize Reality</h2>
             </div>
@@ -530,9 +565,9 @@ const App = () => {
           <div className="w-full h-[80vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-10 relative overflow-y-auto no-scrollbar border-t border-white/10 text-white" onClick={e => e.stopPropagation()}>
             <div className="w-14 h-1.5 bg-white/10 rounded-full mx-auto mb-10 sm:hidden" />
             <button onClick={closeModal} className="absolute top-10 right-10 p-2 text-white/20"><X size={22} /></button>
-            <div className="text-left text-white">
-              <div className="flex items-center gap-2 mb-2"><Zap size={14} className="text-cyan-400" /><span className="text-cyan-500 font-brand text-[9px] font-bold uppercase tracking-[0.4em] text-white">{String(selectedProject.tag || "")}</span></div>
-              <h2 className="text-3xl font-black mb-10 uppercase tracking-tighter leading-tight text-white">{String(selectedProject.title || "")}</h2>
+            <div className="text-left">
+              <div className="flex items-center gap-2 mb-2"><Zap size={14} className="text-cyan-400" /><span className="text-cyan-500 font-brand text-[9px] font-bold uppercase tracking-[0.4em]">{String(selectedProject.tag || "")}</span></div>
+              <h2 className="text-3xl font-black mb-10 uppercase tracking-tighter leading-tight">{String(selectedProject.title || "")}</h2>
               <div className="space-y-6 pb-12">
                 <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3">Goal</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{String(selectedProject.goal || "")}</p></section>
                 <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3">Process</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{String(selectedProject.process || "")}</p></section>
