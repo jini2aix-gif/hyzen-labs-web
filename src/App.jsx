@@ -33,19 +33,19 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.6.2 | Vercel Deployment Stable]
- * 1. 환경 분석: Vercel 배포 시 __firebase_config 부재로 인한 크래시 방지 로직 추가
- * 2. 디버깅: 리액트 차일드 객체 에러(Timestamp Object) 방어를 위한 데이터 정제 강화
- * 3. 시각화: 3D Cover Flow 효과(기울기/투명도) 상시 유지 및 여백 버블 시스템 고도화
- * 4. 레이아웃: 팝업 종료 시 모바일 Fit 강제 리셋 엔진 탑재
+ * [Hyzen Labs. CTO Optimized - R1.6.3 | Deployment Integrity Edition]
+ * 1. 빌드 최적화: Vercel 배포 시 모듈 참조 오류 방지를 위한 Firebase 초기화 구조 개선
+ * 2. 렌더링 안정화: Firestore 데이터의 문자열 강제 변환으로 React Child Object 에러 원천 차단
+ * 3. 레이아웃 고정: 팝업 시 배경 스케일링 제거로 모바일 Fit 이슈 근본 해결
+ * 4. 시각 효과: 3D Cover Flow 효과(기울기/투명도) 상시 유지 및 여백 버블 시스템 고도화
  */
 
-// --- [Firebase Initialization with Safety Checks] ---
+// --- [Firebase Initialization Safety Check] ---
 const getFirebaseConfig = () => {
   try {
-    return typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-      apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: ""
-    };
+    return typeof __firebase_config !== 'undefined' && __firebase_config 
+      ? JSON.parse(__firebase_config) 
+      : { apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
   } catch (e) {
     return { apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
   }
@@ -55,12 +55,13 @@ const firebaseConfig = getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'hyzen-labs-prod';
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'hyzen-labs-v1';
 const ADMIN_PASS = "5733906";
 
 // --- [시각화 컴포넌트: 여백 유영 버블 메시지] ---
 const FloatingBubble = ({ msg }) => {
   const [coords] = useState(() => {
+    // 중앙 콘텐츠(25%~75%)를 피해 좌우 여백으로만 생성
     const isLeft = Math.random() > 0.5;
     const horizontalPos = isLeft ? Math.random() * 15 + 5 : Math.random() * 15 + 80;
     return {
@@ -71,7 +72,7 @@ const FloatingBubble = ({ msg }) => {
     };
   });
 
-  // 데이터 안전 추출 (객체 에러 방지)
+  const safeName = String(msg?.name || "Anon");
   const safeText = String(msg?.text || "");
   const summary = safeText.length > 15 ? safeText.substring(0, 15) + ".." : safeText;
 
@@ -89,7 +90,7 @@ const FloatingBubble = ({ msg }) => {
             </div>
           )}
           <div className="flex flex-col text-left pr-1">
-            <span className="text-[6px] font-brand text-cyan-400 font-black uppercase tracking-tighter opacity-60">{String(msg?.name || "Anon")}</span>
+            <span className="text-[6px] font-brand text-cyan-400 font-black uppercase tracking-tighter opacity-60">{safeName}</span>
             <span className="text-[8px] text-white/40 font-light italic leading-tight truncate max-w-[70px]">"{summary}"</span>
           </div>
         </div>
@@ -127,7 +128,7 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
 
           return (
             <div 
-              key={`${idx}-${activeIndex}-${isCenter}`}
+              key={`${idx}-${activeIndex}`}
               className={`absolute w-[240px] sm:w-[320px] h-[160px] preserve-3d cursor-pointer transition-all duration-[750ms] ${isCenter ? 'ease-[cubic-bezier(0.34,1.56,0.64,1)]' : 'ease-out'}`}
               style={{
                 transform,
@@ -181,7 +182,6 @@ const App = () => {
           await signInAnonymously(auth);
         }
       } catch (err) {
-        console.warn("Auth Fallback to Anonymous");
         await signInAnonymously(auth).catch(() => {});
       }
     };
@@ -205,7 +205,7 @@ const App = () => {
     }
   }, [user]);
 
-  // --- [Fit Logic: 정밀 리셋] ---
+  // --- [Layout Fix: 정밀 리셋] ---
   useEffect(() => {
     if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen) {
       window.scrollTo(0, 0);
@@ -305,7 +305,6 @@ const App = () => {
         .animate-init-progress { animation: initProgress 2.2s ease-in-out forwards; }
       `}</style>
 
-      {/* --- [Entry Sequence] --- */}
       {isInitializing && (
         <div className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center p-8 transition-opacity duration-700">
           <div className="absolute top-0 left-0 w-full h-[1px] bg-cyan-500/20 blur-[1px] animate-scan" />
@@ -342,7 +341,7 @@ const App = () => {
               <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
               <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
             </div>
-            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.6.2 | Stable Deploy</span>
+            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.6.3 | Stable Deploy</span>
           </div>
           <div className="flex gap-4 opacity-40">
             <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
@@ -364,7 +363,6 @@ const App = () => {
           </div>
           <p className="text-[2.2vw] sm:text-[11px] text-cyan-400/60 tracking-[0.5em] font-brand font-black uppercase mb-8 animate-fade-in-soft">Augmented Reality Grounding</p>
 
-          {/* Unified Identity Hub: Founder Profile enlarged (w-24) */}
           <div className="flex flex-col items-center gap-2 animate-fade-in-soft" style={{ animationDelay: '0.2s' }}>
             <div onClick={openGuestbook} className="relative group cursor-pointer tap-feedback active:scale-95 transition-all">
               <div className="absolute -inset-10 border border-white/5 rounded-full animate-[orbit_25s_linear_infinite] pointer-events-none" />
@@ -376,7 +374,7 @@ const App = () => {
                   ) : (
                     <User size={40} strokeWidth={1} className="text-white/10" />
                   )}
-                  <div className="absolute inset-0 bg-cyan-500/0 group-hover:bg-cyan-500/20 backdrop-blur-[0px] group-hover:backdrop-blur-[2px] transition-all duration-500 flex items-center justify-center pointer-events-none">
+                  <div className="absolute inset-0 bg-cyan-500/0 group-hover:bg-cyan-500/10 backdrop-blur-[0px] group-hover:backdrop-blur-[2px] transition-all duration-500 flex items-center justify-center pointer-events-none">
                     <Fingerprint size={48} className="text-cyan-400 opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 rotate-12 group-hover:rotate-0 transition-all duration-500 drop-shadow-[0_0_10px_#22d3ee]" />
                   </div>
                 </div>
@@ -393,10 +391,9 @@ const App = () => {
           </div>
         </section>
 
-        {/* Controller Section */}
         <div className="shrink-0 z-10 pb-6 animate-fade-in-soft" style={{ animationDelay: '0.4s' }}>
           <div className="px-6 mb-6 max-w-lg mx-auto">
-            <div className="glass-panel p-1 rounded-2xl flex gap-1 relative border border-white/10 shadow-2xl overflow-hidden">
+            <div className="glass-panel p-1 rounded-2xl flex gap-1 relative border border-white/10 shadow-2xl overflow-hidden text-white">
               {['roadmap', 'works', 'traces'].map((view) => (
                 <button key={view} onClick={() => { setActiveView(view); triggerSync(); }} className={`flex-1 py-3.5 rounded-xl text-[7px] font-brand tracking-[0.1em] transition-all tap-feedback uppercase ${activeView === view ? 'bg-white text-black font-black shadow-lg' : 'text-white/30'}`}>
                   {view}
@@ -406,7 +403,7 @@ const App = () => {
           </div>
 
           <div className="px-6 max-w-5xl mx-auto h-[180px] relative overflow-visible text-white">
-            <div key={activeView} className="w-full h-full animate-fade-in-soft">
+            <div key={activeView} className="w-full h-full animate-fade-in-soft text-white">
               {activeView === 'roadmap' && (
                 <CoverFlow items={roadmapSteps} activeIndex={activeIndices.roadmap} setActiveIndex={(i) => setViewIndex('roadmap', i)} renderItem={(step) => (
                   <div className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-cyan-500/30 flex flex-col justify-between">
@@ -415,8 +412,8 @@ const App = () => {
                       <div className="text-[6px] font-brand px-2.5 py-1 rounded-full border border-cyan-500/50 text-cyan-400 bg-cyan-500/5 uppercase font-black">In Prep</div>
                     </div>
                     <div className="text-left">
-                      <span className="text-[8px] font-brand text-white/30 tracking-[0.2em] uppercase font-bold">{step.phase}</span>
-                      <h3 className="text-[13px] font-bold tracking-tight mt-1 leading-tight">{step.title}</h3>
+                      <span className="text-[8px] font-brand text-white/30 tracking-[0.2em] uppercase font-bold">{String(step.phase || "")}</span>
+                      <h3 className="text-[13px] font-bold tracking-tight mt-1 leading-tight">{String(step.title || "")}</h3>
                     </div>
                   </div>
                 )} />
@@ -425,12 +422,12 @@ const App = () => {
                 <CoverFlow items={projects} activeIndex={activeIndices.works} setActiveIndex={(i) => setViewIndex('works', i)} renderItem={(project) => (
                   <div onClick={() => { setSelectedProject(project); setIsModalOpen(true); }} className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-white/20 flex flex-col justify-between tap-feedback group hover:border-cyan-500/40 transition-all shadow-2xl">
                     <div className="flex justify-between items-start mb-2">
-                      <span className="text-cyan-500 font-brand text-[8px] font-bold uppercase tracking-[0.3em]">{project.tag}</span>
+                      <span className="text-cyan-500 font-brand text-[8px] font-bold uppercase tracking-[0.3em]">{String(project.tag || "")}</span>
                       <Maximize2 size={12} className="text-white/20 group-hover:text-cyan-400" />
                     </div>
                     <div className="flex-1 flex flex-col justify-center text-left">
-                      <h3 className="text-[15px] font-black mb-1 uppercase tracking-tight leading-tight">{project.title}</h3>
-                      <p className="text-white/40 text-[9px] leading-relaxed line-clamp-2 font-light">{project.desc}</p>
+                      <h3 className="text-[15px] font-black mb-1 uppercase tracking-tight leading-tight">{String(project.title || "")}</h3>
+                      <p className="text-white/40 text-[9px] leading-relaxed line-clamp-2 font-light">{String(project.desc || "")}</p>
                     </div>
                   </div>
                 )} />
@@ -498,7 +495,7 @@ const App = () => {
 
       {isGuestbookOpen && (
         <div className="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-3xl p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
-          <div className="w-full h-[90vh] sm:h-auto sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-8 relative flex flex-col shadow-2xl border-t border-cyan-500/20" onClick={e => e.stopPropagation()}>
+          <div className="w-full h-[90vh] sm:h-auto sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-8 relative flex flex-col shadow-2xl border-t border-cyan-500/20 text-white" onClick={e => e.stopPropagation()}>
             <div className="w-14 h-1.5 bg-white/10 rounded-full mx-auto mb-8 sm:hidden" />
             <button onClick={closeModal} className="absolute top-8 right-8 p-2 text-white/20 hover:text-white transition-colors"><X size={22} /></button>
             <div className="mb-6 text-left text-white">
@@ -533,13 +530,13 @@ const App = () => {
           <div className="w-full h-[80vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-10 relative overflow-y-auto no-scrollbar border-t border-white/10 text-white" onClick={e => e.stopPropagation()}>
             <div className="w-14 h-1.5 bg-white/10 rounded-full mx-auto mb-10 sm:hidden" />
             <button onClick={closeModal} className="absolute top-10 right-10 p-2 text-white/20"><X size={22} /></button>
-            <div className="text-left">
-              <div className="flex items-center gap-2 mb-2"><Zap size={14} className="text-cyan-400" /><span className="text-cyan-500 font-brand text-[9px] font-bold uppercase tracking-[0.4em]">{selectedProject.tag}</span></div>
-              <h2 className="text-3xl font-black mb-10 uppercase tracking-tighter leading-tight">{selectedProject.title}</h2>
+            <div className="text-left text-white">
+              <div className="flex items-center gap-2 mb-2"><Zap size={14} className="text-cyan-400" /><span className="text-cyan-500 font-brand text-[9px] font-bold uppercase tracking-[0.4em] text-white">{String(selectedProject.tag || "")}</span></div>
+              <h2 className="text-3xl font-black mb-10 uppercase tracking-tighter leading-tight text-white">{String(selectedProject.title || "")}</h2>
               <div className="space-y-6 pb-12">
-                <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3">Goal</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{selectedProject.goal}</p></section>
-                <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3">Process</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{selectedProject.process}</p></section>
-                <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3">Result</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{selectedProject.result}</p></section>
+                <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3">Goal</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{String(selectedProject.goal || "")}</p></section>
+                <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3">Process</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{String(selectedProject.process || "")}</p></section>
+                <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3">Result</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{String(selectedProject.result || "")}</p></section>
               </div>
               <button className="w-full bg-white text-black py-5 rounded-[2.2rem] font-brand text-[10px] font-black tracking-[0.3em] uppercase shadow-2xl">Access Case Study</button>
             </div>
