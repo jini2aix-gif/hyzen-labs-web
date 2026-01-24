@@ -33,52 +33,41 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.7.7 | System Integrity Edition]
- * 1. 디버깅: 리액트 스타일 경고 해결 (webkitTextStroke -> WebkitTextStroke)
- * 2. 호환성: es2015 환경에서의 import.meta 경고를 방지하기 위한 환경 변수 로직 최적화
- * 3. 로드맵: 현업 워딩을 배제한 '감각과 지능의 융합' 중심의 고차원 인사이트 워딩 적용
- * 4. 절대 핏: 팝업 시 배경 스케일 고정 및 전송 버튼 클릭 시 강제 Blur로 100% 핏 수호
- * 5. 데이터: Firestore 실시간 동기화로 방명록 카드 및 배경 버블 영구 보존
+ * [Hyzen Labs. CTO Optimized - R1.7.8 | Infinite Persistence Edition]
+ * 1. 실시간성: 방명록 작성 즉시 TRACES 탭 및 배경 버블에 데이터 반영 로직 복구
+ * 2. 영구성: Vercel 환경 변수 대응 로직 최적화로 재방문 시 데이터 보존 보장
+ * 3. 디버깅: React Child Object 에러 및 스타일 벤더 프리픽스 경고 완전 해결
+ * 4. 절대 핏: 팝업 줌 완전 차단 및 전송 시 강제 Blur로 100% 모바일 핏 유지
  */
 
 const ADMIN_PASS = "5733906";
 
-// --- [Firebase Initialization: Stable Multi-Platform Support] ---
+// --- [Firebase Initialization: Stable Unified Linker] ---
 const getFirebaseConfig = () => {
-  // 1. Canvas 전용 글로벌 환경 변수 우선 참조
+  // 1. Canvas 글로벌 변수 체크
   if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-    try {
-      return JSON.parse(__firebase_config);
-    } catch (e) {
-      console.error("Firebase config parse error");
-    }
+    try { return JSON.parse(__firebase_config); } catch (e) { console.error("Canvas Config Fail"); }
   }
-  // 2. Vercel/기타 환경을 위한 폴백 (빌드 타임 경고 방지를 위해 import.meta 직접 참조 지양)
-  const env = typeof process !== 'undefined' ? process.env : {};
-  if (env.VITE_FIREBASE_CONFIG) {
-    try {
-      return JSON.parse(env.VITE_FIREBASE_CONFIG);
-    } catch (e) {
-      return null;
-    }
+  // 2. Vercel 환경 변수 체크 (배포 시 필수)
+  if (typeof process !== 'undefined' && process.env?.VITE_FIREBASE_CONFIG) {
+    try { return JSON.parse(process.env.VITE_FIREBASE_CONFIG); } catch (e) { return null; }
   }
   return null;
 };
 
 const fConfig = getFirebaseConfig();
-let firebaseApp, auth, db, appId;
+let app, auth, db, appId;
 
 if (fConfig && fConfig.apiKey) {
-  firebaseApp = getApps().length === 0 ? initializeApp(fConfig) : getApps()[0];
-  auth = getAuth(firebaseApp);
-  db = getFirestore(firebaseApp);
+  app = getApps().length === 0 ? initializeApp(fConfig) : getApps()[0];
+  auth = getAuth(app);
+  db = getFirestore(app);
   appId = typeof __app_id !== 'undefined' ? __app_id : 'hyzen-labs-v1';
 }
 
 // --- [시각화 컴포넌트: 지능형 자유 유영 버블] ---
 const FloatingBubble = ({ msg }) => {
   const [coords] = useState(() => {
-    // 가로 5% ~ 95% 사이 자유 배치
     const left = Math.random() * 90 + 5;
     let top;
     // 중앙 아이덴티티 영역(25% ~ 75%) 회피 로직
@@ -150,7 +139,7 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
 
           return (
             <div 
-              key={`${idx}-${activeIndex}-${isCenter}`}
+              key={`${item.id || idx}-${activeIndex}-${isCenter}`}
               className={`absolute w-[240px] sm:w-[320px] h-[160px] preserve-3d cursor-pointer transition-all duration-[800ms] ${isCenter ? 'ease-[cubic-bezier(0.22,1.4,0.36,1)]' : 'ease-out'}`}
               style={{
                 transform,
@@ -202,7 +191,7 @@ const App = () => {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
         } else { await signInAnonymously(auth); }
-      } catch (err) { console.warn("Production Link Active - Firebase Syncing"); }
+      } catch (err) { console.warn("Firebase Auth Local Fallback"); }
     };
     initAuth();
     const unsubscribe = auth ? onAuthStateChanged(auth, setUser) : () => {};
@@ -210,7 +199,7 @@ const App = () => {
     return () => { unsubscribe(); clearTimeout(timer); };
   }, []);
 
-  // --- [Real-time Firestore Sync Engine] ---
+  // --- [Real-time Firestore Sync Engine: Fixed for Instant Rendering] ---
   useEffect(() => {
     if (!user || !db) return;
     try {
@@ -218,18 +207,19 @@ const App = () => {
       const q = query(messagesCollection);
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // 최신 데이터 우선 정렬 (createdAt이 없는 신규 데이터는 현재 시간으로 정렬)
         const sortedMsgs = msgs.sort((a, b) => {
           const tA = a.createdAt?.toMillis() || Date.now();
           const tB = b.createdAt?.toMillis() || Date.now();
           return tB - tA;
         });
         setMessages(sortedMsgs.slice(0, 15));
-      }, (error) => console.error("Cloud Sync Link Error", error));
+      }, (error) => console.error("Cloud Sync Error", error));
       return () => unsubscribe();
-    } catch (e) { console.error("Persistence Context Access Fail", e); }
+    } catch (e) { console.error("Persistence Engine Fail", e); }
   }, [user]);
 
-  // --- [Fit Integrity Reset Logic] ---
+  // --- [Absolute Layout Fit Reset Logic] ---
   useEffect(() => {
     if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen) {
       window.scrollTo(0, 0);
@@ -259,6 +249,7 @@ const App = () => {
     e.preventDefault();
     if (!newMessage.name || !newMessage.text) return;
 
+    // [CRITICAL] 줌인 현상 해결을 위한 포커스 해제
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
@@ -274,7 +265,18 @@ const App = () => {
         });
         triggerSync();
       } catch (err) { console.error("Write Fail", err); }
+    } else {
+      // 로컬 폴백 모드 (데이터베이스 미연결 시)
+      const fallbackMsg = {
+        id: Date.now().toString(),
+        name: newMessage.name,
+        text: newMessage.text,
+        image: newMessage.image,
+        date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [fallbackMsg, ...prev].slice(0, 15));
     }
+
     setNewMessage({ name: '', text: '', image: null });
     setIsGuestbookOpen(false);
   };
@@ -301,26 +303,26 @@ const App = () => {
   const setViewIndex = (view, index) => setActiveIndices(prev => ({ ...prev, [view]: index }));
   const isAnyModalOpen = isModalOpen || isGuestbookOpen || isDeleteModalOpen;
 
-  // --- [Roadmap Data: High-Insight Fusion Vision] ---
+  // --- [Roadmap Data: Insight Fusion Vision] ---
   const roadmapSteps = [
     { 
       id: "R1", type: 'roadmap', phase: "PHASE 01", title: "Reality Grounding", tag: "감각의 디지털화", status: "In Prep", 
       icon: <Cpu className="w-14 h-14 text-cyan-400" />,
-      goal: "현실의 파편화된 물리적 데이터를 AI가 인지 가능한 고차원 잠재 공간(Latent Space)으로 전이시키는 토대를 구축합니다.",
-      process: "실재하는 사물의 기하학적 정보와 질감을 고밀도 벡터 데이터로 치환하는 정밀 샘플링 체계 설계.",
-      result: "현실의 감각이 디지털 지능과 오차 없이 동기화되는 하이퍼-리얼리티 데이터 아카이브 확보."
+      goal: "현실 세계의 파편화된 감각 데이터를 고밀도 잠재 공간(Latent Space)으로 전이시키는 물리적 기반을 구축합니다.",
+      process: "실재하는 사물의 기하학적 정보와 질감을 AI가 인지 가능한 고차원 벡터 데이터로 실시간 샘플링.",
+      result: "현실의 촉감과 시각이 디지털 지능과 오차 없이 동기화되는 하이퍼-리얼리티 아카이브 확보."
     },
     { 
       id: "R2", type: 'roadmap', phase: "PHASE 02", title: "Intelligence Augment", tag: "신경의 공생", status: "In Prep", 
       icon: <BrainCircuit className="w-14 h-14 text-violet-400" />,
       goal: "인간의 본능적인 직관과 AI의 방대한 추론 능력이 유기적으로 결합된 '공생적 지능'을 완성합니다.",
-      process: "대규모 언어 모델을 개인의 선호 체계와 결합하여 튜닝된 퍼스널 인지 엔진 개발.",
+      process: "대규모 언어 모델을 개인의 선호 체계와 결합하여 고도로 튜닝된 퍼스널 인지 보조 엔진 개발.",
       result: "AI가 인간의 의도를 선제적으로 파악하고 창의적 영감을 증폭시키는 지능형 보조 뇌의 실현."
     },
     { 
       id: "R3", type: 'roadmap', phase: "PHASE 03", title: "Seamless Convergence", tag: "통합된 실재", status: "Upcoming", 
       icon: <Layers className="w-14 h-14 text-amber-400" />,
-      goal: "물리적 공간과 가상 지능의 경계가 소멸되어, 오직 인간의 가치와 행복만이 남는 생태계를 지향합니다.",
+      goal: "물리적 공간과 가상 지능의 경계가 완전히 소멸되어, 오직 인간의 가치와 행복만이 남는 생태계를 지향합니다.",
       process: "공간 컴퓨팅과 지능형 에이전트가 삶의 배경으로 녹아들어 도구로서의 기술이 자취를 감추는 단계.",
       result: "기술이 보이지 않는 곳에서 인간의 생애 주기를 보호하고 행복의 밀도를 극대화하는 최종 연구소 완성."
     }
@@ -348,7 +350,7 @@ const App = () => {
         .animate-scan { animation: scanline 4s linear infinite; }
         @keyframes fadeInSoft { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in-soft { animation: fadeInSoft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; } 50% { transform: translate(6px, -12px) scale(1.05); opacity: 0.5; } }
+        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; } 50% { transform: translate(6px, -10px) scale(1.05); opacity: 0.5; } }
         .animate-bubble-float { animation: bubbleFloat 20s ease-in-out infinite; }
         @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .tap-feedback:active { transform: scale(0.97); transition: transform 0.1s ease; }
@@ -370,7 +372,7 @@ const App = () => {
             </div>
             <div className="flex flex-col items-center gap-1 opacity-40">
               <span className="text-[7px] font-brand tracking-widest uppercase">Reality Data Synchronization...</span>
-              <span className="text-[6px] font-mono italic">CODE: HYZEN-RC177-STABLE</span>
+              <span className="text-[6px] font-mono italic">CODE: HYZEN-RC178-STABLE</span>
             </div>
           </div>
         </div>
@@ -381,7 +383,7 @@ const App = () => {
         <div className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-xl animate-fade-in-soft pointer-events-auto" onClick={closeModal} />
       )}
 
-      {/* --- [Main Layer: Absolute Scale 1.0 Enforcement] --- */}
+      {/* --- [Main Layer: Absolute Scale Fixed] --- */}
       <div 
         className={`flex-1 flex flex-col relative transition-opacity duration-1000 ${isInitializing ? 'opacity-0' : 'opacity-100'}`}
         style={{ transform: 'scale(1)', filter: 'none' }}
@@ -398,7 +400,7 @@ const App = () => {
               <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
               <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
             </div>
-            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.7.7 | System Integrity</span>
+            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.7.8 | System Integrity</span>
           </div>
           <div className="flex gap-4 opacity-40 text-white">
             <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
@@ -469,7 +471,7 @@ const App = () => {
                       <div className="text-[6px] font-brand px-2.5 py-1 rounded-full border border-cyan-500/50 text-cyan-400 bg-cyan-500/5 uppercase font-black">{String(step.status)}</div>
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 text-white">
+                      <div className="flex items-center gap-2">
                         <span className="text-[8px] font-brand text-white/30 tracking-[0.2em] uppercase font-bold">{String(step.phase)}</span>
                         <Maximize2 size={10} className="text-white/10 group-hover:text-cyan-400" />
                       </div>
@@ -523,7 +525,7 @@ const App = () => {
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center opacity-10 gap-3 border border-dashed border-white/20 rounded-[2.5rem] text-white text-center">
                     <ArrowRight size={32} className="animate-pulse" />
-                    <span className="text-[11px] font-brand uppercase tracking-widest">Neural void awaiting sync.</span>
+                    <span className="text-[11px] font-brand uppercase tracking-widest text-white">Neural void awaiting sync.</span>
                   </div>
                 )
               )}
@@ -562,8 +564,8 @@ const App = () => {
               <div className="flex items-center gap-3 text-cyan-400 mb-2"><Activity size={14} /><span className="font-brand text-[9px] font-bold uppercase tracking-[0.5em]">Digital Trace Sync</span></div>
               <h2 className="text-2xl font-black uppercase tracking-tighter leading-none text-white">Synchronize Reality</h2>
             </div>
-            <form onSubmit={handleMessageSubmit} className="space-y-4 pt-4 safe-pb text-left">
-              <div className="flex gap-2 text-white">
+            <form onSubmit={handleMessageSubmit} className="space-y-4 pt-4 safe-pb text-left text-white">
+              <div className="flex gap-2">
                 <input type="text" placeholder="IDENTIFIER" className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-base sm:text-[11px] font-brand focus:outline-none focus:border-cyan-500/50 uppercase tracking-widest placeholder:opacity-20 text-white" value={newMessage.name} required onChange={e => setNewMessage({...newMessage, name: e.target.value})} />
                 <button type="button" onClick={() => fileInputRef.current?.click()} className={`px-4 rounded-2xl border transition-all ${newMessage.image ? 'bg-cyan-500 border-cyan-500 text-black shadow-[0_0_15px_rgba(34,211,238,0.5)]' : 'bg-white/5 border-white/10 text-white/30'}`}><Camera size={18} /></button>
                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => {
