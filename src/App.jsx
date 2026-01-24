@@ -29,11 +29,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.3.4 | Immersive Focus Edition]
- * 1. 공간 최적화: 카드 간 갭을 축소하여 데이터 밀도 향상 (translateX 115% -> 80%)
- * 2. 시각 집중: 측면 카드 투명도 강화(Ghost effect)로 중앙 카드 몰입도 극대화
- * 3. 초기 탭: 사용자 요청에 따라 진입 시 'TRACES' 탭 우선 활성화
- * 4. 유지보수: "ME," 쉼표, 통합 프로필 허브, 보안 삭제(5733906) 시스템 유지
+ * [Hyzen Labs. CTO Optimized - R1.3.7 | Biometric Identity Edition]
+ * 1. 기능 복구: 프로필 이미지 위 지문(Fingerprint) 로그인 오버레이 효과 재적용
+ * 2. 시각화: 지문 아이콘의 스케일 애니메이션 및 사이언 글로우 효과 고도화
+ * 3. 모바일 최적화: Compact Identity 레이아웃(수직 간격 압축) 유지
+ * 4. 유지보수: 3D Cover Flow, 터치 슬라이드, 보안 삭제 시스템 완벽 작동
  */
 
 const ADMIN_PASS = "5733906";
@@ -77,50 +77,40 @@ const FloatingBubble = ({ msg }) => {
   );
 };
 
-// --- [공통 컴포넌트: Cover Flow Wrapper - Immersive Focus 버전] ---
+// --- [공통 컴포넌트: Cover Flow Wrapper] ---
 const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
+  const touchStartRef = useRef(null);
   const handlePrev = () => setActiveIndex(Math.max(0, activeIndex - 1));
   const handleNext = () => setActiveIndex(Math.min(items.length - 1, activeIndex + 1));
 
+  const onTouchStart = (e) => { touchStartRef.current = e.touches[0].clientX; };
+  const onTouchEnd = (e) => {
+    if (touchStartRef.current === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStartRef.current - touchEnd;
+    const threshold = 50;
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) handleNext();
+      else handlePrev();
+    }
+    touchStartRef.current = null;
+  };
+
   return (
-    <div className="relative w-full h-full flex items-center justify-center perspective-[1500px] overflow-visible">
-      {/* Navigation Arrows */}
+    <div className="relative w-full h-full flex items-center justify-center perspective-[1500px] overflow-visible touch-pan-y" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <button onClick={handlePrev} className={`absolute left-0 z-50 p-2 text-white/10 hover:text-white/50 transition-all ${activeIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}><ChevronLeft size={24} /></button>
       <button onClick={handleNext} className={`absolute right-0 z-50 p-2 text-white/10 hover:text-white/50 transition-all ${activeIndex === items.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}><ChevronRight size={24} /></button>
-
       <div className="relative w-full h-full flex items-center justify-center preserve-3d">
         {items.map((item, idx) => {
           const offset = idx - activeIndex;
           const isCenter = offset === 0;
-          
-          /**
-           * Immersive Focus 로직
-           * 1. translateX를 offset * 80%로 축소하여 카드 간 거리를 좁힘
-           * 2. rotateY는 유지하되 측면 카드의 투명도를 0.1~0.2 수준으로 극소화 (Ghosting)
-           * 3. 중앙 카드는 translateZ(180px)로 확실하게 앞으로 끌어냄
-           */
           let transform = `translateX(${offset * 80}%) translateZ(${Math.abs(offset) * -300}px) rotateY(${offset * -55}deg)`;
           if (isCenter) transform = `translateZ(180px) scale(1.1)`;
-
           return (
-            <div 
-              key={idx}
-              className="absolute w-[220px] sm:w-[320px] h-[160px] transition-all duration-800 cubic-bezier(0.16, 1, 0.3, 1) preserve-3d cursor-pointer"
-              style={{
-                transform,
-                zIndex: 20 - Math.abs(offset),
-                pointerEvents: isCenter ? 'auto' : 'none',
-                opacity: isCenter ? 1 : Math.max(0.05, 0.3 - Math.abs(offset) * 0.1) // 측면 카드 투명화
-              }}
-              onClick={() => setActiveIndex(idx)}
-            >
+            <div key={idx} className="absolute w-[220px] sm:w-[320px] h-[160px] transition-all duration-800 cubic-bezier(0.16, 1, 0.3, 1) preserve-3d cursor-pointer" style={{ transform, zIndex: 20 - Math.abs(offset), pointerEvents: isCenter ? 'auto' : 'none', opacity: isCenter ? 1 : Math.max(0.05, 0.3 - Math.abs(offset) * 0.1) }}>
               <div className="relative w-full h-full preserve-3d">
                 {renderItem(item, isCenter)}
-                
-                {/* 비중심 카드에 대한 추가적인 딤드 효과 */}
-                {!isCenter && (
-                  <div className="absolute inset-0 rounded-[2.5rem] bg-black/40 backdrop-blur-[2px] transition-opacity duration-700" />
-                )}
+                {!isCenter && <div className="absolute inset-0 rounded-[2.5rem] bg-black/40 backdrop-blur-[2px] transition-opacity duration-700" />}
               </div>
             </div>
           );
@@ -131,7 +121,6 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
 };
 
 const App = () => {
-  // 초기 탭 TRACES 설정
   const [activeView, setActiveView] = useState('traces');
   const [activeIndices, setActiveIndices] = useState({ roadmap: 0, works: 0, traces: 0 });
   const [selectedProject, setSelectedProject] = useState(null);
@@ -255,8 +244,6 @@ const App = () => {
         .animate-fade-in-soft { animation: fadeInSoft 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
         @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; } 50% { transform: translate(10px, -20px) scale(1.03); opacity: 0.5; } }
         .animate-bubble-float { animation: bubbleFloat 20s ease-in-out infinite; }
-        @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
-        .animate-twinkle { animation: twinkle 2s infinite ease-in-out; }
         @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .tap-feedback:active { transform: scale(0.97); transition: transform 0.1s ease; }
       `}</style>
@@ -268,7 +255,7 @@ const App = () => {
             <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
             <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
           </div>
-          <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.3.4 | Immersive Focus</span>
+          <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.3.7 | Biometric Identity</span>
         </div>
         <div className="flex gap-4 opacity-40">
           <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
@@ -291,37 +278,51 @@ const App = () => {
           </div>
         </div>
         
-        <p className="text-[2.5vw] sm:text-[11px] text-cyan-400/60 tracking-[0.5em] font-brand font-black uppercase mb-10 animate-fade-in-soft">
+        <p className="text-[2.5vw] sm:text-[11px] text-cyan-400/60 tracking-[0.5em] font-brand font-black uppercase mb-6 animate-fade-in-soft">
           Augmented Reality Grounding
         </p>
 
-        {/* --- [Unified Identity Hub] --- */}
+        {/* --- [Unified Identity Hub - Fingerprint Restored] --- */}
         <div className="flex flex-col items-center gap-2 animate-fade-in-soft" style={{ animationDelay: '0.2s' }}>
           <div onClick={openGuestbook} className="relative group cursor-pointer tap-feedback active:scale-95 transition-all">
+            {/* Interactive Orbit Rings */}
             <div className="absolute -inset-6 border border-white/5 rounded-full animate-[orbit_25s_linear_infinite] pointer-events-none" />
             <div className="absolute -inset-4 border border-cyan-500/10 rounded-full animate-[orbit_15s_linear_infinite_reverse] pointer-events-none" />
             
-            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent shadow-2xl shadow-black">
+            {/* Founder Profile Circle with Fingerprint Sync Effect */}
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent shadow-2xl shadow-black">
               <div className="w-full h-full rounded-full border border-white/10 overflow-hidden bg-zinc-900 flex items-center justify-center relative">
                 {imgLoadStatus !== 'error' ? (
-                  <img src={founderImgSrc} alt="Founder" className={`w-full h-full object-cover grayscale brightness-90 transition-all duration-1000 group-hover:grayscale-0 group-hover:scale-105 ${imgLoadStatus === 'loading' ? 'opacity-0' : 'opacity-100'}`} onLoad={() => setImgLoadStatus('success')} onError={() => setImgLoadStatus('error')} />
+                  <img 
+                    src={founderImgSrc} 
+                    alt="Founder" 
+                    className={`w-full h-full object-cover grayscale brightness-90 transition-all duration-1000 group-hover:grayscale-0 group-hover:scale-110 ${imgLoadStatus === 'loading' ? 'opacity-0' : 'opacity-100'}`} 
+                    onLoad={() => setImgLoadStatus('success')} 
+                    onError={() => setImgLoadStatus('error')} 
+                  />
                 ) : (
-                  <User size={30} strokeWidth={1} className="text-white/10" />
+                  <User size={24} strokeWidth={1} className="text-white/10" />
                 )}
-                <div className="absolute inset-0 bg-cyan-500/0 group-hover:bg-cyan-500/10 transition-colors flex items-center justify-center">
-                  <Fingerprint size={24} className="text-cyan-400 opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 transition-all duration-500" />
+                
+                {/* Fingerprint Overlay - RESTORED & ENHANCED */}
+                <div className="absolute inset-0 bg-cyan-500/0 group-hover:bg-cyan-500/20 backdrop-blur-[0px] group-hover:backdrop-blur-[2px] transition-all duration-500 flex items-center justify-center pointer-events-none">
+                  <Fingerprint 
+                    size={32} 
+                    className="text-cyan-400 opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 rotate-12 group-hover:rotate-0 transition-all duration-500 drop-shadow-[0_0_10px_rgba(34,211,238,1)]" 
+                  />
                 </div>
               </div>
             </div>
 
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 glass-panel border border-cyan-500/40 rounded-full flex items-center gap-2 shadow-[0_5px_20px_rgba(34,211,238,0.2)] bg-black group-hover:border-cyan-400 transition-colors">
-              <MessageSquare size={10} className="text-cyan-400 group-hover:animate-bounce" />
-              <span className="text-[8px] font-brand tracking-[0.2em] font-black uppercase text-white/80">Sync Trace</span>
+            {/* Fused Sync Badge */}
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 glass-panel border border-cyan-500/40 rounded-full flex items-center gap-2 shadow-[0_5px_20px_rgba(34,211,238,0.2)] bg-black transition-all group-hover:border-cyan-300">
+              <MessageSquare size={10} className="text-cyan-400" />
+              <span className="text-[8px] font-brand tracking-[0.2em] font-black uppercase text-white/80 whitespace-nowrap">Sync Trace</span>
             </div>
           </div>
 
-          <div className="mt-6 flex flex-col items-center">
-            <h3 className="text-[13px] font-title tracking-tight text-white font-bold leading-none">Youngji.Park</h3>
+          <div className="mt-3 flex flex-col items-center">
+            <h3 className="text-[12px] font-title tracking-tight text-white font-bold leading-none">Youngji.Park</h3>
             <span className="text-[7px] font-brand tracking-[0.4em] uppercase font-bold text-white/20 mt-2">Founder</span>
           </div>
         </div>
@@ -339,23 +340,19 @@ const App = () => {
           </div>
         </div>
 
-        {/* --- [3D Cover Flow Viewport - Immersive Focus Optimization] --- */}
-        <div className="px-6 max-w-5xl mx-auto h-[200px] relative overflow-visible">
+        {/* --- [3D Cover Flow Viewport] --- */}
+        <div className="px-6 max-w-5xl mx-auto h-[180px] relative overflow-visible">
           <div key={activeView} className="w-full h-full animate-fade-in-soft">
             {activeView === 'roadmap' && (
-              <CoverFlow 
-                items={roadmapSteps} 
-                activeIndex={activeIndices.roadmap} 
-                setActiveIndex={(i) => setViewIndex('roadmap', i)}
-                renderItem={(step) => (
+              <CoverFlow items={roadmapSteps} activeIndex={activeIndices.roadmap} setActiveIndex={(i) => setViewIndex('roadmap', i)} renderItem={(step) => (
                   <div className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-cyan-500/30 flex flex-col justify-between shadow-2xl">
                     <div className="flex justify-between items-start mb-2">
-                      <div className="w-16 h-16 flex items-center justify-center bg-white/[0.03] rounded-[1.5rem] border border-white/15 text-cyan-400">{step.icon}</div>
+                      <div className="w-14 h-14 flex items-center justify-center bg-white/[0.03] rounded-[1.2rem] border border-white/15 text-cyan-400">{step.icon}</div>
                       <div className="text-[6px] font-brand px-2.5 py-1 rounded-full border border-cyan-500/50 text-cyan-400 bg-cyan-500/5 uppercase font-black">In Prep</div>
                     </div>
                     <div>
                       <span className="text-[8px] font-brand text-white/30 tracking-[0.2em] uppercase font-bold">{step.phase}</span>
-                      <h3 className="text-[14px] font-bold tracking-tight mt-1 leading-tight">{step.title}</h3>
+                      <h3 className="text-[13px] font-bold tracking-tight mt-1 leading-tight">{step.title}</h3>
                     </div>
                   </div>
                 )}
@@ -363,19 +360,15 @@ const App = () => {
             )}
             
             {activeView === 'works' && (
-              <CoverFlow 
-                items={projects} 
-                activeIndex={activeIndices.works} 
-                setActiveIndex={(i) => setViewIndex('works', i)}
-                renderItem={(project) => (
+              <CoverFlow items={projects} activeIndex={activeIndices.works} setActiveIndex={(i) => setViewIndex('works', i)} renderItem={(project) => (
                   <div onClick={() => { setSelectedProject(project); setIsModalOpen(true); }} className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-white/20 flex flex-col justify-between tap-feedback group hover:border-cyan-500/40 transition-all shadow-2xl">
                     <div className="flex justify-between items-start mb-2">
                       <span className="text-cyan-500 font-brand text-[8px] font-bold uppercase tracking-[0.3em]">{project.tag}</span>
                       <Maximize2 size={12} className="text-white/20 group-hover:text-cyan-400" />
                     </div>
                     <div className="flex-1 flex flex-col justify-center">
-                      <h3 className="text-[15px] font-black mb-1 uppercase tracking-tight leading-tight">{project.title}</h3>
-                      <p className="text-white/40 text-[10px] leading-relaxed line-clamp-2 font-light">{project.desc}</p>
+                      <h3 className="text-[14px] font-black mb-1 uppercase tracking-tight leading-tight">{project.title}</h3>
+                      <p className="text-white/40 text-[9px] leading-relaxed line-clamp-2 font-light">{project.desc}</p>
                     </div>
                   </div>
                 )}
@@ -384,11 +377,7 @@ const App = () => {
 
             {activeView === 'traces' && (
               messages.length > 0 ? (
-                <CoverFlow 
-                  items={messages} 
-                  activeIndex={activeIndices.traces} 
-                  setActiveIndex={(i) => setViewIndex('traces', i)}
-                  renderItem={(msg) => (
+                <CoverFlow items={messages} activeIndex={activeIndices.traces} setActiveIndex={(i) => setViewIndex('traces', i)} renderItem={(msg) => (
                     <div className="w-full h-full glass-panel rounded-[2.5rem] relative overflow-hidden border border-violet-500/30 shadow-2xl group">
                       {msg.image && (
                         <div className="absolute right-0 top-0 w-full h-full z-0 overflow-hidden pointer-events-none">
@@ -402,7 +391,7 @@ const App = () => {
                             <div className="w-1 h-1 bg-violet-400 rounded-full shadow-[0_0_10px_rgba(167,139,250,1)]" />
                             <span className="text-[10px] font-brand text-violet-400/90 font-black uppercase tracking-[0.3em] drop-shadow-md">{msg.name}</span>
                           </div>
-                          <p className="text-[13px] text-white/90 font-light italic leading-[1.6] line-clamp-3 drop-shadow-xl pl-1">{msg.text}</p>
+                          <p className="text-[12px] text-white/90 font-light italic leading-[1.6] line-clamp-3 drop-shadow-xl pl-1">{msg.text}</p>
                         </div>
                         <div className="flex justify-between items-end mt-4">
                           <div className="flex items-center gap-2 bg-white/[0.03] px-2.5 py-1 rounded-full border border-white/5 backdrop-blur-sm">
@@ -418,7 +407,7 @@ const App = () => {
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center opacity-10 gap-3 border border-dashed border-white/20 rounded-[2.5rem]">
                   <ArrowRight size={32} className="animate-pulse" />
-                  <span className="text-[11px] font-brand uppercase tracking-widest text-center">First connection is yours.</span>
+                  <span className="text-[11px] font-brand uppercase tracking-widest text-center">Neural void awaiting sync.</span>
                 </div>
               )
             )}
@@ -432,7 +421,7 @@ const App = () => {
         <p className="text-[6px] font-brand tracking-[0.2em] uppercase opacity-20 mt-2">© All Rights Reserved by HYZEN LABS.</p>
       </footer>
 
-      {/* Security Modals */}
+      {/* Modals - Same logic */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/90 backdrop-blur-2xl p-6 animate-fade-in-soft" onClick={closeModal}>
           <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 flex flex-col items-center text-center shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -448,7 +437,6 @@ const App = () => {
         </div>
       )}
 
-      {/* Guestbook Modal */}
       {isGuestbookOpen && (
         <div className="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-3xl p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
           <div className="w-full h-[90vh] sm:h-auto sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-8 relative flex flex-col shadow-2xl border-t border-cyan-500/20" onClick={e => e.stopPropagation()}>
@@ -474,7 +462,6 @@ const App = () => {
         </div>
       )}
 
-      {/* Project Detail Modal */}
       {isModalOpen && selectedProject && (
         <div className="fixed inset-0 z-[4000] flex items-end sm:items-center justify-center bg-black/98 backdrop-blur-3xl p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
           <div className="w-full h-[80vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-10 relative overflow-y-auto no-scrollbar border-t border-white/10" onClick={e => e.stopPropagation()}>
