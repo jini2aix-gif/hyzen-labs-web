@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, serverTimestamp } from 'firebase/firestore';
 import { 
@@ -33,22 +33,26 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.7.1 | Absolute Sync & Fit Edition]
- * 1. 디버깅: 방명록 작성 시 실시간 동기화 오류 해결 및 데이터 버블 렌더링 정상화
- * 2. 줌 제어: 16px 폰트 및 강제 Blur 처리로 모바일 줌인 현상 완전 차단 (Fit 최우선)
- * 3. 시각화: 중앙 영역을 지능적으로 회피하는 전역 자유 유영 버블 시스템
- * 4. 3D 복구: 독립 오버레이 레이어 방식으로 커버플로우 70도 기울기 영구 보호
+ * [Hyzen Labs. CTO Optimized - R1.7.3 | Absolute Integrity & Stability]
+ * 1. 환경 호환: 빌드 오류(import.meta) 해결 및 글로벌 환경 변수 참조 방식 최적화
+ * 2. 줌 제어: 팝업 시 배경 스케일 고정 및 입력 필드 포커스 해제 로직으로 모바일 Fit 보장
+ * 3. 로드맵 진화: 로드맵 카드에 상세 탐색 모달 및 3D 시각 효과 통합 (Works와 경험 통일)
+ * 4. 시각화: 중앙 아이덴티티 보호를 위한 지능형 자유 유영 버블 시스템 (Dodge Logic)
  */
 
 const ADMIN_PASS = "5733906";
 
-// --- [Firebase Initialization Safety Check] ---
+// --- [Firebase Initialization: Cross-Platform Support] ---
 const getFirebaseConfig = () => {
-  try {
-    if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+  // 1. Canvas 전용 글로벌 환경 변수 우선 참조
+  if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+    try {
       return JSON.parse(__firebase_config);
+    } catch (e) {
+      console.error("Firebase config parse error in Canvas context");
     }
-  } catch (e) { console.warn("Firebase config check skipped."); }
+  }
+  // 2. Vercel/기타 환경을 위한 폴백 (사용자 수동 입력 대비)
   return null;
 };
 
@@ -56,7 +60,7 @@ const fConfig = getFirebaseConfig();
 let firebaseApp, auth, db, appId;
 
 if (fConfig && fConfig.apiKey) {
-  firebaseApp = initializeApp(fConfig);
+  firebaseApp = getApps().length === 0 ? initializeApp(fConfig) : getApps()[0];
   auth = getAuth(firebaseApp);
   db = getFirestore(firebaseApp);
   appId = typeof __app_id !== 'undefined' ? __app_id : 'hyzen-labs-v1';
@@ -65,14 +69,13 @@ if (fConfig && fConfig.apiKey) {
 // --- [시각화 컴포넌트: 지능형 자유 유영 버블] ---
 const FloatingBubble = ({ msg }) => {
   const [coords] = useState(() => {
-    // 가로 위치는 5% ~ 95% 사이 자유 배치
     const left = Math.random() * 90 + 5;
     let top;
-    // 중앙 구역(25% ~ 75%) 회피 로직: 텍스트를 가리지 않게 상단이나 하단으로 밀어냄
+    // 중앙 구역(25% ~ 75%) 회피 로직: 핵심 텍스트를 가리지 않도록 상단/하단 배치 유도
     if (left > 25 && left < 75) {
-      top = Math.random() > 0.5 ? Math.random() * 12 + 4 : Math.random() * 15 + 80;
+      top = Math.random() > 0.5 ? Math.random() * 10 + 5 : Math.random() * 15 + 78;
     } else {
-      top = Math.random() * 75 + 10;
+      top = Math.random() * 70 + 10;
     }
     return {
       top: `${top}%`,
@@ -132,6 +135,7 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
         {items.map((item, idx) => {
           const offset = idx - activeIndex;
           const isCenter = offset === 0;
+          
           let transform = `translateX(${offset * 90}%) translateZ(${Math.abs(offset) * -450}px) rotateY(${offset * -70}deg)`;
           if (isCenter) transform = `translateZ(200px) scale(1.15)`;
 
@@ -189,7 +193,7 @@ const App = () => {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
         } else { await signInAnonymously(auth); }
-      } catch (err) { console.warn("Firebase Running in Local Mode"); }
+      } catch (err) { console.warn("Firebase Running in Local Fallback Mode"); }
     };
     initAuth();
     const unsubscribe = auth ? onAuthStateChanged(auth, setUser) : () => {};
@@ -197,7 +201,7 @@ const App = () => {
     return () => { unsubscribe(); clearTimeout(timer); };
   }, []);
 
-  // --- [Persistent Snapshot Logic: Fixed for Instancy] ---
+  // --- [Firestore Real-time Persistence Sync] ---
   useEffect(() => {
     if (!user || !db) return;
     try {
@@ -205,22 +209,22 @@ const App = () => {
       const q = query(messagesCollection);
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // 최신순 정렬 보강
+        // 작성 즉시 화면에 반영되도록 서버 타임스탬프 기준 내림차순 정렬
         const sortedMsgs = msgs.sort((a, b) => {
-          const timeA = a.createdAt?.toMillis() || Date.now();
-          const timeB = b.createdAt?.toMillis() || Date.now();
-          return timeB - timeA;
+          const tA = a.createdAt?.toMillis() || Date.now();
+          const tB = b.createdAt?.toMillis() || Date.now();
+          return tB - tA;
         });
         setMessages(sortedMsgs.slice(0, 15));
-      }, (error) => console.error("Cloud Sync Link Error", error));
+      }, (error) => console.error("Snapshot Error:", error));
       return () => unsubscribe();
-    } catch (e) { console.error("Persistence Context Fail", e); }
+    } catch (e) { console.error("Persistence Context Error:", e); }
   }, [user]);
 
-  // --- [Fit Integrity Reset Logic] ---
+  // --- [Stability Reset Logic: Ensure Absolute Fit] ---
   useEffect(() => {
     if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen) {
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
       document.body.style.overflow = 'hidden';
       setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
     }
@@ -231,22 +235,11 @@ const App = () => {
     setTimeout(() => setIsSyncing(false), 1500);
   }, []);
 
-  const openGuestbook = () => {
-    setNewMessage({ name: '', text: '', image: null });
-    setIsGuestbookOpen(true);
-  };
-
-  const handleDeleteRequest = (id) => {
-    setTargetDeleteId(id);
-    setDeletePass("");
-    setIsDeleteModalOpen(true);
-  };
-
   const handleMessageSubmit = async (e) => {
     e.preventDefault();
     if (!newMessage.name || !newMessage.text) return;
 
-    // [CRITICAL] 줌아웃 강제 유도를 위한 포커스 해제
+    // [CRITICAL] 전송 시 줌아웃 유도를 위한 포커스 해제
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
@@ -260,10 +253,21 @@ const App = () => {
           createdAt: serverTimestamp(),
           date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
         });
-      } catch (err) { console.error("Submit Fail", err); }
+        triggerSync();
+      } catch (err) { console.error("Write Fail:", err); }
+    } else {
+      // 로컬 모드 폴백
+      const fallbackMsg = {
+        id: Date.now().toString(),
+        name: newMessage.name,
+        text: newMessage.text,
+        image: newMessage.image,
+        date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [fallbackMsg, ...prev].slice(0, 15));
     }
+
     setNewMessage({ name: '', text: '', image: null });
-    triggerSync();
     setIsGuestbookOpen(false);
   };
 
@@ -274,7 +278,7 @@ const App = () => {
         setIsDeleteModalOpen(false);
         setTargetDeleteId(null);
         triggerSync();
-      } catch (err) { console.error("Delete Fail", err); }
+      } catch (err) { console.error("Delete Action Fail:", err); }
     }
     setDeletePass("");
   };
@@ -286,9 +290,21 @@ const App = () => {
     setSelectedItem(null);
   };
 
+  const openGuestbook = () => {
+    setNewMessage({ name: '', text: '', image: null });
+    setIsGuestbookOpen(true);
+  };
+
+  const handleDeleteRequest = (id) => {
+    setTargetDeleteId(id);
+    setDeletePass("");
+    setIsDeleteModalOpen(true);
+  };
+
   const setViewIndex = (view, index) => setActiveIndices(prev => ({ ...prev, [view]: index }));
   const isAnyModalOpen = isModalOpen || isGuestbookOpen || isDeleteModalOpen;
 
+  // --- [Roadmap Data: Pure Fusion Vision] ---
   const roadmapSteps = [
     { 
       id: "R1", 
@@ -358,8 +374,9 @@ const App = () => {
         .animate-init-progress { animation: initProgress 2.2s ease-in-out forwards; }
       `}</style>
 
+      {/* --- [Entry Sequence] --- */}
       {isInitializing && (
-        <div className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center p-8 transition-opacity duration-700 text-white">
+        <div className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center p-8 transition-opacity duration-700 text-white text-center">
           <div className="absolute top-0 left-0 w-full h-[1px] bg-cyan-500/20 blur-[1px] animate-scan" />
           <div className="flex flex-col items-center gap-6">
             <div className="flex items-center gap-4 text-cyan-400">
@@ -371,18 +388,18 @@ const App = () => {
             </div>
             <div className="flex flex-col items-center gap-1 opacity-40">
               <span className="text-[7px] font-brand tracking-widest uppercase">Reality Data Synchronization...</span>
-              <span className="text-[6px] font-mono italic">CODE: HYZEN-RC171-PURE</span>
+              <span className="text-[6px] font-mono italic">CODE: HYZEN-RC173-STABLE</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- [Structural Fix: Independent Backdrop Overlay] --- */}
+      {/* --- [Structural Fix: Independent Backdrop Overlay for Blur] --- */}
       {isAnyModalOpen && (
         <div className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-xl animate-fade-in-soft pointer-events-auto" onClick={closeModal} />
       )}
 
-      {/* --- [Main Layer: Absolute Scale Fixed] --- */}
+      {/* --- [Main Layer: Absolute Scale 1.0 Enforcement] --- */}
       <div 
         className={`flex-1 flex flex-col relative transition-opacity duration-1000 ${isInitializing ? 'opacity-0' : 'opacity-100'}`}
         style={{ transform: 'scale(1)', filter: 'none' }}
@@ -399,7 +416,7 @@ const App = () => {
               <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
               <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
             </div>
-            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.7.1 | Absolute Sync</span>
+            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.7.3 | Absolute Fit</span>
           </div>
           <div className="flex gap-4 opacity-40 text-white">
             <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
@@ -412,7 +429,7 @@ const App = () => {
           <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-cyan-500/5 blur-[100px] -z-10 transition-opacity duration-1000 ${isSyncing ? 'opacity-100' : 'opacity-40'}`} />
           <div className="relative inline-block animate-fade-in-soft mb-4 group pt-2 text-white">
             <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10 pointer-events-none" />
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center text-white">
               <h1 className="text-[9.5vw] sm:text-8xl font-title tracking-[-0.07em] leading-[0.9] uppercase">
                 <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent block">ME,</span>
                 <span className="text-outline block my-1 group-hover:text-white transition-all duration-1000">REALITY</span>
@@ -452,7 +469,7 @@ const App = () => {
 
         {/* Controller Section */}
         <div className="shrink-0 z-10 pb-6 animate-fade-in-soft text-white" style={{ animationDelay: '0.4s' }}>
-          <div className="px-6 mb-6 max-w-lg mx-auto">
+          <div className="px-6 mb-6 max-w-lg mx-auto text-white">
             <div className="glass-panel p-1 rounded-2xl flex gap-1 relative border border-white/10 shadow-2xl overflow-hidden">
               {['roadmap', 'works', 'traces'].map((view) => (
                 <button key={view} onClick={() => { setActiveView(view); triggerSync(); }} className={`flex-1 py-3.5 rounded-xl text-[7px] font-brand tracking-[0.1em] transition-all tap-feedback uppercase ${activeView === view ? 'bg-white text-black font-black shadow-lg' : 'text-white/30'}`}>
@@ -466,13 +483,13 @@ const App = () => {
             <div key={activeView} className="w-full h-full animate-fade-in-soft">
               {activeView === 'roadmap' && (
                 <CoverFlow items={roadmapSteps} activeIndex={activeIndices.roadmap} setActiveIndex={(i) => setViewIndex('roadmap', i)} renderItem={(step) => (
-                  <div onClick={() => { setSelectedItem(step); setIsModalOpen(true); }} className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-cyan-500/30 flex flex-col justify-between tap-feedback group hover:border-cyan-400 transition-colors shadow-2xl">
+                  <div onClick={() => { setSelectedItem(step); setIsModalOpen(true); }} className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-cyan-500/30 flex flex-col justify-between tap-feedback group hover:border-cyan-400 transition-colors shadow-2xl text-white">
                     <div className="flex justify-between items-start mb-2">
                       <div className="w-16 h-16 flex items-center justify-center bg-white/[0.03] rounded-[1.2rem] border border-white/15 text-cyan-400 group-hover:text-cyan-300 group-hover:scale-110 transition-transform">{step.icon}</div>
                       <div className="text-[6px] font-brand px-2.5 py-1 rounded-full border border-cyan-500/50 text-cyan-400 bg-cyan-500/5 uppercase font-black">{String(step.status)}</div>
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 text-white">
                         <span className="text-[8px] font-brand text-white/30 tracking-[0.2em] uppercase font-bold">{String(step.phase || "")}</span>
                         <Maximize2 size={10} className="text-white/10 group-hover:text-cyan-400" />
                       </div>
@@ -488,7 +505,7 @@ const App = () => {
                       <span className="text-cyan-500 font-brand text-[8px] font-bold uppercase tracking-[0.3em]">{String(project.tag || "")}</span>
                       <Maximize2 size={12} className="text-white/20 group-hover:text-cyan-400" />
                     </div>
-                    <div className="flex-1 flex flex-col justify-center">
+                    <div className="flex-1 flex flex-col justify-center text-left">
                       <h3 className="text-[15px] font-black mb-1 uppercase tracking-tight leading-tight">{String(project.title || "")}</h3>
                       <p className="text-white/40 text-[9px] leading-relaxed line-clamp-2 font-light">{String(project.desc || "")}</p>
                     </div>
@@ -513,7 +530,7 @@ const App = () => {
                           </div>
                           <p className="text-[12px] text-white/95 font-light italic leading-[1.6] line-clamp-3 drop-shadow-xl pl-1">{String(msg?.text || "")}</p>
                         </div>
-                        <div className="flex justify-between items-end mt-4 text-white">
+                        <div className="flex justify-between items-end mt-4">
                           <div className="flex items-center gap-2 bg-white/[0.03] px-2.5 py-1 rounded-full border border-white/5 backdrop-blur-sm">
                             <Clock size={10} className="text-white/20" />
                             <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.15em]">{String(msg?.date || "")}</span>
@@ -524,9 +541,9 @@ const App = () => {
                     </div>
                   )} />
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center opacity-10 gap-3 border border-dashed border-white/20 rounded-[2.5rem] text-white">
+                  <div className="w-full h-full flex flex-col items-center justify-center opacity-10 gap-3 border border-dashed border-white/20 rounded-[2.5rem] text-white text-center">
                     <ArrowRight size={32} className="animate-pulse" />
-                    <span className="text-[11px] font-brand uppercase tracking-widest text-center">Neural void awaiting sync.</span>
+                    <span className="text-[11px] font-brand uppercase tracking-widest">Neural void awaiting sync.</span>
                   </div>
                 )
               )}
@@ -536,7 +553,7 @@ const App = () => {
 
         <footer className="w-full shrink-0 z-10 py-6 flex flex-col items-center justify-center border-t border-white/5 bg-black/20 text-white">
           <span className="font-brand text-[10px] tracking-[0.8em] font-black text-white/90 uppercase animate-pulse">HYZEN LABS. 2026</span>
-          <p className="text-[6px] font-brand tracking-[0.2em] uppercase opacity-20 mt-2 text-white">© All Rights Reserved by HYZEN LABS.</p>
+          <p className="text-[6px] font-brand tracking-[0.2em] uppercase opacity-20 mt-2">© All Rights Reserved by HYZEN LABS.</p>
         </footer>
       </div>
 
@@ -546,7 +563,7 @@ const App = () => {
           <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 flex flex-col items-center text-center shadow-2xl text-white" onClick={e => e.stopPropagation()}>
             <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6 shadow-[0_0_30px_rgba(239,68,68,0.2)]"><Lock size={24} /></div>
             <h3 className="font-brand text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">Security Verification</h3>
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6">Erase Neural Trace?</h2>
+            <h2 className="text-xl font-black uppercase tracking-tight mb-6 text-white text-center leading-tight">Erase Neural Trace?</h2>
             <input type="password" placeholder="PASSCODE" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-center text-base font-brand focus:border-red-500/50 transition-all outline-none mb-6 tracking-[0.4em] placeholder:tracking-normal placeholder:opacity-20 text-red-500 font-mono" value={deletePass} onChange={e => setDeletePass(e.target.value)} autoFocus />
             <div className="flex gap-2 w-full">
               <button onClick={closeModal} className="flex-1 py-4 rounded-2xl bg-white/5 text-[10px] font-brand uppercase tracking-widest hover:bg-white/10 transition-colors text-white">Abort</button>
@@ -603,7 +620,7 @@ const App = () => {
               <h2 className="text-3xl font-black mb-10 uppercase tracking-tighter leading-tight text-white">
                 {String(selectedItem.title)}
               </h2>
-              <div className="space-y-8 pb-12">
+              <div className="space-y-8 pb-12 text-white text-left">
                 <section>
                   <h4 className="text-[10px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-3 border-l-2 border-cyan-500 pl-4">Goal</h4>
                   <p className="text-[15px] font-light text-white/80 leading-relaxed pl-5">{String(selectedItem.goal)}</p>
