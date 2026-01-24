@@ -33,10 +33,10 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.5.3 | Kinetic Precision Edition]
- * 1. 디버깅: 팝업 시 줌 효과(Scale) 완전 제거로 모바일 Fit 이슈 최종 해결
- * 2. 인터랙션: 카드 스와이프 시 탄성(Elastic) 효과를 통한 물리적 질감 구현
- * 3. 시각화: 데이터 버블을 중앙 영역을 피한 '좌우 여백'으로 고정 배치 유지
+ * [Hyzen Labs. CTO Optimized - R1.6.5 | Absolute Precision Edition]
+ * 1. 디버깅: 팝업 시 배경 스케일(Zoom) 완전 제거 및 별도 오버레이 레이어로 3D 효과 보호
+ * 2. 3D 복구: 커버플로우 70도 기울기 및 투명 고스트 효과(Ghost Side-view) 물리적 고정
+ * 3. 시각화: 중앙 영역을 피한 '좌우 여백' 전용 버블 유영 시스템 (Safe Margin)
  * 4. 모바일: 9.5vw 히어로 폰트 및 96px 대형 프로필 허브의 시각적 균형 최적화
  */
 
@@ -67,12 +67,9 @@ if (fConfig && fConfig.apiKey) {
 // --- [시각화 컴포넌트: 여백 유영 버블 메시지] ---
 const FloatingBubble = ({ msg }) => {
   const [coords] = useState(() => {
-    // 중앙 텍스트/사진 영역(25% ~ 75%)을 피하기 위한 좌우 여백 로직
+    // 중앙 텍스트/사진 영역(25% ~ 75%)을 피하기 위해 극좌우(5~20%, 80~95%)에만 배치
     const isLeft = Math.random() > 0.5;
-    const horizontalPos = isLeft 
-      ? Math.random() * 15 + 5   // 좌측 여백 (5% ~ 20%)
-      : Math.random() * 15 + 80; // 우측 여백 (80% ~ 95%)
-    
+    const horizontalPos = isLeft ? Math.random() * 15 + 5 : Math.random() * 15 + 80;
     return {
       top: `${Math.random() * 30 + 10}%`,
       left: `${horizontalPos}%`,
@@ -81,17 +78,14 @@ const FloatingBubble = ({ msg }) => {
     };
   });
 
-  const summary = String(msg?.text || "").length > 15 ? msg.text.substring(0, 15) + ".." : (msg?.text || "");
+  const safeName = String(msg?.name || "Anon");
+  const safeText = String(msg?.text || "");
+  const summary = safeText.length > 15 ? safeText.substring(0, 15) + ".." : safeText;
 
   return (
     <div 
       className="absolute pointer-events-none select-none animate-bubble-float z-[2]"
-      style={{ 
-        top: coords.top, 
-        left: coords.left, 
-        animationDuration: coords.duration,
-        animationDelay: coords.delay
-      }}
+      style={{ top: coords.top, left: coords.left, animationDuration: coords.duration, animationDelay: coords.delay }}
     >
       <div className="relative group scale-75 sm:scale-90 transition-transform duration-1000">
         <div className="relative flex items-center gap-2 px-4 py-2.5 rounded-full glass-panel border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden">
@@ -101,8 +95,8 @@ const FloatingBubble = ({ msg }) => {
               <img src={msg.image} className="w-full h-full object-cover grayscale brightness-125" alt="" />
             </div>
           )}
-          <div className="flex flex-col text-left pr-2">
-            <span className="text-[6px] font-brand text-cyan-400 font-black uppercase tracking-tighter opacity-70">{String(msg?.name || "Anon")}</span>
+          <div className="flex flex-col text-left pr-2 text-white">
+            <span className="text-[6px] font-brand text-cyan-400 font-black uppercase tracking-tighter opacity-70">{safeName}</span>
             <span className="text-[9px] text-white/50 font-light italic leading-tight truncate max-w-[80px]">"{summary}"</span>
           </div>
         </div>
@@ -111,7 +105,7 @@ const FloatingBubble = ({ msg }) => {
   );
 };
 
-// --- [공통 컴포넌트: Cover Flow Wrapper - 키네틱 스냅 버전] ---
+// --- [공통 컴포넌트: Cover Flow Wrapper - 정밀 3D 고정 버전] ---
 const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
   const touchStartRef = useRef(null);
   const handlePrev = () => setActiveIndex(Math.max(0, activeIndex - 1));
@@ -120,19 +114,13 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
   const onTouchStart = (e) => { touchStartRef.current = e.touches[0].clientX; };
   const onTouchEnd = (e) => {
     if (touchStartRef.current === null) return;
-    const touchEnd = e.changedTouches[0].clientX;
-    const diff = touchStartRef.current - touchEnd;
-    const threshold = 40;
-    if (Math.abs(diff) > threshold) {
-      if (diff > 0) handleNext();
-      else handlePrev();
-    }
+    const diff = touchStartRef.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) { diff > 0 ? handleNext() : handlePrev(); }
     touchStartRef.current = null;
   };
 
   return (
     <div className="relative w-full h-full flex items-center justify-center perspective-[1500px] overflow-visible touch-pan-y" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      {/* Navigation Arrows */}
       <button onClick={handlePrev} className={`absolute left-0 z-[100] p-2 text-white/10 hover:text-white/50 transition-all ${activeIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}><ChevronLeft size={24} /></button>
       <button onClick={handleNext} className={`absolute right-0 z-[100] p-2 text-white/10 hover:text-white/50 transition-all ${activeIndex === items.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}><ChevronRight size={24} /></button>
       
@@ -141,26 +129,27 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
           const offset = idx - activeIndex;
           const isCenter = offset === 0;
           
-          // 3D 커버플로우 물리 로직: 탄성 스냅을 위해 rotateY 62도 및 translateZ -350px 유지
-          let transform = `translateX(${offset * 85}%) translateZ(${Math.abs(offset) * -350}px) rotateY(${offset * -62}deg)`;
-          if (isCenter) transform = `translateZ(180px) scale(1.1)`;
+          // 3D 효과 복구: rotateY 70도 및 translateZ -400px로 극적인 공간감 부여
+          let transform = `translateX(${offset * 88}%) translateZ(${Math.abs(offset) * -400}px) rotateY(${offset * -70}deg)`;
+          if (isCenter) transform = `translateZ(200px) scale(1.15)`;
 
           return (
             <div 
               key={`${idx}-${activeIndex}`}
-              className={`absolute w-[240px] sm:w-[320px] h-[160px] preserve-3d cursor-pointer transition-all duration-[800ms] ${isCenter ? 'ease-[cubic-bezier(0.22,1.4,0.36,1)]' : 'ease-out'}`}
+              className={`absolute w-[240px] sm:w-[320px] h-[160px] preserve-3d cursor-pointer transition-all duration-[850ms] ${isCenter ? 'ease-[cubic-bezier(0.22,1.4,0.36,1)]' : 'ease-out'}`}
               style={{
                 transform,
                 zIndex: 20 - Math.abs(offset),
                 pointerEvents: isCenter ? 'auto' : 'none',
-                opacity: isCenter ? 1 : Math.max(0.01, 0.22 - Math.abs(offset) * 0.08)
+                // 투명도 효과 상시 유지 (비중심 카드 0.15~0.4 적용)
+                opacity: isCenter ? 1 : Math.max(0.05, 0.4 - Math.abs(offset) * 0.15)
               }}
               onClick={() => setActiveIndex(idx)}
             >
-              <div className="relative w-full h-full preserve-3d">
+              <div className="relative w-full h-full preserve-3d shadow-2xl text-white">
                 {renderItem(item, isCenter)}
                 {!isCenter && (
-                  <div className="absolute inset-0 rounded-[2.5rem] bg-black/75 backdrop-blur-[6px] transition-all duration-500 pointer-events-none" />
+                  <div className="absolute inset-0 rounded-[2.5rem] bg-black/75 backdrop-blur-[8px] transition-all duration-500 pointer-events-none" />
                 )}
               </div>
             </div>
@@ -191,13 +180,11 @@ const App = () => {
   const fileInputRef = useRef(null);
   const founderImgSrc = "YJ.PNG"; 
 
-  // --- [Intro Timer] ---
   useEffect(() => {
     const timer = setTimeout(() => setIsInitializing(false), 2800);
     return () => clearTimeout(timer);
   }, []);
 
-  // --- [Firebase Logic] ---
   useEffect(() => {
     if (!app || !auth) return;
     const initAuth = async () => {
@@ -208,7 +195,7 @@ const App = () => {
           await signInAnonymously(auth);
         }
       } catch (err) {
-        console.warn("Auth Failure, proceeding without Firebase sync.");
+        console.warn("Auth Failure");
       }
     };
     initAuth();
@@ -230,12 +217,13 @@ const App = () => {
     }
   }, [user]);
 
-  // --- [Fit Logic: 정밀 리셋 및 줌 효과 완전 제거] ---
+  // --- [Absolute Layout Reset: Fit & Non-Zoom Logic] ---
   useEffect(() => {
     if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen) {
+      // 모든 팝업이 닫히면 브라우저 주소창 높이를 무시하고 강제로 최상단으로 핏팅
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
       document.body.style.overflow = 'hidden';
-      // 뷰포트 강제 리프레시를 통한 Fit 보장
+      // 뷰포트 강제 리프레시
       setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
     }
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
@@ -338,9 +326,9 @@ const App = () => {
         .preserve-3d { transform-style: preserve-3d; }
         @keyframes scanline { 0% { top: -10%; opacity: 0; } 50% { opacity: 1; } 100% { top: 110%; opacity: 0; } }
         .animate-scan { animation: scanline 4s linear infinite; }
-        @keyframes fadeInSoft { from { opacity: 0; transform: translateY(15px) scale(1); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes fadeInSoft { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in-soft { animation: fadeInSoft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; } 50% { transform: translate(10px, -20px) scale(1.05); opacity: 0.4; } }
+        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; } 50% { transform: translate(8px, -15px) scale(1.05); opacity: 0.4; } }
         .animate-bubble-float { animation: bubbleFloat 20s ease-in-out infinite; }
         @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .tap-feedback:active { transform: scale(0.97); transition: transform 0.1s ease; }
@@ -362,18 +350,22 @@ const App = () => {
             </div>
             <div className="flex flex-col items-center gap-1 opacity-40">
               <span className="text-[7px] font-brand tracking-widest uppercase">Reality Data Synchronization...</span>
-              <span className="text-[6px] font-mono italic">CODE: HYZEN-RC164-RESILIENT</span>
+              <span className="text-[6px] font-mono italic">CODE: HYZEN-RC165-PRECISION</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- [Main Layer: Absolute Stability Enforcement - No Scaling] --- */}
+      {/* --- [Background Blur Overlay for 3D Context Protection] --- */}
+      {isAnyModalOpen && (
+        <div className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-md animate-fade-in-soft pointer-events-auto" onClick={closeModal} />
+      )}
+
+      {/* --- [Main Layer: Absolute Stability Enforcement - Scale(1) Hardcoded] --- */}
       <div 
-        className={`flex-1 flex flex-col relative transition-all duration-700 origin-center 
-          ${isInitializing ? 'opacity-0' : 'opacity-100'} 
-          ${isAnyModalOpen ? 'blur-md brightness-50 pointer-events-none' : 'blur-0 brightness-100'}`}
-        style={{ transform: 'scale(1)' }} // 팝업 시 배경 스케일 변화 완전 제거
+        className={`flex-1 flex flex-col relative transition-opacity duration-700 
+          ${isInitializing ? 'opacity-0' : 'opacity-100'}`}
+        style={{ transform: 'scale(1)' }} // 팝업 시 스케일 고정하여 줌인 현상 원천 차단
       >
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           {messages.map(msg => (
@@ -382,26 +374,26 @@ const App = () => {
         </div>
 
         <nav className="w-full z-[100] px-6 py-4 flex justify-between items-center shrink-0">
-          <div className="flex flex-col text-left group">
+          <div className="flex flex-col text-left group text-white">
             <div className="flex items-center gap-2">
               <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
               <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
             </div>
-            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.5.3 | Kinetic Precision</span>
+            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.6.5 | Absolute Precision</span>
           </div>
-          <div className="flex gap-4 opacity-40">
+          <div className="flex gap-4 opacity-40 text-white">
             <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
             <Share2 size={14} />
           </div>
         </nav>
 
-        {/* Hero Section: Precise Spacing for Mobile */}
+        {/* Hero Section: Precise Spacing for Mobile Viewport */}
         <section className="flex-1 z-10 px-8 pt-4 sm:pt-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
           <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-cyan-500/5 blur-[100px] -z-10 transition-opacity duration-1000 ${isSyncing ? 'opacity-100' : 'opacity-40'}`} />
           
           <div className="relative inline-block animate-fade-in-soft mb-4 group pt-4">
             <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10 pointer-events-none" />
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center text-white">
               <h1 className="text-[9.5vw] sm:text-8xl font-title tracking-[-0.07em] leading-[0.9] uppercase">
                 <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent block">ME,</span>
                 <span className="text-outline block my-1 group-hover:text-white transition-all duration-1000">REALITY</span>
@@ -412,8 +404,8 @@ const App = () => {
           
           <p className="text-[2.2vw] sm:text-[11px] text-cyan-400/60 tracking-[0.5em] font-brand font-black uppercase mb-8 animate-fade-in-soft">Augmented Reality Grounding</p>
 
-          {/* Unified Identity Hub: Larger Profile for Presence (w-24) */}
-          <div className="flex flex-col items-center gap-2 animate-fade-in-soft" style={{ animationDelay: '0.2s' }}>
+          {/* Unified Identity Hub: Larger Profile Photo (w-24) */}
+          <div className="flex flex-col items-center gap-2 animate-fade-in-soft text-white" style={{ animationDelay: '0.2s' }}>
             <div onClick={openGuestbook} className="relative group cursor-pointer tap-feedback active:scale-95 transition-all">
               <div className="absolute -inset-10 border border-white/5 rounded-full animate-[orbit_25s_linear_infinite] pointer-events-none" />
               <div className="absolute -inset-8 border border-cyan-500/10 rounded-full animate-[orbit_15s_linear_infinite_reverse] pointer-events-none" />
@@ -456,6 +448,7 @@ const App = () => {
             </div>
           </div>
 
+          {/* 3D Cover Flow Viewport - Effects Solidified */}
           <div className="px-6 max-w-5xl mx-auto h-[180px] relative overflow-visible">
             <div key={activeView} className="w-full h-full animate-fade-in-soft text-white">
               {activeView === 'roadmap' && (
@@ -494,8 +487,8 @@ const App = () => {
                       <div className="w-full h-full glass-panel rounded-[2.5rem] relative overflow-hidden border border-violet-500/30 group shadow-[0_15px_40px_rgba(0,0,0,0.5)]">
                         {msg.image && (
                           <div className="absolute right-0 top-0 w-full h-full z-0 overflow-hidden pointer-events-none">
-                            <img src={msg.image} className="absolute right-0 h-full w-[75%] object-cover brightness-[0.85] contrast-110 opacity-100 transition-all duration-700 group-hover:brightness-100 group-hover:scale-105" alt="" />
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#010101] via-[#010101]/85 to-transparent z-1" />
+                            <img src={msg.image} className="absolute right-0 h-full w-[75%] object-cover brightness-[0.85] contrast-110 opacity-100 transition-all duration-700 group-hover:brightness-100" alt="" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#010101] via-[#010101]/90 to-transparent z-1" />
                           </div>
                         )}
                         <div className="relative z-10 p-6 h-full flex flex-col justify-between text-left text-white">
@@ -534,9 +527,9 @@ const App = () => {
         </footer>
       </div>
 
-      {/* --- [Modals] --- */}
+      {/* --- [Modals: Fullscreen Independent Overlays] --- */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/90 backdrop-blur-2xl p-6 animate-fade-in-soft" onClick={closeModal}>
+        <div className="fixed inset-0 z-[5000] flex items-center justify-center p-6 animate-fade-in-soft" onClick={closeModal}>
           <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 flex flex-col items-center text-center shadow-2xl text-white" onClick={e => e.stopPropagation()}>
             <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6 shadow-[0_0_30px_rgba(239,68,68,0.2)]"><Lock size={24} /></div>
             <h3 className="font-brand text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">Security Verification</h3>
@@ -551,7 +544,7 @@ const App = () => {
       )}
 
       {isGuestbookOpen && (
-        <div className="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-3xl p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
+        <div className="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
           <div className="w-full h-[90vh] sm:h-auto sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-8 relative flex flex-col shadow-2xl border-t border-cyan-500/20 text-white" onClick={e => e.stopPropagation()}>
             <div className="w-14 h-1.5 bg-white/10 rounded-full mx-auto mb-8 sm:hidden" />
             <button onClick={closeModal} className="absolute top-8 right-8 p-2 text-white/20 hover:text-white transition-colors"><X size={22} /></button>
@@ -583,7 +576,7 @@ const App = () => {
       )}
 
       {isModalOpen && selectedProject && (
-        <div className="fixed inset-0 z-[4000] flex items-end sm:items-center justify-center bg-black/98 backdrop-blur-3xl p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
+        <div className="fixed inset-0 z-[4000] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
           <div className="w-full h-[80vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-10 relative overflow-y-auto no-scrollbar border-t border-white/10 text-white" onClick={e => e.stopPropagation()}>
             <div className="w-14 h-1.5 bg-white/10 rounded-full mx-auto mb-10 sm:hidden" />
             <button onClick={closeModal} className="absolute top-10 right-10 p-2 text-white/20"><X size={22} /></button>
