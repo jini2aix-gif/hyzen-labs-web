@@ -30,11 +30,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.4.0 | Neural Genesis Edition]
- * 1. 진입 효과: 시스템 초기화 시퀀스(Initializing Overlay) 추가
- * 2. 애니메이션: 인트로 종료 후 메인 콘텐츠의 부드러운 줌아웃 등장 연출
- * 3. 레이아웃: Compact Identity 및 Precision Spacing 유지
- * 4. 인터랙션: 3D Cover Flow, 터치 슬라이드, 지문 인식 프로필, 보안 삭제(5733906) 유지
+ * [Hyzen Labs. CTO Optimized - R1.4.1 | Stable Reality Edition]
+ * 1. 가시성: TRACES 이미지 투명도 및 밝기 최적화 (실재감 강화)
+ * 2. 복구: 팝업 종료 시 메인 화면 스케일 리셋 (Zoom-in 현상 해결)
+ * 3. 진입 효과: 시스템 초기화 시퀀스 유지
+ * 4. 인터랙션: 3D Cover Flow, 터치 슬라이드, 지문 인식 프로필 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -145,7 +145,7 @@ const App = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsInitializing(false);
-    }, 2800); // 2.8초 후 메인 화면 진입
+    }, 2800);
     return () => clearTimeout(timer);
   }, []);
 
@@ -225,6 +225,9 @@ const App = () => {
     document.body.style.overflow = 'auto';
   };
 
+  // 팝업 여부에 따른 메인 레이아웃 스케일 제어 로직 (줌인 현상 방지)
+  const isAnyModalOpen = isModalOpen || isGuestbookOpen || isDeleteModalOpen;
+
   return (
     <div className="h-screen w-screen bg-[#010101] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col relative">
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] pointer-events-none z-[1] mix-blend-overlay" />
@@ -250,7 +253,7 @@ const App = () => {
         .animate-init-progress { animation: initProgress 2.2s ease-in-out forwards; }
       `}</style>
 
-      {/* --- [Entry Sequence: Initializing Layer] --- */}
+      {/* --- [Entry Sequence] --- */}
       {isInitializing && (
         <div className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center p-8 transition-opacity duration-700">
           <div className="absolute top-0 left-0 w-full h-[1px] bg-cyan-500/20 blur-[1px] animate-scan" />
@@ -264,14 +267,14 @@ const App = () => {
             </div>
             <div className="flex flex-col items-center gap-1 opacity-40">
               <span className="text-[7px] font-brand tracking-widest uppercase">Reality Data Synchronization...</span>
-              <span className="text-[6px] font-mono">CODE: HYZEN-RC140-ACTIVE</span>
+              <span className="text-[6px] font-mono">CODE: HYZEN-RC141-STABLE</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- [Main Content Layer] --- */}
-      <div className={`flex-1 flex flex-col relative transition-all duration-1000 ${isInitializing ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}>
+      {/* --- [Main Content Layer: Scale Restoration Logic Applied] --- */}
+      <div className={`flex-1 flex flex-col relative transition-all duration-1000 origin-center ${isInitializing ? 'opacity-0 scale-105' : 'opacity-100'} ${isAnyModalOpen ? 'scale-95 blur-sm brightness-50' : 'scale-100 blur-0 brightness-100'}`}>
         
         {/* Floating Bubbles Layer */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -287,7 +290,7 @@ const App = () => {
               <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
               <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
             </div>
-            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.4.0 | Neural Genesis</span>
+            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.4.1 | Stable Reality</span>
           </div>
           <div className="flex gap-4 opacity-40">
             <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
@@ -348,7 +351,7 @@ const App = () => {
 
         {/* Controller Section */}
         <div className="shrink-0 z-10 pb-4 animate-fade-in-soft" style={{ animationDelay: '0.4s' }}>
-          <div className="px-6 mb-6 max-w-lg mx-auto">
+          <div className="px-6 mb-6 max-lg mx-auto">
             <div className="glass-panel p-1 rounded-2xl flex gap-1 relative overflow-hidden border border-white/10 shadow-2xl">
               {['roadmap', 'works', 'traces'].map((view) => (
                 <button key={view} onClick={() => { setActiveView(view); triggerSync(); }} className={`flex-1 py-3.5 rounded-xl text-[7px] font-brand tracking-[0.1em] transition-all tap-feedback uppercase ${activeView === view ? 'bg-white text-black font-black shadow-lg' : 'text-white/30'}`}>
@@ -385,8 +388,8 @@ const App = () => {
                         <Maximize2 size={12} className="text-white/20 group-hover:text-cyan-400" />
                       </div>
                       <div className="flex-1 flex flex-col justify-center">
-                        <h3 className="text-[14px] font-black mb-1 uppercase tracking-tight leading-tight">{project.title}</h3>
-                        <p className="text-white/40 text-[9px] leading-relaxed line-clamp-2 font-light">{project.desc}</p>
+                        <h3 className="text-[15px] font-black mb-1 uppercase tracking-tight leading-tight">{project.title}</h3>
+                        <p className="text-white/40 text-[10px] leading-relaxed line-clamp-2 font-light">{project.desc}</p>
                       </div>
                     </div>
                   )}
@@ -397,10 +400,12 @@ const App = () => {
                 messages.length > 0 ? (
                   <CoverFlow items={messages} activeIndex={activeIndices.traces} setActiveIndex={(i) => setViewIndex('traces', i)} renderItem={(msg) => (
                       <div className="w-full h-full glass-panel rounded-[2.5rem] relative overflow-hidden border border-violet-500/30 shadow-2xl group">
+                        {/* --- [TRACE IMAGE ENHANCED] --- */}
                         {msg.image && (
                           <div className="absolute right-0 top-0 w-full h-full z-0 overflow-hidden pointer-events-none">
-                            <img src={msg.image} className="absolute right-0 h-full w-[70%] object-cover grayscale brightness-[0.4] contrast-125 opacity-50 transition-all duration-700 group-hover:opacity-70 group-hover:scale-105" alt="" />
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#010101] via-[#010101]/90 to-transparent z-1" />
+                            {/* Opacity and Brightness improved for better visibility */}
+                            <img src={msg.image} className="absolute right-0 h-full w-[70%] object-cover grayscale brightness-[0.7] contrast-110 opacity-90 transition-all duration-700 group-hover:opacity-100 group-hover:scale-105" alt="" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#010101] via-[#010101]/80 to-transparent z-1" />
                           </div>
                         )}
                         <div className="relative z-10 p-6 h-full flex flex-col justify-between">
@@ -440,7 +445,7 @@ const App = () => {
         </footer>
       </div>
 
-      {/* Security Modals */}
+      {/* --- [MODALS: Reset Logic Integration] --- */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/90 backdrop-blur-2xl p-6 animate-fade-in-soft" onClick={closeModal}>
           <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 flex flex-col items-center text-center shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -456,7 +461,6 @@ const App = () => {
         </div>
       )}
 
-      {/* Guestbook Modal */}
       {isGuestbookOpen && (
         <div className="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-3xl p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
           <div className="w-full h-[90vh] sm:h-auto sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-8 relative flex flex-col shadow-2xl border-t border-cyan-500/20" onClick={e => e.stopPropagation()}>
@@ -482,7 +486,6 @@ const App = () => {
         </div>
       )}
 
-      {/* Project Detail Modal */}
       {isModalOpen && selectedProject && (
         <div className="fixed inset-0 z-[4000] flex items-end sm:items-center justify-center bg-black/98 backdrop-blur-3xl p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
           <div className="w-full h-[80vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-10 relative overflow-y-auto no-scrollbar border-t border-white/10" onClick={e => e.stopPropagation()}>
