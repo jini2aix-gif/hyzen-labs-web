@@ -29,21 +29,20 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.2.4 | Visual Balance Edition]
- * 1. 모바일 최적화: 히어로 문구 폰트 크기 조정 (13vw -> 11vw) 및 상단 여백 확보
- * 2. 시각화: 데이터 버블 유영 범위를 상단 45% 이내로 제한 (Atmospheric Gravity 유지)
- * 3. UI: 심리스 적색 삭제 버튼 및 정교한 타이포그래피 유지
- * 4. UX: 탭 전환 애니메이션 및 비밀번호(5733906) 보안 시스템 유지
+ * [Hyzen Labs. CTO Optimized - R1.2.5 | Perfect Visibility Edition]
+ * 1. 모바일 최적화: 히어로 섹션 수직 간격 재조정으로 SYNC TRACE 버튼 가시성 확보
+ * 2. 레이아웃: mb-10 -> mb-6 축소 및 pt-12 -> pt-10 조정으로 상단 공간 압축
+ * 3. 시각화: 상단 45% 유영하는 데이터 버블 시스템 유지
+ * 4. 보안: 비밀번호(5733906) 인증 기반 심리스 삭제 시스템 유지
  */
 
 const ADMIN_PASS = "5733906";
 
 // --- [시각화 컴포넌트: 버블 메시지] ---
 const FloatingBubble = ({ msg }) => {
-  // 상단 중앙 부분으로 유영 범위 제한
   const [coords] = useState({
-    top: `${Math.random() * 35 + 10}%`, // 10% ~ 45% 구간 (상단)
-    left: `${Math.random() * 60 + 20}%`, // 20% ~ 80% 구간 (중앙 집중)
+    top: `${Math.random() * 35 + 10}%`,
+    left: `${Math.random() * 60 + 20}%`,
     duration: `${Math.random() * 10 + 20}s`,
     delay: `${Math.random() * 5}s`
   });
@@ -61,7 +60,6 @@ const FloatingBubble = ({ msg }) => {
       }}
     >
       <div className="relative group scale-75 sm:scale-90 transition-transform duration-1000">
-        {/* Bubble Body with Reflection Highlight */}
         <div className="relative flex items-center gap-2 px-4 py-3 rounded-full glass-panel border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden">
           <div className="absolute top-1 left-3 w-4 h-2 bg-white/10 rounded-full blur-[1px] rotate-[-20deg]" />
           <div className="absolute bottom-1 right-3 w-2 h-1 bg-cyan-400/10 rounded-full blur-[2px]" />
@@ -76,8 +74,6 @@ const FloatingBubble = ({ msg }) => {
             <span className="text-[9px] text-white/50 font-light italic leading-tight truncate max-w-[80px]">"{summary}"</span>
           </div>
         </div>
-        
-        {/* Glow Spark */}
         <div className="absolute -top-1 -right-1 w-1 h-1 bg-white rounded-full animate-twinkle shadow-[0_0_5px_white]" />
       </div>
     </div>
@@ -189,7 +185,6 @@ const App = () => {
     <div className="h-screen w-screen bg-[#010101] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col relative">
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] pointer-events-none z-[1] mix-blend-overlay" />
       
-      {/* Floating Bubbles Layer - Top portion only */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {messages.map(msg => (
           <FloatingBubble key={msg.id} msg={msg} />
@@ -212,16 +207,10 @@ const App = () => {
         .animate-scan { animation: scanline 4s linear infinite; }
         @keyframes fadeInSoft { from { opacity: 0; transform: translateY(15px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .animate-fade-in-soft { animation: fadeInSoft 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-        
-        @keyframes bubbleFloat { 
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; } 
-          50% { transform: translate(10px, -20px) scale(1.03); opacity: 0.5; } 
-        }
+        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; } 50% { transform: translate(10px, -20px) scale(1.03); opacity: 0.5; } }
         .animate-bubble-float { animation: bubbleFloat 20s ease-in-out infinite; }
-
         @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
         .animate-twinkle { animation: twinkle 2s infinite ease-in-out; }
-        
         @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .tap-feedback:active { transform: scale(0.97); transition: transform 0.1s ease; }
       `}</style>
@@ -233,7 +222,7 @@ const App = () => {
             <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
             <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
           </div>
-          <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.2.4 | Visual Balance</span>
+          <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.2.5 | Perfect Visibility</span>
         </div>
         <div className="flex gap-4 opacity-40">
           <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
@@ -241,8 +230,8 @@ const App = () => {
         </div>
       </nav>
 
-      {/* Hero Section - Padding top added to prevent clipping */}
-      <section className="flex-1 z-10 px-8 pt-12 flex flex-col items-center justify-center text-center relative overflow-hidden">
+      {/* Hero Section - Optimized Padding for Mobile */}
+      <section className="flex-1 z-10 px-8 pt-10 flex flex-col items-center justify-center text-center relative overflow-hidden">
         <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-cyan-500/5 blur-[100px] -z-10 transition-opacity duration-1000 ${isSyncing ? 'opacity-100' : 'opacity-40'}`} />
         
         <div className="relative inline-block animate-fade-in-soft mb-6 group">
@@ -253,7 +242,6 @@ const App = () => {
           <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10 pointer-events-none" />
 
           <div className="flex flex-col items-center">
-            {/* Reduced mobile font size (13vw -> 11vw) for better fit */}
             <h1 className="text-[11vw] sm:text-8xl font-title tracking-[-0.07em] leading-[0.9] uppercase">
               <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent block">ME,</span>
               <span className="text-outline block my-1 group-hover:text-white transition-all duration-1000">REALITY</span>
@@ -262,12 +250,13 @@ const App = () => {
           </div>
         </div>
         
-        <p className="text-[2.5vw] sm:text-[11px] text-cyan-400/60 tracking-[0.5em] font-brand font-black uppercase mb-10 animate-fade-in-soft" style={{ animationDelay: '0.1s' }}>
+        {/* mb-10 -> mb-6 for better mobile spacing */}
+        <p className="text-[2.5vw] sm:text-[11px] text-cyan-400/60 tracking-[0.5em] font-brand font-black uppercase mb-6 animate-fade-in-soft" style={{ animationDelay: '0.1s' }}>
           Augmented Reality Grounding
         </p>
 
-        <div className="flex flex-col items-center gap-6 animate-fade-in-soft" style={{ animationDelay: '0.2s' }}>
-          <div className="relative group scale-110 sm:scale-125" onClick={triggerSync}>
+        <div className="flex flex-col items-center gap-5 animate-fade-in-soft" style={{ animationDelay: '0.2s' }}>
+          <div className="relative group scale-100 sm:scale-125" onClick={triggerSync}>
             <div className="absolute -inset-4 border border-white/5 rounded-full animate-[orbit_20s_linear_infinite] pointer-events-none" />
             <div className="relative w-16 h-16 rounded-full p-[1px] bg-gradient-to-br from-white/20 to-transparent">
               <div className="w-full h-full rounded-full border border-white/10 overflow-hidden bg-zinc-900 flex items-center justify-center relative shadow-2xl shadow-black">
@@ -282,11 +271,12 @@ const App = () => {
 
           <div className="flex flex-col items-center">
             <h3 className="text-[14px] font-title tracking-tight text-white font-bold">Youngji.Park</h3>
-            <span className="text-[8px] font-brand tracking-[0.4em] uppercase font-bold text-white/20 mb-6">Founder</span>
+            <span className="text-[8px] font-brand tracking-[0.4em] uppercase font-bold text-white/20 mb-4">Founder</span>
             
-            <button onClick={openGuestbook} className="group flex items-center gap-3 px-8 py-3.5 rounded-full border border-white/20 glass-panel hover:bg-cyan-500/10 hover:border-cyan-500/50 transition-all active:scale-95 shadow-2xl">
-              <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center text-black shadow-lg shadow-cyan-500/20 group-hover:rotate-12 transition-transform">
-                <MessageSquare size={12} strokeWidth={2.5} />
+            {/* Reduced margin and optimized size for mobile visibility */}
+            <button onClick={openGuestbook} className="group flex items-center gap-3 px-6 py-3 rounded-full border border-white/20 glass-panel hover:bg-cyan-500/10 hover:border-cyan-500/50 transition-all active:scale-95 shadow-2xl">
+              <div className="w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center text-black shadow-lg shadow-cyan-500/20 group-hover:rotate-12 transition-transform">
+                <MessageSquare size={10} strokeWidth={2.5} />
               </div>
               <span className="text-[9px] font-brand tracking-[0.4em] font-black uppercase text-white/80">Sync Trace</span>
             </button>
