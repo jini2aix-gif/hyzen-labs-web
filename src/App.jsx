@@ -1,70 +1,67 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Github, 
   Linkedin, 
   Mail, 
   ChevronRight, 
+  ChevronLeft,
   Cpu, 
   Layers, 
   Sparkles, 
   ArrowRight, 
   X, 
   Share2, 
-  Activity,
   Box,
   BrainCircuit,
+  User,
+  MessageSquare,
+  Send,
+  Activity,
   Zap,
-  User
+  Fingerprint,
+  Maximize2,
+  Camera,
+  Image as ImageIcon,
+  Flame
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R0.9.9.3 Compatibility Update]
- * 1. 호환성 수정: import.meta.env 의존성 제거 (ES2015 환경 대응)
- * 2. 이미지 권장 위치: public/YJ.PNG
- * 3. 히어로 워딩: ME, REALITY, AND AI
- * 4. 비전: Grounded in Reality, Augmented by Intelligence (One line)
- * 5. 로드맵: In Preparation (준비중)
+ * [Hyzen Labs. CTO Optimized - R1.1.7 | Visual Expansion Edition]
+ * 1. 브랜드: "ME," 쉼표 포함 키네틱 타이포그래피 & 'HYZEN LABS.' 푸터
+ * 2. 시각 요소: 확대된 아이콘/이미지(w-16) 및 배경 플로팅 트윙클 Spark 효과
+ * 3. 탐색: ROADMAP / WORKS / TRACES 3개 탭의 수평 스크롤 및 화살표 내비게이션
+ * 4. UX: 방명록 진입 시 폼 리셋, 전송 후 자동 팝업 닫힘 및 페이드인 애니메이션
  */
 
-// --- [시각화 컴포넌트: Convergence Engine] ---
-const ConvergenceEngine = () => {
+// --- [배경 플로팅 요소 컴포넌트] ---
+const FloatingMessage = ({ msg }) => {
+  const [coords] = useState({
+    top: `${Math.random() * 60 + 15}%`,
+    left: `${Math.random() * 75 + 5}%`,
+  });
+
+  const summary = msg.text.length > 20 ? msg.text.substring(0, 20) + "..." : msg.text;
+
   return (
-    <div className="relative w-full h-[300px] flex items-center justify-center overflow-hidden">
-      {/* Intelligence Network */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-48 h-48 border border-cyan-500/20 rounded-full animate-spin-slow" />
-        <div className="w-64 h-64 border border-violet-500/10 rounded-full animate-spin-reverse" />
-        
-        {[0, 72, 144, 216, 288].map((angle, i) => (
-          <div 
-            key={i}
-            className="absolute w-1.5 h-1.5 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.8)]"
-            style={{
-              transform: `rotate(${angle}deg) translate(100px) rotate(-${angle}deg)`,
-              animation: `pulse 2s infinite ${i * 0.4}s`
-            }}
-          />
-        ))}
+    <div 
+      className="absolute pointer-events-none select-none transition-opacity duration-1000 ease-in-out animate-float z-[2]"
+      style={{ ...coords, opacity: 0.45 }}
+    >
+      <div className="relative flex items-center gap-2 glass-panel px-3 py-2 rounded-2xl border border-cyan-500/10 scale-75 sm:scale-100 shadow-2xl">
+        {/* Intelligence Spark Effect */}
+        <div className="absolute -top-1 -left-1 w-2 h-2">
+          <div className="w-full h-full bg-cyan-400 rounded-full animate-twinkle shadow-[0_0_8px_#22d3ee]" />
+        </div>
+        {msg.image && (
+          <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/10">
+            <img src={msg.image} className="w-full h-full object-cover grayscale" alt="" />
+          </div>
+        )}
+        <div className="flex flex-col text-left">
+          <span className="text-[7px] font-brand text-cyan-400 font-black uppercase tracking-tighter">{msg.name}</span>
+          <span className="text-[9px] text-white/70 font-light italic leading-tight">"{summary}"</span>
+        </div>
       </div>
-
-      {/* Reality Core */}
-      <div className="relative z-10 w-24 h-24 bg-gradient-to-br from-zinc-800 to-black rounded-3xl border border-white/20 flex items-center justify-center shadow-[0_0_40px_rgba(0,0,0,1)]">
-        <Box size={32} className="text-white opacity-80" />
-        <div className="absolute inset-0 border border-cyan-500/40 rounded-3xl animate-ping-slow" />
-      </div>
-
-      <style>{`
-        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes spin-reverse { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
-        .animate-spin-slow { animation: spin-slow 15s linear infinite; }
-        .animate-spin-reverse { animation: spin-reverse 25s linear infinite; }
-        @keyframes ping-slow { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
-        .animate-ping-slow { animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite; }
-        @keyframes pulse {
-          0%, 100% { opacity: 0.3; transform: rotate(var(--tw-rotate)) translate(100px) scale(1); }
-          50% { opacity: 1; transform: rotate(var(--tw-rotate)) translate(100px) scale(1.5); }
-        }
-      `}</style>
     </div>
   );
 };
@@ -73,276 +70,375 @@ const App = () => {
   const [activeView, setActiveView] = useState('roadmap');
   const [selectedProject, setSelectedProject] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
   const [imgLoadStatus, setImgLoadStatus] = useState('loading');
+  const [isSyncing, setIsSyncing] = useState(false);
+  
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState({ name: '', text: '', image: null });
+  
+  const fileInputRef = useRef(null);
+  const scrollRef = useRef(null);
 
-  // [CTO 해결책]: import.meta.env 대신 환경 변수 접근 방식을 안전하게 변경하거나 
-  // public 폴더의 특성을 이용해 절대 경로를 직접 사용합니다.
-  // 배포 환경(GitHub Pages)에서는 "/"가 아닌 프로젝트 명을 포함해야 할 수 있으므로 유동적으로 처리합니다.
   const founderImgSrc = "YJ.PNG"; 
 
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+  const triggerSync = useCallback(() => {
+    setIsSyncing(true);
+    setTimeout(() => setIsSyncing(false), 1500);
   }, []);
+
+  const scroll = (direction) => {
+    if (scrollRef.current) {
+      const scrollAmount = 300;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const projects = [
     {
       id: 1,
       tag: "Visual Synthesis",
       title: "잠재적 공간의 초상",
-      desc: "매니페스토에서 강조한 '유한한 직관'을 AI 데이터로 변환하여 생성한 추상적 비주얼 실험.",
-      goal: "인간의 무의식적인 시각적 직관을 수치화하여 AI 모델의 잠재 공간(Latent Space)과 연결합니다.",
-      process: "SDXL과 커스텀 LoRA를 활용하여 현실의 질감을 AI 생성물에 이식하는 워크플로우 개발.",
-      result: "AI가 생성한 이미지에서 '기계적 차가움'을 걷어내고 '인간적 직관'의 흔적을 발견함."
+      desc: "매니페스토의 '유한한 직관'을 AI 데이터로 변환한 비주얼 실험.",
+      goal: "인간의 무의식적 직관을 AI 잠재 공간과 연결합니다.",
+      process: "SDXL과 커스텀 LoRA를 활용한 현실 질감 이식.",
+      result: "AI 생성물에서 인간적 직관의 흔적을 발견함."
     },
     {
       id: 2,
       tag: "Spatial Computing",
       title: "물리적 공간의 디지털 증강",
-      desc: "현실 오브젝트를 인식하여 AI가 실시간으로 정보를 오버레이하는 AR 시각화 엔진 프로토타입.",
-      goal: "현실 세계의 사물을 AI가 이해하고 인간에게 새로운 인터페이스를 제공하는 것을 목표로 합니다.",
-      process: "On-device AI 비전 모델을 활용한 객체 감지 및 공간 좌표계 매핑 기술 적용.",
-      result: "사물과 디지털 정보의 이질감을 최소화하는 하이퍼-리얼리스틱 렌더링 기술 확보."
+      desc: "현실 오브젝트 인식 실시간 AR 시각화 엔진.",
+      goal: "현실 사물을 AI가 이해하고 새로운 인터페이스를 제공하는 목적.",
+      process: "On-device AI 비전 모델 기반 객체 감지 기술.",
+      result: "하이퍼-리얼리스틱 렌더링 기술 확보."
+    },
+    {
+      id: 3,
+      tag: "Energy Resonance",
+      title: "배터리 에너지의 지능적 가시화",
+      desc: "물리적 배터리팩의 열 역학 데이터를 AI가 분석하여 AR로 시각화하는 지능형 코어.",
+      goal: "보이지 않는 에너지의 흐름을 지능적으로 가시화하여 안전과 효율을 극대화합니다.",
+      process: "BMS 데이터와 AI 물리 모델링을 융합한 실시간 렌더링 시스템 개발.",
+      result: "물리적 배터리 상태에 대한 직관적 인지 능력을 300% 이상 향상."
     }
   ];
 
   const roadmapSteps = [
-    { phase: "Phase 01", title: "Reality Grounding", status: "In Preparation", icon: <Cpu className="w-5 h-5 text-cyan-400" /> },
-    { phase: "Phase 02", title: "Intelligence Augmentation", status: "In Preparation", icon: <BrainCircuit className="w-5 h-5 text-violet-400" /> },
-    { phase: "Phase 03", title: "Seamless Convergence", status: "Upcoming", icon: <Layers className="w-5 h-5 text-amber-400" /> }
+    { phase: "PHASE 01", title: "Reality Grounding", status: "In Prep", progress: 0, icon: <Cpu className="w-6 h-6 text-cyan-400" /> },
+    { phase: "PHASE 02", title: "Intelligence Augment", status: "In Prep", progress: 0, icon: <BrainCircuit className="w-6 h-6 text-violet-400" /> },
+    { phase: "PHASE 03", title: "Seamless Convergence", status: "Upcoming", progress: 0, icon: <Layers className="w-6 h-6 text-amber-400" /> }
   ];
 
-  const openModal = (project) => {
-    setSelectedProject(project);
-    setIsModalOpen(true);
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewMessage(prev => ({ ...prev, image: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleMessageSubmit = (e) => {
+    e.preventDefault();
+    if (!newMessage.name || !newMessage.text) return;
+    const msg = {
+      id: Date.now(),
+      name: newMessage.name,
+      text: newMessage.text,
+      image: newMessage.image,
+      date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+    };
+    const updatedMessages = [msg, ...messages].slice(0, 10);
+    setMessages(updatedMessages);
+    setNewMessage({ name: '', text: '', image: null });
+    triggerSync();
+    
+    setTimeout(() => {
+      setIsGuestbookOpen(false);
+      document.body.style.overflow = 'auto';
+    }, 500);
+  };
+
+  const openGuestbook = () => {
+    setNewMessage({ name: '', text: '', image: null });
+    setIsGuestbookOpen(true);
     document.body.style.overflow = 'hidden';
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
+    setIsGuestbookOpen(false);
     document.body.style.overflow = 'auto';
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white selection:bg-cyan-500/30 overflow-x-hidden font-sans">
+    <div className="h-screen w-screen bg-[#010101] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col relative">
+      {/* Background System */}
+      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] pointer-events-none z-[1] mix-blend-overlay" />
+      
+      {/* Floating Trace Layer */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        {messages.map(msg => (
+          <FloatingMessage key={msg.id} msg={msg} />
+        ))}
+      </div>
+
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Michroma&family=Orbitron:wght@400;700;900&family=JetBrains+Mono&display=swap');
         .font-brand { font-family: 'Orbitron', sans-serif; }
         .font-title { font-family: 'Michroma', sans-serif; }
-        .glass-panel { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        ::-webkit-scrollbar { display: none; }
-        .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
-        .animate-fade-in { animation: fadeIn 1s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .glass-panel { 
+          background: rgba(255, 255, 255, 0.02); 
+          backdrop-filter: blur(20px); 
+          border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .text-outline { -webkit-text-stroke: 1px rgba(255,255,255,0.2); color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        @keyframes scanline {
+          0% { top: -10%; opacity: 0; }
+          50% { opacity: 1; }
+          100% { top: 110%; opacity: 0; }
+        }
+        .animate-scan { animation: scanline 4s linear infinite; }
+        
+        @keyframes fadeInSoft { 
+          from { opacity: 0; transform: translateY(15px) scale(0.98); } 
+          to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
+        .animate-fade-in-soft { animation: fadeInSoft 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        
+        @keyframes float {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          25% { transform: translate(8px, -12px) rotate(0.5deg); }
+          50% { transform: translate(-4px, 8px) rotate(-0.5deg); }
+          75% { transform: translate(-8px, -4px) rotate(0.2deg); }
+        }
+        .animate-float { animation: float 20s ease-in-out infinite; }
+
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.3; transform: scale(0.8); }
+          50% { opacity: 1; transform: scale(1.2); }
+        }
+        .animate-twinkle { animation: twinkle 2s infinite ease-in-out; }
+        
+        @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .tap-feedback:active { transform: scale(0.97); transition: transform 0.1s ease; }
       `}</style>
 
-      {/* Navigation */}
-      <nav className={`fixed top-0 left-0 w-full z-[1000] transition-all duration-500 px-6 py-5 ${isScrolled ? 'glass-panel border-b border-white/10' : 'bg-transparent'}`}>
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex flex-col text-left">
-            <span className="font-brand text-[10px] tracking-[0.4em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
-            <span className="text-[8px] opacity-20 mt-1 uppercase tracking-widest font-brand font-bold text-white">Me, Reality, and AI</span>
+      {/* Header Navigation */}
+      <nav className="w-full z-[100] px-6 py-4 flex justify-between items-center shrink-0">
+        <div className="flex flex-col text-left group">
+          <div className="flex items-center gap-2">
+            <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
+            <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
           </div>
-          <button className="p-2 bg-white/5 rounded-full border border-white/10 active:scale-90 transition-transform">
-            <Share2 size={16} className="text-white/40" />
-          </button>
+          <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.1.7 | Visual Expansion</span>
+        </div>
+        <div className="flex gap-4 opacity-40">
+          <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
+          <Share2 size={14} />
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-40 pb-16 px-8 flex flex-col items-center text-center overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[200%] h-[500px] bg-radial-gradient from-cyan-500/5 via-transparent to-transparent opacity-50 pointer-events-none -z-10" />
+      <section className="flex-1 z-10 px-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
+        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-cyan-500/5 blur-[100px] -z-10 transition-opacity duration-1000 ${isSyncing ? 'opacity-100' : 'opacity-40'}`} />
         
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/5 border border-cyan-500/20 mb-10 animate-fade-in">
-          <Sparkles size={10} className="text-cyan-400" />
-          <span className="text-[8px] font-brand tracking-[0.4em] uppercase text-cyan-400 font-bold">Release Candidate 0.9.9.3</span>
-        </div>
+        <div className="relative inline-block animate-fade-in-soft mb-6 group">
+          <div className="absolute -top-3 -left-3 w-3 h-3 border-t border-l border-cyan-500/40" />
+          <div className="absolute -top-3 -right-3 w-3 h-3 border-t border-r border-cyan-500/40" />
+          <div className="absolute -bottom-3 -left-3 w-3 h-3 border-b border-l border-cyan-500/40" />
+          <div className="absolute -bottom-3 -right-3 w-3 h-3 border-b border-r border-cyan-500/40" />
+          <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10 pointer-events-none" />
 
-        <h1 className="text-[10vw] sm:text-7xl font-title tracking-tighter leading-tight mb-10 bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent uppercase animate-fade-in">
-          ME, REALITY,<br/>AND AI
-        </h1>
+          <div className="flex flex-col items-center">
+            <h1 className="text-[13vw] sm:text-8xl font-title tracking-[-0.07em] leading-[0.9] uppercase">
+              <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent block">ME,</span>
+              <span className="text-outline block my-1 group-hover:text-white transition-all duration-1000">REALITY</span>
+              <span className="bg-gradient-to-b from-cyan-400 to-cyan-700 bg-clip-text text-transparent block">AND AI</span>
+            </h1>
+          </div>
+        </div>
         
-        <div className="w-full overflow-hidden mb-16 px-4">
-          <p className="text-[3.1vw] sm:text-base text-cyan-400/80 leading-none tracking-[0.1em] font-brand font-black uppercase whitespace-nowrap">
-            Grounded in Reality, Augmented by Intelligence
-          </p>
-        </div>
+        <p className="text-[2.5vw] sm:text-[11px] text-cyan-400/60 tracking-[0.5em] font-brand font-black uppercase mb-10 animate-fade-in-soft" style={{ animationDelay: '0.1s' }}>
+          Augmented Reality Grounding
+        </p>
 
-        <div className="w-16 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-      </section>
-
-      {/* Founder Profile Section */}
-      <section className="px-8 pb-20 flex flex-col items-center animate-fade-in">
-        <div className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-violet-500 rounded-full blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-          
-          <div className="relative w-28 h-28 rounded-full border border-white/10 overflow-hidden glass-panel shadow-2xl bg-zinc-900 flex items-center justify-center">
-            {imgLoadStatus !== 'error' ? (
-              <img 
-                src={founderImgSrc} 
-                alt="Founder Youngji.Park"
-                loading="eager"
-                className={`w-full h-full object-cover grayscale brightness-90 hover:grayscale-0 transition-all duration-700 ease-in-out scale-105 ${imgLoadStatus === 'loading' ? 'opacity-0' : 'opacity-100'}`}
-                onLoad={() => setImgLoadStatus('success')}
-                onError={(e) => {
-                  console.warn("Founder image fail. Path tried:", founderImgSrc);
-                  setImgLoadStatus('error');
-                }}
-              />
-            ) : (
-              <div className="text-white/20 flex flex-col items-center gap-1">
-                <User size={40} strokeWidth={1} />
-                <span className="text-[6px] font-brand uppercase opacity-50 tracking-tighter text-center px-2 leading-tight">Sync fail<br/>Check public/YJ.PNG</span>
+        <div className="flex flex-col items-center gap-6 animate-fade-in-soft" style={{ animationDelay: '0.2s' }}>
+          <div className="relative group scale-110 sm:scale-125" onClick={triggerSync}>
+            <div className="absolute -inset-4 border border-white/5 rounded-full animate-[orbit_20s_linear_infinite] pointer-events-none" />
+            <div className="relative w-16 h-16 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent">
+              <div className="w-full h-full rounded-full border border-white/10 overflow-hidden bg-zinc-900 flex items-center justify-center relative shadow-2xl">
+                {imgLoadStatus !== 'error' ? (
+                  <img 
+                    src={founderImgSrc} 
+                    alt="Founder"
+                    className={`w-full h-full object-cover grayscale brightness-90 transition-all duration-1000 group-hover:grayscale-0 ${imgLoadStatus === 'loading' ? 'opacity-0' : 'opacity-100'}`}
+                    onLoad={() => setImgLoadStatus('success')}
+                    onError={() => setImgLoadStatus('error')}
+                  />
+                ) : (
+                  <User size={24} strokeWidth={1} className="text-white/10" />
+                )}
               </div>
-            )}
-            
-            {imgLoadStatus === 'loading' && (
-              <div className="absolute inset-0 bg-white/5 animate-pulse" />
-            )}
+            </div>
           </div>
-          
-          <div className="absolute -bottom-1 -right-1 p-1 bg-[#050505] rounded-full border border-cyan-500/30">
-            <Sparkles size={10} className="text-cyan-400 animate-pulse" />
-          </div>
-        </div>
 
-        <div className="mt-8 flex flex-col items-center gap-1.5 text-center">
-          <span className="text-[9px] font-brand tracking-[0.4em] text-cyan-400 font-black uppercase font-bold">Founder</span>
-          <h3 className="text-sm sm:text-lg font-title tracking-tight text-white/90 font-bold">Youngji.Park</h3>
-          <div className="w-10 h-[1px] bg-white/10 mt-2"></div>
+          <div className="flex flex-col items-center">
+            <h3 className="text-[14px] font-title tracking-tight text-white font-bold">Youngji.Park</h3>
+            <span className="text-[8px] font-brand tracking-[0.4em] uppercase font-bold text-white/20 mb-6">Founder</span>
+            
+            <button 
+              onClick={openGuestbook}
+              className="group flex items-center gap-3 px-8 py-3.5 rounded-full border border-white/15 glass-panel hover:bg-cyan-500/10 hover:border-cyan-500/50 transition-all active:scale-95 shadow-2xl"
+            >
+              <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center text-black shadow-lg shadow-cyan-500/20 group-hover:rotate-12 transition-transform">
+                <MessageSquare size={12} strokeWidth={2.5} />
+              </div>
+              <span className="text-[9px] font-brand tracking-[0.4em] font-black uppercase text-white/80">Sync Trace</span>
+            </button>
+          </div>
         </div>
       </section>
 
-      {/* View Switcher */}
-      <div className="sticky top-20 z-[900] px-6 mb-12">
-        <div className="glass-panel p-1 rounded-2xl flex gap-1 shadow-2xl">
-          <button 
-            onClick={() => setActiveView('roadmap')}
-            className={`flex-1 py-4 rounded-xl text-[9px] font-brand tracking-widest transition-all ${activeView === 'roadmap' ? 'bg-cyan-500 text-black font-black' : 'text-white/30'}`}
-          >
-            ROADMAP
-          </button>
-          <button 
-            onClick={() => setActiveView('works')}
-            className={`flex-1 py-4 rounded-xl text-[9px] font-brand tracking-widest transition-all ${activeView === 'works' ? 'bg-violet-500 text-black font-black' : 'text-white/30'}`}
-          >
-            WORKS
-          </button>
+      {/* Controller Section */}
+      <div className="shrink-0 z-10 pb-4 animate-fade-in-soft" style={{ animationDelay: '0.3s' }}>
+        <div className="px-6 mb-4 max-w-lg mx-auto">
+          <div className="glass-panel p-1 rounded-2xl flex gap-1 relative overflow-hidden">
+            {['roadmap', 'works', 'traces'].map((view) => (
+              <button 
+                key={view}
+                onClick={() => { setActiveView(view); triggerSync(); }}
+                className={`flex-1 py-3.5 rounded-xl text-[7px] font-brand tracking-[0.1em] transition-all tap-feedback uppercase ${activeView === view ? 'bg-white text-black font-black' : 'text-white/30'}`}
+              >
+                {view}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Content Area - Visual Elements Enlarged */}
+        <div className="px-6 max-w-4xl mx-auto h-[180px] relative">
+          <button onClick={() => scroll('left')} className="absolute left-1 top-1/2 -translate-y-1/2 z-20 p-2 text-white/20 hover:text-white/60 transition-colors hidden sm:block"><ChevronLeft size={24} /></button>
+          <button onClick={() => scroll('right')} className="absolute right-1 top-1/2 -translate-y-1/2 z-20 p-2 text-white/20 hover:text-white/60 transition-colors hidden sm:block"><ChevronRight size={24} /></button>
+
+          <div ref={scrollRef} key={activeView} className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2 h-full animate-fade-in-soft">
+            {activeView === 'roadmap' ? (
+              roadmapSteps.map((step, idx) => (
+                <div key={idx} className="glass-panel p-5 rounded-[2.5rem] relative overflow-hidden flex-shrink-0 w-[85%] sm:w-[35%] snap-center border border-white/5 flex flex-col justify-between">
+                  <div className="absolute bottom-0 left-0 h-[1px] bg-cyan-500/20 w-full" />
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="w-16 h-16 flex items-center justify-center bg-white/[0.03] rounded-[1.5rem] border border-white/5 text-cyan-400">
+                      {step.icon}
+                    </div>
+                    <div className={`text-[6px] font-brand px-2.5 py-1 rounded-full border ${step.status === 'In Prep' ? 'border-cyan-500/50 text-cyan-400' : 'border-white/10 text-white/20'}`}>
+                      {step.status}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-[8px] font-brand text-white/30 tracking-[0.2em] uppercase font-bold">{step.phase}</span>
+                    <h3 className="text-[14px] font-bold tracking-tight mt-1 leading-tight">{step.title}</h3>
+                  </div>
+                </div>
+              ))
+            ) : activeView === 'works' ? (
+              projects.map(project => (
+                <div key={project.id} className="glass-panel p-5 rounded-[2.5rem] relative overflow-hidden flex-shrink-0 w-[85%] sm:w-[35%] snap-center border border-white/5 flex flex-col justify-between tap-feedback group" onClick={() => { setSelectedProject(project); setIsModalOpen(true); }}>
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-cyan-500 font-brand text-[8px] font-bold uppercase tracking-[0.3em]">{project.tag}</span>
+                    <Maximize2 size={12} className="text-white/20 group-hover:text-cyan-400" />
+                  </div>
+                  <div className="flex-1 flex flex-col justify-center">
+                    <h3 className="text-[15px] font-black mb-1 uppercase tracking-tight leading-tight">{project.title}</h3>
+                    <p className="text-white/40 text-[10px] leading-relaxed line-clamp-2 font-light">{project.desc}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              messages.length > 0 ? (
+                messages.map(msg => (
+                  <div key={msg.id} className="glass-panel p-5 rounded-[2.5rem] relative overflow-hidden flex-shrink-0 w-[85%] sm:w-[35%] snap-center border border-white/5 flex flex-col justify-between">
+                    <div className="absolute bottom-0 left-0 h-[1px] bg-violet-500/20 w-full" />
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="w-16 h-16 flex items-center justify-center bg-white/[0.03] rounded-[1.5rem] border border-white/5 overflow-hidden text-cyan-400 shrink-0 shadow-lg">
+                        {msg.image ? <img src={msg.image} className="w-full h-full object-cover grayscale brightness-110" alt="Trace" /> : <User size={24} strokeWidth={1} className="opacity-20" />}
+                      </div>
+                      <span className="text-[8px] font-mono text-white/20 uppercase bg-white/5 px-2 py-0.5 rounded-full">{msg.date}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-brand text-violet-400 tracking-[0.1em] uppercase font-bold">{msg.name}</span>
+                      <p className="text-[12px] text-white/70 font-light italic mt-1 leading-tight line-clamp-2">"{msg.text}"</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="w-full flex flex-col items-center justify-center opacity-10 gap-2 border border-dashed border-white/10 rounded-[2.5rem]">
+                  <Sparkles size={32} />
+                  <span className="text-[10px] font-brand uppercase tracking-widest text-center">Awaiting traces.</span>
+                </div>
+              )
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Main Content Areas */}
-      <main className="px-6 max-w-7xl mx-auto pb-32">
-        {activeView === 'roadmap' ? (
-          <div className="space-y-12 animate-fade-in text-left">
-            <div className="grid gap-3">
-              {roadmapSteps.map((step, idx) => (
-                <div key={idx} className="glass-panel p-5 rounded-[2rem] flex items-center justify-between transition-all active:scale-[0.98]">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-white/5 rounded-2xl border border-white/5">
-                      {step.icon}
-                    </div>
-                    <div>
-                      <span className="text-[8px] font-brand text-white/20 tracking-widest uppercase font-bold">{step.phase}</span>
-                      <h3 className="text-xs font-bold tracking-tight">{step.title}</h3>
-                    </div>
-                  </div>
-                  <div className={`text-[6px] font-brand px-2 py-0.5 rounded border ${step.status === 'In Preparation' ? 'border-cyan-500/50 text-cyan-400' : 'border-white/5 text-white/10'}`}>
-                    {step.status}
-                  </div>
-                </div>
-              ))}
-            </div>
+      {/* Footer */}
+      <footer className="w-full shrink-0 z-10 py-6 flex flex-col items-center justify-center border-t border-white/5 bg-black/20">
+        <span className="font-brand text-[10px] tracking-[0.8em] font-black text-white/90 uppercase animate-pulse">HYZEN LABS. 2026</span>
+        <p className="text-[6px] font-brand tracking-[0.2em] uppercase opacity-20 mt-2">© All Rights Reserved by HYZEN LABS.</p>
+      </footer>
 
-            <div className="glass-panel p-10 rounded-[3.5rem] relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-cyan-500/5 to-transparent pointer-events-none" />
-              <div className="flex flex-col mb-4 text-center">
-                <h3 className="text-[10px] font-brand tracking-[0.4em] text-white/40 uppercase mb-2">Convergence Engine</h3>
-                <p className="text-[8px] text-cyan-400/60 uppercase tracking-[0.2em] font-brand font-bold italic">Vision Sync Profile</p>
-              </div>
-              <ConvergenceEngine />
-              <p className="mt-8 text-center text-[9px] text-white/20 font-brand tracking-[0.3em] leading-relaxed uppercase">
-                Real-time synchronization of<br/>
-                Physical environments & Intelligence layers
-              </p>
+      {/* Modals */}
+      {isGuestbookOpen && (
+        <div className="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-3xl p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
+          <div className="w-full h-[90vh] sm:h-auto sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-8 relative flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="w-14 h-1.5 bg-white/10 rounded-full mx-auto mb-8 sm:hidden" />
+            <button onClick={closeModal} className="absolute top-8 right-8 p-2 text-white/20 hover:text-white transition-colors"><X size={22} /></button>
+            <div className="mb-6">
+              <div className="flex items-center gap-3 text-cyan-400 mb-2"><Activity size={14} /><span className="font-brand text-[9px] font-bold uppercase tracking-[0.5em]">Digital Trace Sync</span></div>
+              <h2 className="text-2xl font-black uppercase tracking-tighter leading-none">Synchronize Reality</h2>
             </div>
-          </div>
-        ) : (
-          <div className="grid gap-5 animate-fade-in text-left">
-            {projects.map(project => (
-              <div 
-                key={project.id} 
-                className="glass-panel p-10 rounded-[3rem] relative overflow-hidden active:scale-[0.98] transition-transform cursor-pointer"
-                onClick={() => openModal(project)}
-              >
-                <div className="absolute top-0 right-0 p-6 opacity-20">
-                  <ArrowRight size={20} className="text-cyan-400" />
-                </div>
-                <span className="text-cyan-500 font-brand text-[9px] font-bold uppercase mb-4 block tracking-widest">{project.tag}</span>
-                <h3 className="text-xl font-black mb-4 uppercase tracking-tighter leading-tight">{project.title}</h3>
-                <p className="text-white/40 text-[10px] leading-relaxed font-light">{project.desc}</p>
-                <div className="mt-8 flex items-center gap-2 text-[9px] font-brand text-cyan-400 uppercase tracking-widest font-bold">
-                  자세히 보기 <ChevronRight size={12} />
-                </div>
+            <form onSubmit={handleMessageSubmit} className="space-y-4 pt-4 safe-pb">
+              <div className="flex gap-2">
+                <input type="text" placeholder="NAME" className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-[11px] font-brand focus:outline-none focus:border-cyan-500/50 uppercase tracking-widest" value={newMessage.name} required onChange={e => setNewMessage({...newMessage, name: e.target.value})} />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className={`px-4 rounded-2xl border transition-all ${newMessage.image ? 'bg-cyan-500 border-cyan-500 text-black shadow-[0_0_15px_rgba(34,211,238,0.5)]' : 'bg-white/5 border-white/10 text-white/30'}`}><Camera size={18} /></button>
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
               </div>
-            ))}
-          </div>
-        )}
-      </main>
-
-      {/* Project Modal */}
-      {isModalOpen && selectedProject && (
-        <div className="fixed inset-0 z-[2000] flex items-end sm:items-center justify-center bg-black/90 backdrop-blur-md p-0 sm:p-4 animate-fade-in" onClick={closeModal}>
-          <div className="w-full h-[85vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-10 relative overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="w-12 h-1 bg-white/10 rounded-full mx-auto mb-10 sm:hidden" />
-            <button onClick={closeModal} className="absolute top-10 right-10 p-2 text-white/20 hover:text-white transition-colors">
-              <X size={20} />
-            </button>
-            <div className="text-left">
-              <span className="text-cyan-500 font-brand text-[9px] font-bold uppercase mb-4 block tracking-widest">{selectedProject.tag}</span>
-              <h2 className="text-3xl font-black mb-12 uppercase tracking-tighter">{selectedProject.title}</h2>
-              
-              <div className="space-y-10 pb-10">
-                <div className="space-y-3">
-                  <h4 className="text-[9px] font-brand tracking-[0.3em] text-white/20 uppercase font-black font-bold text-white/40">Goal</h4>
-                  <p className="text-[13px] font-light text-white/70 leading-relaxed">{selectedProject.goal}</p>
-                </div>
-                <div className="space-y-3">
-                  <h4 className="text-[9px] font-brand tracking-[0.3em] text-white/20 uppercase font-black font-bold text-white/40">Process</h4>
-                  <p className="text-[13px] font-light text-white/70 leading-relaxed">{selectedProject.process}</p>
-                </div>
-                <div className="space-y-3">
-                  <h4 className="text-[9px] font-brand tracking-[0.3em] text-white/20 uppercase font-black font-bold text-white/40">Result</h4>
-                  <p className="text-[13px] font-light text-white/70 leading-relaxed">{selectedProject.result}</p>
-                </div>
+              {newMessage.image && <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-cyan-500 shadow-xl"><img src={newMessage.image} className="w-full h-full object-cover" alt="" /><button onClick={() => setNewMessage(prev => ({...prev, image: null}))} className="absolute top-1 right-1 bg-black/50 p-1 text-white rounded-lg"><X size={10} /></button></div>}
+              <div className="relative">
+                <textarea placeholder="Leave your trace..." className="w-full h-24 bg-white/5 border border-white/10 rounded-3xl px-6 py-4 text-[13px] font-light focus:outline-none focus:border-cyan-500/50 resize-none" value={newMessage.text} required onChange={e => setNewMessage({...newMessage, text: e.target.value})} />
+                <button type="submit" className="absolute bottom-3 right-3 p-3 bg-cyan-500 rounded-2xl text-black active:scale-90 transition-all shadow-xl shadow-cyan-500/30"><Send size={18} strokeWidth={2.5} /></button>
               </div>
-
-              <div className="border-t border-white/5 pt-10 safe-pb">
-                <button className="w-full bg-cyan-500 text-black py-5 rounded-2xl font-brand text-[10px] font-black tracking-widest active:scale-95 transition-transform uppercase">
-                  Launch Case Study
-                </button>
-              </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Footer */}
-      <footer className="py-20 text-center safe-pb border-t border-white/5 mx-6">
-        <div className="flex flex-col items-center gap-8">
-          <div className="flex gap-10 opacity-30">
-            <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-cyan-400 transition-colors"><Github size={18} /></a>
-            <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="hover:text-cyan-400 transition-colors"><Linkedin size={18} /></a>
-            <a href="mailto:jini2aix@gmail.com" className="hover:text-cyan-400 transition-colors"><Mail size={18} /></a>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <span className="font-brand text-[9px] tracking-[0.5em] uppercase font-black opacity-20 italic font-bold text-white/60 leading-none">Hyzen Labs. RC-0.9.9.3</span>
-            <p className="text-[7px] font-brand tracking-[0.2em] font-bold uppercase opacity-5">© 2026 Designed by Jin & Park</p>
+      {isModalOpen && selectedProject && (
+        <div className="fixed inset-0 z-[4000] flex items-end sm:items-center justify-center bg-black/98 backdrop-blur-3xl p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
+          <div className="w-full h-[80vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-10 relative overflow-y-auto no-scrollbar" onClick={e => e.stopPropagation()}>
+            <div className="w-14 h-1.5 bg-white/10 rounded-full mx-auto mb-10 sm:hidden" />
+            <button onClick={closeModal} className="absolute top-10 right-10 p-2 text-white/20"><X size={22} /></button>
+            <div className="text-left">
+              <div className="flex items-center gap-2 mb-2"><Zap size={14} className="text-cyan-400" /><span className="text-cyan-500 font-brand text-[9px] font-bold uppercase tracking-[0.4em]">{selectedProject.tag}</span></div>
+              <h2 className="text-3xl font-black mb-10 uppercase tracking-tighter leading-tight">{selectedProject.title}</h2>
+              <div className="space-y-6 pb-12">
+                <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3">Goal</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{selectedProject.goal}</p></section>
+                <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3">Process</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{selectedProject.process}</p></section>
+                <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3">Result</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{selectedProject.result}</p></section>
+              </div>
+              <button className="w-full bg-white text-black py-5 rounded-[2.2rem] font-brand text-[10px] font-black tracking-[0.3em] uppercase shadow-2xl">Access Case Study</button>
+            </div>
           </div>
         </div>
-      </footer>
+      )}
     </div>
   );
 };
