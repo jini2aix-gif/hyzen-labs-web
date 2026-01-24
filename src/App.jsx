@@ -33,32 +33,30 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.6.4 | Deployment Resilience Edition]
- * 1. 디버깅: 인트로 멈춤 현상 해결 (Firebase 로직과 타이머 분리)
- * 2. 복구: 팝업 종료 시 모바일 Fit 이슈 근본 해결 (Zero-Scale Restoration)
- * 3. 시각화: 중앙 텍스트를 피한 사이드 여백 유영 버블 시스템 유지
- * 4. 모바일: 9.5vw 히어로 폰트 및 96px 대형 프로필 허브의 시각적 균형 유지
+ * [Hyzen Labs. CTO Optimized - R1.5.3 | Kinetic Precision Edition]
+ * 1. 디버깅: 팝업 시 줌 효과(Scale) 완전 제거로 모바일 Fit 이슈 최종 해결
+ * 2. 인터랙션: 카드 스와이프 시 탄성(Elastic) 효과를 통한 물리적 질감 구현
+ * 3. 시각화: 데이터 버블을 중앙 영역을 피한 '좌우 여백'으로 고정 배치 유지
+ * 4. 모바일: 9.5vw 히어로 폰트 및 96px 대형 프로필 허브의 시각적 균형 최적화
  */
 
 const ADMIN_PASS = "5733906";
 
-// --- [Firebase Initialization with Deep Safety Checks] ---
+// --- [Firebase Initialization Safety Check] ---
 const getFirebaseConfig = () => {
   try {
-    // Canvas 환경이 아닐 경우(Vercel 등)를 대비한 체크
     if (typeof __firebase_config !== 'undefined' && __firebase_config) {
       return JSON.parse(__firebase_config);
     }
   } catch (e) {
     console.warn("Firebase config parse error");
   }
-  return null; // 설정이 없을 경우 null 반환
+  return null;
 };
 
 const fConfig = getFirebaseConfig();
 let app, auth, db, appId;
 
-// Firebase 설정이 있을 때만 엔진 가동 (Vercel 배포 시 설정 부재로 인한 크래시 방지)
 if (fConfig && fConfig.apiKey) {
   app = initializeApp(fConfig);
   auth = getAuth(app);
@@ -69,36 +67,43 @@ if (fConfig && fConfig.apiKey) {
 // --- [시각화 컴포넌트: 여백 유영 버블 메시지] ---
 const FloatingBubble = ({ msg }) => {
   const [coords] = useState(() => {
+    // 중앙 텍스트/사진 영역(25% ~ 75%)을 피하기 위한 좌우 여백 로직
     const isLeft = Math.random() > 0.5;
-    const horizontalPos = isLeft ? Math.random() * 15 + 5 : Math.random() * 15 + 80;
+    const horizontalPos = isLeft 
+      ? Math.random() * 15 + 5   // 좌측 여백 (5% ~ 20%)
+      : Math.random() * 15 + 80; // 우측 여백 (80% ~ 95%)
+    
     return {
       top: `${Math.random() * 30 + 10}%`,
       left: `${horizontalPos}%`,
-      duration: `${Math.random() * 10 + 15}s`,
+      duration: `${Math.random() * 10 + 20}s`,
       delay: `${Math.random() * 5}s`
     };
   });
 
-  const safeName = String(msg?.name || "Anon");
-  const safeText = String(msg?.text || "");
-  const summary = safeText.length > 15 ? safeText.substring(0, 15) + ".." : safeText;
+  const summary = String(msg?.text || "").length > 15 ? msg.text.substring(0, 15) + ".." : (msg?.text || "");
 
   return (
     <div 
       className="absolute pointer-events-none select-none animate-bubble-float z-[2]"
-      style={{ top: coords.top, left: coords.left, animationDuration: coords.duration, animationDelay: coords.delay }}
+      style={{ 
+        top: coords.top, 
+        left: coords.left, 
+        animationDuration: coords.duration,
+        animationDelay: coords.delay
+      }}
     >
       <div className="relative group scale-75 sm:scale-90 transition-transform duration-1000">
         <div className="relative flex items-center gap-2 px-4 py-2.5 rounded-full glass-panel border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden">
           <div className="absolute top-1 left-3 w-4 h-2 bg-white/10 rounded-full blur-[1px] rotate-[-20deg]" />
           {msg.image && (
-            <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-white/20">
+            <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-white/20">
               <img src={msg.image} className="w-full h-full object-cover grayscale brightness-125" alt="" />
             </div>
           )}
-          <div className="flex flex-col text-left pr-1 text-white">
-            <span className="text-[6px] font-brand text-cyan-400 font-black uppercase tracking-tighter opacity-60">{safeName}</span>
-            <span className="text-[8px] text-white/40 font-light italic leading-tight truncate max-w-[70px]">"{summary}"</span>
+          <div className="flex flex-col text-left pr-2">
+            <span className="text-[6px] font-brand text-cyan-400 font-black uppercase tracking-tighter opacity-70">{String(msg?.name || "Anon")}</span>
+            <span className="text-[9px] text-white/50 font-light italic leading-tight truncate max-w-[80px]">"{summary}"</span>
           </div>
         </div>
       </div>
@@ -106,7 +111,7 @@ const FloatingBubble = ({ msg }) => {
   );
 };
 
-// --- [공통 컴포넌트: Cover Flow Wrapper - 3D 효과 상시 유지] ---
+// --- [공통 컴포넌트: Cover Flow Wrapper - 키네틱 스냅 버전] ---
 const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
   const touchStartRef = useRef(null);
   const handlePrev = () => setActiveIndex(Math.max(0, activeIndex - 1));
@@ -115,13 +120,19 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
   const onTouchStart = (e) => { touchStartRef.current = e.touches[0].clientX; };
   const onTouchEnd = (e) => {
     if (touchStartRef.current === null) return;
-    const diff = touchStartRef.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 40) { diff > 0 ? handleNext() : handlePrev(); }
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStartRef.current - touchEnd;
+    const threshold = 40;
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) handleNext();
+      else handlePrev();
+    }
     touchStartRef.current = null;
   };
 
   return (
     <div className="relative w-full h-full flex items-center justify-center perspective-[1500px] overflow-visible touch-pan-y" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      {/* Navigation Arrows */}
       <button onClick={handlePrev} className={`absolute left-0 z-[100] p-2 text-white/10 hover:text-white/50 transition-all ${activeIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}><ChevronLeft size={24} /></button>
       <button onClick={handleNext} className={`absolute right-0 z-[100] p-2 text-white/10 hover:text-white/50 transition-all ${activeIndex === items.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}><ChevronRight size={24} /></button>
       
@@ -130,25 +141,26 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
           const offset = idx - activeIndex;
           const isCenter = offset === 0;
           
+          // 3D 커버플로우 물리 로직: 탄성 스냅을 위해 rotateY 62도 및 translateZ -350px 유지
           let transform = `translateX(${offset * 85}%) translateZ(${Math.abs(offset) * -350}px) rotateY(${offset * -62}deg)`;
           if (isCenter) transform = `translateZ(180px) scale(1.1)`;
 
           return (
             <div 
               key={`${idx}-${activeIndex}`}
-              className={`absolute w-[240px] sm:w-[320px] h-[160px] preserve-3d cursor-pointer transition-all duration-[750ms] ${isCenter ? 'ease-[cubic-bezier(0.34,1.56,0.64,1)]' : 'ease-out'}`}
+              className={`absolute w-[240px] sm:w-[320px] h-[160px] preserve-3d cursor-pointer transition-all duration-[800ms] ${isCenter ? 'ease-[cubic-bezier(0.22,1.4,0.36,1)]' : 'ease-out'}`}
               style={{
                 transform,
                 zIndex: 20 - Math.abs(offset),
                 pointerEvents: isCenter ? 'auto' : 'none',
-                opacity: isCenter ? 1 : Math.max(0.01, 0.2 - Math.abs(offset) * 0.05)
+                opacity: isCenter ? 1 : Math.max(0.01, 0.22 - Math.abs(offset) * 0.08)
               }}
               onClick={() => setActiveIndex(idx)}
             >
-              <div className="relative w-full h-full preserve-3d shadow-2xl text-white">
+              <div className="relative w-full h-full preserve-3d">
                 {renderItem(item, isCenter)}
                 {!isCenter && (
-                  <div className="absolute inset-0 rounded-[2.5rem] bg-black/70 backdrop-blur-[6px] transition-all duration-500 pointer-events-none" />
+                  <div className="absolute inset-0 rounded-[2.5rem] bg-black/75 backdrop-blur-[6px] transition-all duration-500 pointer-events-none" />
                 )}
               </div>
             </div>
@@ -179,15 +191,13 @@ const App = () => {
   const fileInputRef = useRef(null);
   const founderImgSrc = "YJ.PNG"; 
 
-  // --- [Intro Timer: 무조건 실행 (Firebase와 분리)] ---
+  // --- [Intro Timer] ---
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsInitializing(false);
-    }, 2800);
+    const timer = setTimeout(() => setIsInitializing(false), 2800);
     return () => clearTimeout(timer);
   }, []);
 
-  // --- [Firebase Logic: Safe Execution] ---
+  // --- [Firebase Logic] ---
   useEffect(() => {
     if (!app || !auth) return;
     const initAuth = async () => {
@@ -220,12 +230,12 @@ const App = () => {
     }
   }, [user]);
 
-  // --- [Fit Logic: 정밀 리셋] ---
+  // --- [Fit Logic: 정밀 리셋 및 줌 효과 완전 제거] ---
   useEffect(() => {
     if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen) {
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
       document.body.style.overflow = 'hidden';
-      // 뷰포트 강제 리프레시
+      // 뷰포트 강제 리프레시를 통한 Fit 보장
       setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
     }
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
@@ -261,7 +271,6 @@ const App = () => {
         });
       } catch (err) { console.error("Submit Error:", err); }
     } else {
-      // 로컬 테스트용 폴백
       const msg = {
         id: Date.now().toString(),
         name: newMessage.name,
@@ -329,8 +338,8 @@ const App = () => {
         .preserve-3d { transform-style: preserve-3d; }
         @keyframes scanline { 0% { top: -10%; opacity: 0; } 50% { opacity: 1; } 100% { top: 110%; opacity: 0; } }
         .animate-scan { animation: scanline 4s linear infinite; }
-        @keyframes fadeInSoft { from { opacity: 0; transform: translateY(15px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        .animate-fade-in-soft { animation: fadeInSoft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeInSoft { from { opacity: 0; transform: translateY(15px) scale(1); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .animate-fade-in-soft { animation: fadeInSoft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; } 50% { transform: translate(10px, -20px) scale(1.05); opacity: 0.4; } }
         .animate-bubble-float { animation: bubbleFloat 20s ease-in-out infinite; }
         @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -359,10 +368,12 @@ const App = () => {
         </div>
       )}
 
-      {/* --- [Main Layer: Absolute Stability Enforcement] --- */}
+      {/* --- [Main Layer: Absolute Stability Enforcement - No Scaling] --- */}
       <div 
-        className={`flex-1 flex flex-col relative transition-all duration-700 origin-center ${isInitializing ? 'opacity-0 scale-105' : 'opacity-100'} ${isAnyModalOpen ? 'blur-md brightness-50 pointer-events-none' : 'blur-0 brightness-100'}`}
-        style={{ transform: 'scale(1)' }} // 배경 스케일링 완전 제거로 Fit 이슈 해결
+        className={`flex-1 flex flex-col relative transition-all duration-700 origin-center 
+          ${isInitializing ? 'opacity-0' : 'opacity-100'} 
+          ${isAnyModalOpen ? 'blur-md brightness-50 pointer-events-none' : 'blur-0 brightness-100'}`}
+        style={{ transform: 'scale(1)' }} // 팝업 시 배경 스케일 변화 완전 제거
       >
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           {messages.map(msg => (
@@ -376,7 +387,7 @@ const App = () => {
               <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
               <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
             </div>
-            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.6.4 | Resilient</span>
+            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.5.3 | Kinetic Precision</span>
           </div>
           <div className="flex gap-4 opacity-40">
             <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
@@ -384,9 +395,11 @@ const App = () => {
           </div>
         </nav>
 
-        <section className="flex-1 z-10 px-8 pt-2 sm:pt-6 flex flex-col items-center justify-center text-center relative overflow-hidden">
+        {/* Hero Section: Precise Spacing for Mobile */}
+        <section className="flex-1 z-10 px-8 pt-4 sm:pt-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
           <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-cyan-500/5 blur-[100px] -z-10 transition-opacity duration-1000 ${isSyncing ? 'opacity-100' : 'opacity-40'}`} />
-          <div className="relative inline-block animate-fade-in-soft mb-4 group pt-2">
+          
+          <div className="relative inline-block animate-fade-in-soft mb-4 group pt-4">
             <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10 pointer-events-none" />
             <div className="flex flex-col items-center">
               <h1 className="text-[9.5vw] sm:text-8xl font-title tracking-[-0.07em] leading-[0.9] uppercase">
@@ -396,12 +409,15 @@ const App = () => {
               </h1>
             </div>
           </div>
+          
           <p className="text-[2.2vw] sm:text-[11px] text-cyan-400/60 tracking-[0.5em] font-brand font-black uppercase mb-8 animate-fade-in-soft">Augmented Reality Grounding</p>
 
+          {/* Unified Identity Hub: Larger Profile for Presence (w-24) */}
           <div className="flex flex-col items-center gap-2 animate-fade-in-soft" style={{ animationDelay: '0.2s' }}>
             <div onClick={openGuestbook} className="relative group cursor-pointer tap-feedback active:scale-95 transition-all">
               <div className="absolute -inset-10 border border-white/5 rounded-full animate-[orbit_25s_linear_infinite] pointer-events-none" />
               <div className="absolute -inset-8 border border-cyan-500/10 rounded-full animate-[orbit_15s_linear_infinite_reverse] pointer-events-none" />
+              
               <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent shadow-2xl shadow-black overflow-visible">
                 <div className="w-full h-full rounded-full border border-white/10 overflow-hidden bg-zinc-900 flex items-center justify-center relative">
                   {imgLoadStatus !== 'error' ? (
@@ -414,11 +430,13 @@ const App = () => {
                   </div>
                 </div>
               </div>
+
               <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-5 py-2 glass-panel border border-cyan-500/40 rounded-full flex items-center gap-2 shadow-[0_5px_20px_rgba(34,211,238,0.3)] bg-black transition-all group-hover:border-cyan-300">
                 <MessageSquare size={12} className="text-cyan-400" />
                 <span className="text-[9px] font-brand tracking-[0.2em] font-black uppercase text-white/80 whitespace-nowrap">Sync Trace</span>
               </div>
             </div>
+
             <div className="mt-4 flex flex-col items-center">
               <h3 className="text-[14px] font-title tracking-tight text-white font-bold leading-none">Youngji.Park</h3>
               <span className="text-[8px] font-brand tracking-[0.4em] uppercase font-bold text-white/20 mt-1.5 pb-1">Founder</span>
@@ -426,9 +444,10 @@ const App = () => {
           </div>
         </section>
 
+        {/* Controller Section */}
         <div className="shrink-0 z-10 pb-6 animate-fade-in-soft" style={{ animationDelay: '0.4s' }}>
-          <div className="px-6 mb-6 max-w-lg mx-auto">
-            <div className="glass-panel p-1 rounded-2xl flex gap-1 relative border border-white/10 shadow-2xl overflow-hidden text-white">
+          <div className="px-6 mb-6 max-w-lg mx-auto text-white">
+            <div className="glass-panel p-1 rounded-2xl flex gap-1 relative border border-white/10 shadow-2xl overflow-hidden">
               {['roadmap', 'works', 'traces'].map((view) => (
                 <button key={view} onClick={() => { setActiveView(view); triggerSync(); }} className={`flex-1 py-3.5 rounded-xl text-[7px] font-brand tracking-[0.1em] transition-all tap-feedback uppercase ${activeView === view ? 'bg-white text-black font-black shadow-lg' : 'text-white/30'}`}>
                   {view}
@@ -437,67 +456,70 @@ const App = () => {
             </div>
           </div>
 
-          <div className="px-6 max-w-5xl mx-auto h-[180px] relative overflow-visible text-white">
-            <div key={activeView} className="w-full h-full animate-fade-in-soft">
+          <div className="px-6 max-w-5xl mx-auto h-[180px] relative overflow-visible">
+            <div key={activeView} className="w-full h-full animate-fade-in-soft text-white">
               {activeView === 'roadmap' && (
                 <CoverFlow items={roadmapSteps} activeIndex={activeIndices.roadmap} setActiveIndex={(i) => setViewIndex('roadmap', i)} renderItem={(step) => (
-                  <div className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-cyan-500/30 flex flex-col justify-between">
-                    <div className="flex justify-between items-start mb-2 text-white">
-                      <div className="w-14 h-14 flex items-center justify-center bg-white/[0.03] rounded-[1.2rem] border border-white/15 text-cyan-400">{step.icon}</div>
-                      <div className="text-[6px] font-brand px-2.5 py-1 rounded-full border border-cyan-500/50 text-cyan-400 bg-cyan-500/5 uppercase font-black">In Prep</div>
+                    <div className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-cyan-500/30 flex flex-col justify-between">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="w-14 h-14 flex items-center justify-center bg-white/[0.03] rounded-[1.2rem] border border-white/15 text-cyan-400">{step.icon}</div>
+                        <div className="text-[6px] font-brand px-2.5 py-1 rounded-full border border-cyan-500/50 text-cyan-400 bg-cyan-500/5 uppercase font-black">In Prep</div>
+                      </div>
+                      <div className="text-left">
+                        <span className="text-[8px] font-brand text-white/30 tracking-[0.2em] uppercase font-bold text-white">{String(step.phase || "")}</span>
+                        <h3 className="text-[13px] font-bold tracking-tight mt-1 leading-tight text-white">{String(step.title || "")}</h3>
+                      </div>
                     </div>
-                    <div className="text-left">
-                      <span className="text-[8px] font-brand text-white/30 tracking-[0.2em] uppercase font-bold text-white">{String(step.phase || "")}</span>
-                      <h3 className="text-[13px] font-bold tracking-tight mt-1 leading-tight text-white">{String(step.title || "")}</h3>
-                    </div>
-                  </div>
-                )} />
+                  )}
+                />
               )}
               {activeView === 'works' && (
                 <CoverFlow items={projects} activeIndex={activeIndices.works} setActiveIndex={(i) => setViewIndex('works', i)} renderItem={(project) => (
-                  <div onClick={() => { setSelectedProject(project); setIsModalOpen(true); }} className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-white/20 flex flex-col justify-between tap-feedback group hover:border-cyan-500/40 transition-all shadow-2xl">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-cyan-500 font-brand text-[8px] font-bold uppercase tracking-[0.3em]">{String(project.tag || "")}</span>
-                      <Maximize2 size={12} className="text-white/20 group-hover:text-cyan-400" />
+                    <div onClick={() => { setSelectedProject(project); setIsModalOpen(true); }} className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-white/20 flex flex-col justify-between tap-feedback group hover:border-cyan-500/40 transition-all shadow-2xl">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-cyan-500 font-brand text-[8px] font-bold uppercase tracking-[0.3em]">{String(project.tag || "")}</span>
+                        <Maximize2 size={12} className="text-white/20 group-hover:text-cyan-400" />
+                      </div>
+                      <div className="flex-1 flex flex-col justify-center text-left text-white">
+                        <h3 className="text-[15px] font-black mb-1 uppercase tracking-tight leading-tight">{String(project.title || "")}</h3>
+                        <p className="text-white/40 text-[9px] leading-relaxed line-clamp-2 font-light">{String(project.desc || "")}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 flex flex-col justify-center text-left text-white">
-                      <h3 className="text-[15px] font-black mb-1 uppercase tracking-tight leading-tight">{String(project.title || "")}</h3>
-                      <p className="text-white/40 text-[9px] leading-relaxed line-clamp-2 font-light">{String(project.desc || "")}</p>
-                    </div>
-                  </div>
-                )} />
+                  )}
+                />
               )}
               {activeView === 'traces' && (
                 messages.length > 0 ? (
                   <CoverFlow items={messages} activeIndex={activeIndices.traces} setActiveIndex={(i) => setViewIndex('traces', i)} renderItem={(msg) => (
-                    <div className="w-full h-full glass-panel rounded-[2.5rem] relative overflow-hidden border border-violet-500/30 group shadow-[0_15px_40px_rgba(0,0,0,0.5)]">
-                      {msg.image && (
-                        <div className="absolute right-0 top-0 w-full h-full z-0 overflow-hidden pointer-events-none">
-                          <img src={msg.image} className="absolute right-0 h-full w-[75%] object-cover brightness-[0.85] contrast-110 opacity-100 transition-all duration-700 group-hover:brightness-100" alt="" />
-                          <div className="absolute inset-0 bg-gradient-to-r from-[#010101] via-[#010101]/90 to-transparent z-1" />
-                        </div>
-                      )}
-                      <div className="relative z-10 p-6 h-full flex flex-col justify-between text-left text-white">
-                        <div>
-                          <div className="flex items-center gap-2.5 mb-3">
-                            <div className="w-1 h-1 bg-violet-400 rounded-full shadow-[0_0_10px_#a78bfa]" />
-                            <span className="text-[10px] font-brand text-violet-400/90 font-black uppercase tracking-[0.3em] drop-shadow-md">{String(msg?.name || "Anon")}</span>
+                      <div className="w-full h-full glass-panel rounded-[2.5rem] relative overflow-hidden border border-violet-500/30 group shadow-[0_15px_40px_rgba(0,0,0,0.5)]">
+                        {msg.image && (
+                          <div className="absolute right-0 top-0 w-full h-full z-0 overflow-hidden pointer-events-none">
+                            <img src={msg.image} className="absolute right-0 h-full w-[75%] object-cover brightness-[0.85] contrast-110 opacity-100 transition-all duration-700 group-hover:brightness-100 group-hover:scale-105" alt="" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#010101] via-[#010101]/85 to-transparent z-1" />
                           </div>
-                          <p className="text-[12px] text-white/95 font-light italic leading-[1.6] line-clamp-3 drop-shadow-xl pl-1">{String(msg?.text || "")}</p>
-                        </div>
-                        <div className="flex justify-between items-end mt-4">
-                          <div className="flex items-center gap-2 bg-white/[0.03] px-2.5 py-1 rounded-full border border-white/5 backdrop-blur-sm">
-                            <Clock size={10} className="text-white/20" />
-                            <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.15em]">{String(msg?.date || "")}</span>
+                        )}
+                        <div className="relative z-10 p-6 h-full flex flex-col justify-between text-left text-white">
+                          <div>
+                            <div className="flex items-center gap-2.5 mb-3">
+                              <div className="w-1 h-1 bg-violet-400 rounded-full shadow-[0_0_10px_#a78bfa]" />
+                              <span className="text-[10px] font-brand text-violet-400/90 font-black uppercase tracking-[0.3em] drop-shadow-md">{String(msg?.name || "Anon")}</span>
+                            </div>
+                            <p className="text-[12px] text-white/95 font-light italic leading-[1.6] line-clamp-3 drop-shadow-xl pl-1">{String(msg?.text || "")}</p>
                           </div>
-                          <button onClick={(e) => { e.stopPropagation(); handleDeleteRequest(msg.id); }} className="p-3 bg-white/[0.02] hover:bg-red-500 rounded-2xl text-white/5 hover:text-black transition-all duration-300 active:scale-90 border border-white/5 hover:border-red-500"><Trash2 size={15} strokeWidth={2} /></button>
+                          <div className="flex justify-between items-end mt-4">
+                            <div className="flex items-center gap-2 bg-white/[0.03] px-2.5 py-1 rounded-full border border-white/5 backdrop-blur-sm">
+                              <Clock size={10} className="text-white/20" />
+                              <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.15em]">{String(msg?.date || "")}</span>
+                            </div>
+                            <button onClick={(e) => { e.stopPropagation(); handleDeleteRequest(msg.id); }} className="p-3 bg-white/[0.02] hover:bg-red-500 rounded-2xl text-white/5 hover:text-black transition-all duration-300 active:scale-90 border border-white/5 hover:border-red-500"><Trash2 size={15} strokeWidth={2} /></button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )} />
+                    )}
+                  />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center opacity-10 gap-3 border border-dashed border-white/20 rounded-[2.5rem]">
-                    <ArrowRight size={32} className="animate-pulse" />
+                    <ArrowRight size={32} className="animate-pulse text-white" />
                     <span className="text-[11px] font-brand uppercase tracking-widest text-center text-white">Neural void awaiting sync.</span>
                   </div>
                 )
@@ -565,13 +587,13 @@ const App = () => {
           <div className="w-full h-[80vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-10 relative overflow-y-auto no-scrollbar border-t border-white/10 text-white" onClick={e => e.stopPropagation()}>
             <div className="w-14 h-1.5 bg-white/10 rounded-full mx-auto mb-10 sm:hidden" />
             <button onClick={closeModal} className="absolute top-10 right-10 p-2 text-white/20"><X size={22} /></button>
-            <div className="text-left">
-              <div className="flex items-center gap-2 mb-2"><Zap size={14} className="text-cyan-400" /><span className="text-cyan-500 font-brand text-[9px] font-bold uppercase tracking-[0.4em]">{String(selectedProject.tag || "")}</span></div>
-              <h2 className="text-3xl font-black mb-10 uppercase tracking-tighter leading-tight">{String(selectedProject.title || "")}</h2>
+            <div className="text-left text-white">
+              <div className="flex items-center gap-2 mb-2"><Zap size={14} className="text-cyan-400" /><span className="text-cyan-500 font-brand text-[9px] font-bold uppercase tracking-[0.4em] text-white">{String(selectedProject.tag || "")}</span></div>
+              <h2 className="text-3xl font-black mb-10 uppercase tracking-tighter leading-tight text-white">{String(selectedProject.title || "")}</h2>
               <div className="space-y-6 pb-12">
-                <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3">Goal</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{String(selectedProject.goal || "")}</p></section>
-                <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3">Process</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{String(selectedProject.process || "")}</p></section>
-                <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3">Result</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{String(selectedProject.result || "")}</p></section>
+                <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3 text-white">Goal</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{String(selectedProject.goal || "")}</p></section>
+                <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3 text-white">Process</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{String(selectedProject.process || "")}</p></section>
+                <section><h4 className="text-[9px] font-brand tracking-[0.2em] uppercase font-bold text-white/30 mb-2 border-l-2 border-cyan-500 pl-3 text-white">Result</h4><p className="text-sm font-light text-white/70 leading-relaxed pl-4">{String(selectedProject.result || "")}</p></section>
               </div>
               <button className="w-full bg-white text-black py-5 rounded-[2.2rem] font-brand text-[10px] font-black tracking-[0.3em] uppercase shadow-2xl">Access Case Study</button>
             </div>
