@@ -33,11 +33,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.6.5 | Absolute Precision Edition]
- * 1. 디버깅: 팝업 시 배경 스케일(Zoom) 완전 제거 및 별도 오버레이 레이어로 3D 효과 보호
- * 2. 3D 복구: 커버플로우 70도 기울기 및 투명 고스트 효과(Ghost Side-view) 물리적 고정
- * 3. 시각화: 중앙 영역을 피한 '좌우 여백' 전용 버블 유영 시스템 (Safe Margin)
- * 4. 모바일: 9.5vw 히어로 폰트 및 96px 대형 프로필 허브의 시각적 균형 최적화
+ * [Hyzen Labs. CTO Optimized - R1.6.6 | Absolute Architecture Edition]
+ * 1. 구조 개혁: 팝업 시 메인 컨테이너 필터 제거 -> 독립 오버레이 레이어로 3D 효과(기울기/투명도) 보호
+ * 2. 디버깅: 팝업 줌(Zoom) 로직 완전 삭제하여 모바일 Fit 이슈 근본 해결
+ * 3. 3D 복구: rotateY 70도 및 opacity 고정 시스템으로 애플 커버플로우 미학 재현
+ * 4. 시각화: 여백(Margin) 전용 버블 시스템으로 중앙 가독성 절대 보호
  */
 
 const ADMIN_PASS = "5733906";
@@ -48,9 +48,7 @@ const getFirebaseConfig = () => {
     if (typeof __firebase_config !== 'undefined' && __firebase_config) {
       return JSON.parse(__firebase_config);
     }
-  } catch (e) {
-    console.warn("Firebase config parse error");
-  }
+  } catch (e) { console.warn("Firebase config check skip"); }
   return null;
 };
 
@@ -64,14 +62,14 @@ if (fConfig && fConfig.apiKey) {
   appId = typeof __app_id !== 'undefined' ? __app_id : 'hyzen-labs-prod';
 }
 
-// --- [시각화 컴포넌트: 여백 유영 버블 메시지] ---
+// --- [시각화 컴포넌트: 여백 집중형 버블] ---
 const FloatingBubble = ({ msg }) => {
   const [coords] = useState(() => {
-    // 중앙 텍스트/사진 영역(25% ~ 75%)을 피하기 위해 극좌우(5~20%, 80~95%)에만 배치
+    // 중앙 텍스트/사진 영역(20% ~ 80%)을 절대 침범하지 않는 좌우 극단 배치
     const isLeft = Math.random() > 0.5;
-    const horizontalPos = isLeft ? Math.random() * 15 + 5 : Math.random() * 15 + 80;
+    const horizontalPos = isLeft ? Math.random() * 10 + 5 : Math.random() * 10 + 85;
     return {
-      top: `${Math.random() * 30 + 10}%`,
+      top: `${Math.random() * 35 + 10}%`,
       left: `${horizontalPos}%`,
       duration: `${Math.random() * 10 + 20}s`,
       delay: `${Math.random() * 5}s`
@@ -87,17 +85,17 @@ const FloatingBubble = ({ msg }) => {
       className="absolute pointer-events-none select-none animate-bubble-float z-[2]"
       style={{ top: coords.top, left: coords.left, animationDuration: coords.duration, animationDelay: coords.delay }}
     >
-      <div className="relative group scale-75 sm:scale-90 transition-transform duration-1000">
-        <div className="relative flex items-center gap-2 px-4 py-2.5 rounded-full glass-panel border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden">
+      <div className="relative group scale-75 transition-transform duration-1000">
+        <div className="relative flex items-center gap-2 px-3 py-2 rounded-full glass-panel border border-white/10 shadow-2xl overflow-hidden">
           <div className="absolute top-1 left-3 w-4 h-2 bg-white/10 rounded-full blur-[1px] rotate-[-20deg]" />
           {msg.image && (
-            <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-white/20">
+            <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-white/20">
               <img src={msg.image} className="w-full h-full object-cover grayscale brightness-125" alt="" />
             </div>
           )}
-          <div className="flex flex-col text-left pr-2 text-white">
-            <span className="text-[6px] font-brand text-cyan-400 font-black uppercase tracking-tighter opacity-70">{safeName}</span>
-            <span className="text-[9px] text-white/50 font-light italic leading-tight truncate max-w-[80px]">"{summary}"</span>
+          <div className="flex flex-col text-left pr-1 text-white">
+            <span className="text-[6px] font-brand text-cyan-400 font-black uppercase tracking-tighter opacity-60">{safeName}</span>
+            <span className="text-[8px] text-white/40 font-light italic leading-tight truncate max-w-[60px]">"{summary}"</span>
           </div>
         </div>
       </div>
@@ -105,7 +103,7 @@ const FloatingBubble = ({ msg }) => {
   );
 };
 
-// --- [공통 컴포넌트: Cover Flow Wrapper - 정밀 3D 고정 버전] ---
+// --- [공통 컴포넌트: Cover Flow Wrapper - 3D 효과 절대 고정] ---
 const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
   const touchStartRef = useRef(null);
   const handlePrev = () => setActiveIndex(Math.max(0, activeIndex - 1));
@@ -129,27 +127,27 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
           const offset = idx - activeIndex;
           const isCenter = offset === 0;
           
-          // 3D 효과 복구: rotateY 70도 및 translateZ -400px로 극적인 공간감 부여
-          let transform = `translateX(${offset * 88}%) translateZ(${Math.abs(offset) * -400}px) rotateY(${offset * -70}deg)`;
+          // 3D 커버플로우 물리 로직: 70도 기울기 및 -450px 깊이감으로 몰입도 극대화
+          let transform = `translateX(${offset * 90}%) translateZ(${Math.abs(offset) * -450}px) rotateY(${offset * -70}deg)`;
           if (isCenter) transform = `translateZ(200px) scale(1.15)`;
 
           return (
             <div 
-              key={`${idx}-${activeIndex}`}
-              className={`absolute w-[240px] sm:w-[320px] h-[160px] preserve-3d cursor-pointer transition-all duration-[850ms] ${isCenter ? 'ease-[cubic-bezier(0.22,1.4,0.36,1)]' : 'ease-out'}`}
+              key={`${idx}-${activeIndex}-${isCenter}`}
+              className={`absolute w-[240px] sm:w-[320px] h-[160px] preserve-3d cursor-pointer transition-all duration-[800ms] ${isCenter ? 'ease-[cubic-bezier(0.22,1.4,0.36,1)]' : 'ease-out'}`}
               style={{
                 transform,
                 zIndex: 20 - Math.abs(offset),
                 pointerEvents: isCenter ? 'auto' : 'none',
-                // 투명도 효과 상시 유지 (비중심 카드 0.15~0.4 적용)
+                // 투명도 효과 상시 유지 (Ghost Side-view)
                 opacity: isCenter ? 1 : Math.max(0.05, 0.4 - Math.abs(offset) * 0.15)
               }}
               onClick={() => setActiveIndex(idx)}
             >
-              <div className="relative w-full h-full preserve-3d shadow-2xl text-white">
+              <div className="relative w-full h-full preserve-3d">
                 {renderItem(item, isCenter)}
                 {!isCenter && (
-                  <div className="absolute inset-0 rounded-[2.5rem] bg-black/75 backdrop-blur-[8px] transition-all duration-500 pointer-events-none" />
+                  <div className="absolute inset-0 rounded-[2.5rem] bg-black/75 backdrop-blur-[6px] transition-all duration-500 pointer-events-none" />
                 )}
               </div>
             </div>
@@ -180,6 +178,7 @@ const App = () => {
   const fileInputRef = useRef(null);
   const founderImgSrc = "YJ.PNG"; 
 
+  // --- [Lifecycle Logic] ---
   useEffect(() => {
     const timer = setTimeout(() => setIsInitializing(false), 2800);
     return () => clearTimeout(timer);
@@ -191,12 +190,8 @@ const App = () => {
       try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (err) {
-        console.warn("Auth Failure");
-      }
+        } else { await signInAnonymously(auth); }
+      } catch (err) { console.warn("Firebase Auth Fail"); }
     };
     initAuth();
     const unsubscribe = onAuthStateChanged(auth, setUser);
@@ -210,20 +205,16 @@ const App = () => {
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setMessages(msgs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)).slice(0, 15));
-      }, (error) => console.error("Sync Error:", error));
+      }, (error) => console.error("Sync Error", error));
       return () => unsubscribe();
-    } catch (e) {
-      console.error("Firestore access error:", e);
-    }
+    } catch (e) { console.error("Firestore Error", e); }
   }, [user]);
 
-  // --- [Absolute Layout Reset: Fit & Non-Zoom Logic] ---
+  // --- [Stable Reset Logic] ---
   useEffect(() => {
     if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen) {
-      // 모든 팝업이 닫히면 브라우저 주소창 높이를 무시하고 강제로 최상단으로 핏팅
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      window.scrollTo(0, 0);
       document.body.style.overflow = 'hidden';
-      // 뷰포트 강제 리프레시
       setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
     }
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
@@ -247,7 +238,6 @@ const App = () => {
   const handleMessageSubmit = async (e) => {
     e.preventDefault();
     if (!newMessage.name || !newMessage.text) return;
-    
     if (user && db) {
       try {
         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
@@ -257,35 +247,21 @@ const App = () => {
           createdAt: serverTimestamp(),
           date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
         });
-      } catch (err) { console.error("Submit Error:", err); }
-    } else {
-      const msg = {
-        id: Date.now().toString(),
-        name: newMessage.name,
-        text: newMessage.text,
-        image: newMessage.image,
-        date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-      };
-      setMessages([msg, ...messages].slice(0, 15));
+      } catch (err) { console.error("Submit Fail", err); }
     }
-
     setNewMessage({ name: '', text: '', image: null });
     triggerSync();
     setIsGuestbookOpen(false);
   };
 
   const confirmDelete = async () => {
-    if (deletePass === ADMIN_PASS && targetDeleteId) {
-      if (user && db) {
-        try {
-          await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', targetDeleteId));
-        } catch (err) { console.error("Delete Error:", err); }
-      } else {
-        setMessages(messages.filter(m => m.id !== targetDeleteId));
-      }
-      setIsDeleteModalOpen(false);
-      setTargetDeleteId(null);
-      triggerSync();
+    if (deletePass === ADMIN_PASS && targetDeleteId && user && db) {
+      try {
+        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', targetDeleteId));
+        setIsDeleteModalOpen(false);
+        setTargetDeleteId(null);
+        triggerSync();
+      } catch (err) { console.error("Delete Fail", err); }
     }
     setDeletePass("");
   };
@@ -296,7 +272,6 @@ const App = () => {
     setIsDeleteModalOpen(false);
   };
 
-  const setViewIndex = (view, index) => setActiveIndices(prev => ({ ...prev, [view]: index }));
   const isAnyModalOpen = isModalOpen || isGuestbookOpen || isDeleteModalOpen;
 
   const roadmapSteps = [
@@ -310,6 +285,8 @@ const App = () => {
     { id: 2, tag: "Spatial Computing", title: "물리적 공간의 디지털 증강", desc: "현실 오브젝트 인식 실시간 AR 시각화 엔진.", goal: "현실 사물을 AI가 이해하고 새로운 인터페이스를 제공.", process: "On-device AI 비전 모델 기반 객체 감지 기술.", result: "실시간 공간 데이터 주권 확보." },
     { id: 3, tag: "Energy Resonance", title: "배터리 에너지의 지능적 가시화", desc: "물리적 배터리팩의 데이터를 AI가 가시화하는 지능형 코어.", goal: "보이지 않는 에너지의 흐름을 지능적으로 시각화.", process: "BMS 데이터와 AI 물리 모델링 융합 시스템.", result: "물리적 안전성 인지 능력 300% 향상." }
   ];
+
+  const setViewIndex = (view, index) => setActiveIndices(prev => ({ ...prev, [view]: index }));
 
   return (
     <div className="h-screen w-screen bg-[#010101] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col relative">
@@ -327,8 +304,8 @@ const App = () => {
         @keyframes scanline { 0% { top: -10%; opacity: 0; } 50% { opacity: 1; } 100% { top: 110%; opacity: 0; } }
         .animate-scan { animation: scanline 4s linear infinite; }
         @keyframes fadeInSoft { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in-soft { animation: fadeInSoft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; } 50% { transform: translate(8px, -15px) scale(1.05); opacity: 0.4; } }
+        .animate-fade-in-soft { animation: fadeInSoft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; } 50% { transform: translate(6px, -10px) scale(1.05); opacity: 0.35; } }
         .animate-bubble-float { animation: bubbleFloat 20s ease-in-out infinite; }
         @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .tap-feedback:active { transform: scale(0.97); transition: transform 0.1s ease; }
@@ -350,22 +327,25 @@ const App = () => {
             </div>
             <div className="flex flex-col items-center gap-1 opacity-40">
               <span className="text-[7px] font-brand tracking-widest uppercase">Reality Data Synchronization...</span>
-              <span className="text-[6px] font-mono italic">CODE: HYZEN-RC165-PRECISION</span>
+              <span className="text-[6px] font-mono italic">CODE: HYZEN-RC166-PRECISION</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- [Background Blur Overlay for 3D Context Protection] --- */}
+      {/* --- [Structural Fix: Independent Overlay for Blur] --- */}
       {isAnyModalOpen && (
-        <div className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-md animate-fade-in-soft pointer-events-auto" onClick={closeModal} />
+        <div 
+          className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-xl animate-fade-in-soft pointer-events-auto" 
+          onClick={closeModal} 
+        />
       )}
 
-      {/* --- [Main Layer: Absolute Stability Enforcement - Scale(1) Hardcoded] --- */}
+      {/* --- [Main Layer: Static Scale & Clean Context] --- */}
       <div 
-        className={`flex-1 flex flex-col relative transition-opacity duration-700 
+        className={`flex-1 flex flex-col relative transition-opacity duration-1000 
           ${isInitializing ? 'opacity-0' : 'opacity-100'}`}
-        style={{ transform: 'scale(1)' }} // 팝업 시 스케일 고정하여 줌인 현상 원천 차단
+        style={{ transform: 'scale(1)', filter: 'none' }} // 필터/스케일 간섭 완전 차단
       >
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           {messages.map(msg => (
@@ -379,7 +359,7 @@ const App = () => {
               <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
               <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
             </div>
-            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.6.5 | Absolute Precision</span>
+            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.6.6 | Precision</span>
           </div>
           <div className="flex gap-4 opacity-40 text-white">
             <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
@@ -387,11 +367,11 @@ const App = () => {
           </div>
         </nav>
 
-        {/* Hero Section: Precise Spacing for Mobile Viewport */}
-        <section className="flex-1 z-10 px-8 pt-4 sm:pt-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
+        {/* Hero Section */}
+        <section className="flex-1 z-10 px-8 pt-4 flex flex-col items-center justify-center text-center relative overflow-hidden">
           <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-cyan-500/5 blur-[100px] -z-10 transition-opacity duration-1000 ${isSyncing ? 'opacity-100' : 'opacity-40'}`} />
           
-          <div className="relative inline-block animate-fade-in-soft mb-4 group pt-4">
+          <div className="relative inline-block animate-fade-in-soft mb-4 group pt-2">
             <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10 pointer-events-none" />
             <div className="flex flex-col items-center text-white">
               <h1 className="text-[9.5vw] sm:text-8xl font-title tracking-[-0.07em] leading-[0.9] uppercase">
@@ -404,12 +384,10 @@ const App = () => {
           
           <p className="text-[2.2vw] sm:text-[11px] text-cyan-400/60 tracking-[0.5em] font-brand font-black uppercase mb-8 animate-fade-in-soft">Augmented Reality Grounding</p>
 
-          {/* Unified Identity Hub: Larger Profile Photo (w-24) */}
           <div className="flex flex-col items-center gap-2 animate-fade-in-soft text-white" style={{ animationDelay: '0.2s' }}>
             <div onClick={openGuestbook} className="relative group cursor-pointer tap-feedback active:scale-95 transition-all">
               <div className="absolute -inset-10 border border-white/5 rounded-full animate-[orbit_25s_linear_infinite] pointer-events-none" />
               <div className="absolute -inset-8 border border-cyan-500/10 rounded-full animate-[orbit_15s_linear_infinite_reverse] pointer-events-none" />
-              
               <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent shadow-2xl shadow-black overflow-visible">
                 <div className="w-full h-full rounded-full border border-white/10 overflow-hidden bg-zinc-900 flex items-center justify-center relative">
                   {imgLoadStatus !== 'error' ? (
@@ -422,13 +400,11 @@ const App = () => {
                   </div>
                 </div>
               </div>
-
               <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-5 py-2 glass-panel border border-cyan-500/40 rounded-full flex items-center gap-2 shadow-[0_5px_20px_rgba(34,211,238,0.3)] bg-black transition-all group-hover:border-cyan-300">
                 <MessageSquare size={12} className="text-cyan-400" />
                 <span className="text-[9px] font-brand tracking-[0.2em] font-black uppercase text-white/80 whitespace-nowrap">Sync Trace</span>
               </div>
             </div>
-
             <div className="mt-4 flex flex-col items-center">
               <h3 className="text-[14px] font-title tracking-tight text-white font-bold leading-none">Youngji.Park</h3>
               <span className="text-[8px] font-brand tracking-[0.4em] uppercase font-bold text-white/20 mt-1.5 pb-1">Founder</span>
@@ -448,9 +424,9 @@ const App = () => {
             </div>
           </div>
 
-          {/* 3D Cover Flow Viewport - Effects Solidified */}
-          <div className="px-6 max-w-5xl mx-auto h-[180px] relative overflow-visible">
-            <div key={activeView} className="w-full h-full animate-fade-in-soft text-white">
+          {/* 3D Cover Flow Viewport */}
+          <div className="px-6 max-w-5xl mx-auto h-[180px] relative overflow-visible text-white">
+            <div key={activeView} className="w-full h-full animate-fade-in-soft">
               {activeView === 'roadmap' && (
                 <CoverFlow items={roadmapSteps} activeIndex={activeIndices.roadmap} setActiveIndex={(i) => setViewIndex('roadmap', i)} renderItem={(step) => (
                     <div className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-cyan-500/30 flex flex-col justify-between">
@@ -527,7 +503,7 @@ const App = () => {
         </footer>
       </div>
 
-      {/* --- [Modals: Fullscreen Independent Overlays] --- */}
+      {/* --- [Modals: Clean Screen Overlays] --- */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center p-6 animate-fade-in-soft" onClick={closeModal}>
           <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 flex flex-col items-center text-center shadow-2xl text-white" onClick={e => e.stopPropagation()}>
