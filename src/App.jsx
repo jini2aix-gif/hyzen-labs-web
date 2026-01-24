@@ -29,9 +29,9 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.2.3 | Atmospheric Gravity Edition]
- * 1. 시각화: 데이터 버블 유영 범위를 상단 45% 이내로 제한하여 시각적 질서 확립
- * 2. 디자인: 히어로 상단 집중형 버블 레이아웃으로 로고/문구 가독성 강화
+ * [Hyzen Labs. CTO Optimized - R1.2.4 | Visual Balance Edition]
+ * 1. 모바일 최적화: 히어로 문구 폰트 크기 조정 (13vw -> 11vw) 및 상단 여백 확보
+ * 2. 시각화: 데이터 버블 유영 범위를 상단 45% 이내로 제한 (Atmospheric Gravity 유지)
  * 3. UI: 심리스 적색 삭제 버튼 및 정교한 타이포그래피 유지
  * 4. UX: 탭 전환 애니메이션 및 비밀번호(5733906) 보안 시스템 유지
  */
@@ -233,7 +233,7 @@ const App = () => {
             <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
             <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
           </div>
-          <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.2.3 | Atmospheric Gravity</span>
+          <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.2.4 | Visual Balance</span>
         </div>
         <div className="flex gap-4 opacity-40">
           <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
@@ -241,8 +241,8 @@ const App = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="flex-1 z-10 px-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
+      {/* Hero Section - Padding top added to prevent clipping */}
+      <section className="flex-1 z-10 px-8 pt-12 flex flex-col items-center justify-center text-center relative overflow-hidden">
         <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-cyan-500/5 blur-[100px] -z-10 transition-opacity duration-1000 ${isSyncing ? 'opacity-100' : 'opacity-40'}`} />
         
         <div className="relative inline-block animate-fade-in-soft mb-6 group">
@@ -253,7 +253,8 @@ const App = () => {
           <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10 pointer-events-none" />
 
           <div className="flex flex-col items-center">
-            <h1 className="text-[13vw] sm:text-8xl font-title tracking-[-0.07em] leading-[0.9] uppercase">
+            {/* Reduced mobile font size (13vw -> 11vw) for better fit */}
+            <h1 className="text-[11vw] sm:text-8xl font-title tracking-[-0.07em] leading-[0.9] uppercase">
               <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent block">ME,</span>
               <span className="text-outline block my-1 group-hover:text-white transition-all duration-1000">REALITY</span>
               <span className="bg-gradient-to-b from-cyan-400 to-cyan-700 bg-clip-text text-transparent block">AND AI</span>
