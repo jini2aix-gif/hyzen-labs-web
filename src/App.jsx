@@ -30,22 +30,30 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.5.0 | Mobile Cinematic Edition]
- * 1. 모바일 최적화: 히어로 폰트 축소 (9.5vw) 및 프로필 이미지 확대 (w-24)로 비주얼 밸런스 개선
- * 2. 애니메이션: 카드 전환 시 키네틱 스냅(Elastic Bounce) 효과 및 잔상 처리 도입
- * 3. 복구 로직: 팝업 종료 시 Scale-100 및 뷰포트 정렬 강제 유지 시스템 최적화
- * 4. 유지보수: "ME," 쉼표 타이포그래피, 지문 인식, 보안 삭제(5733906) 사양 완벽 계승
+ * [Hyzen Labs. CTO Optimized - R1.5.1 | Precision Sync Edition]
+ * 1. 3D 복구: 커버플로우의 기울기 및 투명도 효과(Ghost Side-view) 상시 유지 로직 강화
+ * 2. 디버깅: 팝업 닫힘 시 스케일 미복구 현상 해결 (Absolute Scale Reset + Viewport Force Fit)
+ * 3. 시각화: 데이터 버블을 중앙 텍스트/사진 영역을 피한 '좌우 여백'으로만 배치
+ * 4. 모바일: 히어로 폰트(9.5vw) 및 확대 프로필(w-24)의 시각적 균형 최적화
  */
 
 const ADMIN_PASS = "5733906";
 
-// --- [시각화 컴포넌트: 버블 메시지] ---
+// --- [시각화 컴포넌트: 여백 유영 버블 메시지] ---
 const FloatingBubble = ({ msg }) => {
-  const [coords] = useState({
-    top: `${Math.random() * 35 + 10}%`,
-    left: `${Math.random() * 60 + 20}%`,
-    duration: `${Math.random() * 10 + 20}s`,
-    delay: `${Math.random() * 5}s`
+  const [coords] = useState(() => {
+    // 중앙 텍스트 영역(25% ~ 75%)을 피하기 위한 좌우 여백 로직
+    const isLeft = Math.random() > 0.5;
+    const horizontalPos = isLeft 
+      ? Math.random() * 20 + 5   // 좌측 여백 (5% ~ 25%)
+      : Math.random() * 20 + 75; // 우측 여백 (75% ~ 95%)
+    
+    return {
+      top: `${Math.random() * 30 + 10}%`, // 상단 영역 유영
+      left: `${horizontalPos}%`,
+      duration: `${Math.random() * 10 + 20}s`,
+      delay: `${Math.random() * 5}s`
+    };
   });
 
   const summary = msg.text.length > 15 ? msg.text.substring(0, 15) + ".." : msg.text;
@@ -78,7 +86,7 @@ const FloatingBubble = ({ msg }) => {
   );
 };
 
-// --- [공통 컴포넌트: Cover Flow Wrapper - 키네틱 스냅 버전] ---
+// --- [공통 컴포넌트: Cover Flow Wrapper - 3D 효과 상시 유지] ---
 const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
   const touchStartRef = useRef(null);
   const handlePrev = () => setActiveIndex(Math.max(0, activeIndex - 1));
@@ -98,7 +106,7 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
   };
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center perspective-[1200px] overflow-visible touch-pan-y" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+    <div className="relative w-full h-full flex items-center justify-center perspective-[1500px] overflow-visible touch-pan-y" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <button onClick={handlePrev} className={`absolute left-0 z-[100] p-2 text-white/10 hover:text-white/50 transition-all ${activeIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}><ChevronLeft size={24} /></button>
       <button onClick={handleNext} className={`absolute right-0 z-[100] p-2 text-white/10 hover:text-white/50 transition-all ${activeIndex === items.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}><ChevronRight size={24} /></button>
       
@@ -107,23 +115,23 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
           const offset = idx - activeIndex;
           const isCenter = offset === 0;
           
-          // 키네틱 물리 법칙 적용: 가로 이동 85%, Z축 깊이 -350px, 회전 62도
+          // 3D 커버플로우 스타일 상시 유지를 위한 변환 로직
           let transform = `translateX(${offset * 85}%) translateZ(${Math.abs(offset) * -350}px) rotateY(${offset * -62}deg)`;
           if (isCenter) transform = `translateZ(200px) scale(1.1)`;
 
           return (
             <div 
-              key={`${idx}-${activeIndex}`}
+              key={`${idx}-${activeIndex}-${isCenter}`} // 키에 상태를 포함시켜 리렌더링 시 스타일 고정 유도
               className={`absolute w-[240px] sm:w-[320px] h-[160px] preserve-3d cursor-pointer transition-all duration-[800ms] ${isCenter ? 'ease-[cubic-bezier(0.34,1.56,0.64,1)]' : 'ease-out'}`}
               style={{
                 transform,
                 zIndex: 20 - Math.abs(offset),
                 pointerEvents: isCenter ? 'auto' : 'none',
-                opacity: isCenter ? 1 : Math.max(0.02, 0.22 - Math.abs(offset) * 0.08)
+                opacity: isCenter ? 1 : Math.max(0.02, 0.22 - Math.abs(offset) * 0.08) // 투명도 상시 유지
               }}
               onClick={() => setActiveIndex(idx)}
             >
-              <div className="relative w-full h-full preserve-3d">
+              <div className="relative w-full h-full preserve-3d shadow-2xl">
                 {renderItem(item, isCenter)}
                 {!isCenter && (
                   <div className="absolute inset-0 rounded-[2.5rem] bg-black/60 backdrop-blur-[4px] transition-all duration-500" />
@@ -161,10 +169,15 @@ const App = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // 팝업 종료 시 강제 상태 리셋 시스템 (Absolute Reset)
+  // --- [Debugged Scale Reset System] ---
   useEffect(() => {
     if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen) {
-      window.scrollTo(0, 0);
+      // 모든 팝업이 닫혔을 때 뷰포트 상태 강제 초기화
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      document.body.style.overflow = 'hidden';
+      // 브라우저 리사이즈 트리거를 통해 강제로 다시 그림 (Fit 이슈 해결)
+      window.dispatchEvent(new Event('resize'));
+    } else {
       document.body.style.overflow = 'hidden';
     }
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
@@ -224,14 +237,12 @@ const App = () => {
   const openGuestbook = () => {
     setNewMessage({ name: '', text: '', image: null });
     setIsGuestbookOpen(true);
-    document.body.style.overflow = 'hidden';
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setIsGuestbookOpen(false);
     setIsDeleteModalOpen(false);
-    document.body.style.overflow = 'auto';
   };
 
   const isAnyModalOpen = isModalOpen || isGuestbookOpen || isDeleteModalOpen;
@@ -252,8 +263,8 @@ const App = () => {
         @keyframes scanline { 0% { top: -10%; opacity: 0; } 50% { opacity: 1; } 100% { top: 110%; opacity: 0; } }
         .animate-scan { animation: scanline 4s linear infinite; }
         @keyframes fadeInSoft { from { opacity: 0; transform: translateY(15px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        .animate-fade-in-soft { animation: fadeInSoft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; } 50% { transform: translate(10px, -20px) scale(1.03); opacity: 0.5; } }
+        .animate-fade-in-soft { animation: fadeInSoft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.25; } 50% { transform: translate(10px, -20px) scale(1.05); opacity: 0.45; } }
         .animate-bubble-float { animation: bubbleFloat 20s ease-in-out infinite; }
         @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .tap-feedback:active { transform: scale(0.97); transition: transform 0.1s ease; }
@@ -261,6 +272,7 @@ const App = () => {
         .animate-init-progress { animation: initProgress 2.2s ease-in-out forwards; }
       `}</style>
 
+      {/* --- [Entry Sequence] --- */}
       {isInitializing && (
         <div className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center p-8 transition-opacity duration-700">
           <div className="absolute top-0 left-0 w-full h-[1px] bg-cyan-500/20 blur-[1px] animate-scan" />
@@ -274,17 +286,18 @@ const App = () => {
             </div>
             <div className="flex flex-col items-center gap-1 opacity-40">
               <span className="text-[7px] font-brand tracking-widest uppercase">Reality Data Synchronization...</span>
-              <span className="text-[6px] font-mono">CODE: HYZEN-RC150-ACTIVE</span>
+              <span className="text-[6px] font-mono">CODE: HYZEN-RC151-PRECISION</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Main Content Layer */}
+      {/* --- [Main Content Layer: Absolute Reset Enforcement] --- */}
       <div 
-        className={`flex-1 flex flex-col relative transition-all duration-700 origin-center 
+        className={`flex-1 flex flex-col relative transition-all duration-[800ms] origin-center 
           ${isInitializing ? 'opacity-0 scale-105' : 'opacity-100'} 
-          ${isAnyModalOpen ? 'scale-[0.92] blur-md brightness-50 pointer-events-none' : 'scale-100 blur-0 brightness-100'}`}
+          ${isAnyModalOpen ? 'scale-[0.9] blur-md brightness-50 pointer-events-none' : 'scale-100 blur-0 brightness-100'}`}
+        style={{ transform: isAnyModalOpen ? 'scale(0.9)' : 'scale(1)' }} // CSS 클래스 외에 직접 스타일 강제
       >
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           {messages.map(msg => (
@@ -298,7 +311,7 @@ const App = () => {
               <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
               <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
             </div>
-            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.5.0 | Mobile Cinematic</span>
+            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.5.1 | Precision Sync</span>
           </div>
           <div className="flex gap-4 opacity-40">
             <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
@@ -306,14 +319,13 @@ const App = () => {
           </div>
         </nav>
 
-        {/* Hero Section: Optimized for Mobile Balance */}
+        {/* Hero Section: Precise Spacing for Mobile */}
         <section className="flex-1 z-10 px-8 pt-4 sm:pt-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
           <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-cyan-500/5 blur-[100px] -z-10 transition-opacity duration-1000 ${isSyncing ? 'opacity-100' : 'opacity-40'}`} />
           
           <div className="relative inline-block animate-fade-in-soft mb-4 group pt-4">
             <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10 pointer-events-none" />
             <div className="flex flex-col items-center">
-              {/* Reduced font size for mobile fit (11vw -> 9.5vw) */}
               <h1 className="text-[9.5vw] sm:text-8xl font-title tracking-[-0.07em] leading-[0.9] uppercase">
                 <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent block">ME,</span>
                 <span className="text-outline block my-1 group-hover:text-white transition-all duration-1000">REALITY</span>
@@ -322,15 +334,14 @@ const App = () => {
             </div>
           </div>
           
-          <p className="text-[2.2vw] sm:text-[11px] text-cyan-400/60 tracking-[0.5em] font-brand font-black uppercase mb-8 sm:mb-10 animate-fade-in-soft">Augmented Reality Grounding</p>
+          <p className="text-[2.2vw] sm:text-[11px] text-cyan-400/60 tracking-[0.5em] font-brand font-black uppercase mb-8 animate-fade-in-soft">Augmented Reality Grounding</p>
 
-          {/* Unified Identity Hub: Profile Picture enlarged for Mobile (w-16 -> w-24) */}
+          {/* Unified Identity Hub: Large Profile (w-24) */}
           <div className="flex flex-col items-center gap-2 animate-fade-in-soft" style={{ animationDelay: '0.2s' }}>
             <div onClick={openGuestbook} className="relative group cursor-pointer tap-feedback active:scale-95 transition-all">
               <div className="absolute -inset-8 border border-white/5 rounded-full animate-[orbit_25s_linear_infinite] pointer-events-none" />
               <div className="absolute -inset-6 border border-cyan-500/10 rounded-full animate-[orbit_15s_linear_infinite_reverse] pointer-events-none" />
               
-              {/* Increased size: w-24 h-24 */}
               <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent shadow-2xl shadow-black overflow-visible">
                 <div className="w-full h-full rounded-full border border-white/10 overflow-hidden bg-zinc-900 flex items-center justify-center relative">
                   {imgLoadStatus !== 'error' ? (
@@ -373,12 +384,12 @@ const App = () => {
             <div key={activeView} className="w-full h-full animate-fade-in-soft">
               {activeView === 'roadmap' && (
                 <CoverFlow items={roadmapSteps} activeIndex={activeIndices.roadmap} setActiveIndex={(i) => setViewIndex('roadmap', i)} renderItem={(step) => (
-                    <div className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-cyan-500/30 flex flex-col justify-between shadow-2xl">
+                    <div className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-cyan-500/30 flex flex-col justify-between">
                       <div className="flex justify-between items-start mb-2">
                         <div className="w-14 h-14 flex items-center justify-center bg-white/[0.03] rounded-[1.2rem] border border-white/15 text-cyan-400">{step.icon}</div>
                         <div className="text-[6px] font-brand px-2.5 py-1 rounded-full border border-cyan-500/50 text-cyan-400 bg-cyan-500/5 uppercase font-black">In Prep</div>
                       </div>
-                      <div>
+                      <div className="text-left">
                         <span className="text-[8px] font-brand text-white/30 tracking-[0.2em] uppercase font-bold">{step.phase}</span>
                         <h3 className="text-[13px] font-bold tracking-tight mt-1 leading-tight">{step.title}</h3>
                       </div>
@@ -393,7 +404,7 @@ const App = () => {
                         <span className="text-cyan-500 font-brand text-[8px] font-bold uppercase tracking-[0.3em]">{project.tag}</span>
                         <Maximize2 size={12} className="text-white/20 group-hover:text-cyan-400" />
                       </div>
-                      <div className="flex-1 flex flex-col justify-center">
+                      <div className="flex-1 flex flex-col justify-center text-left">
                         <h3 className="text-[15px] font-black mb-1 uppercase tracking-tight leading-tight">{project.title}</h3>
                         <p className="text-white/40 text-[9px] leading-relaxed line-clamp-2 font-light">{project.desc}</p>
                       </div>
@@ -404,7 +415,7 @@ const App = () => {
               {activeView === 'traces' && (
                 messages.length > 0 ? (
                   <CoverFlow items={messages} activeIndex={activeIndices.traces} setActiveIndex={(i) => setViewIndex('traces', i)} renderItem={(msg) => (
-                      <div className="w-full h-full glass-panel rounded-[2.5rem] relative overflow-hidden border border-violet-500/30 shadow-2xl group">
+                      <div className="w-full h-full glass-panel rounded-[2.5rem] relative overflow-hidden border border-violet-500/30 group">
                         {msg.image && (
                           <div className="absolute right-0 top-0 w-full h-full z-0 overflow-hidden pointer-events-none">
                             <img src={msg.image} className="absolute right-0 h-full w-[70%] object-cover brightness-[0.85] contrast-110 opacity-100 transition-all duration-700 group-hover:brightness-100 group-hover:scale-105" alt="" />
@@ -447,7 +458,7 @@ const App = () => {
         </footer>
       </div>
 
-      {/* Modals with Scroll Lock Removal logic on cleanup */}
+      {/* --- [Modals] --- */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/90 backdrop-blur-2xl p-6 animate-fade-in-soft" onClick={closeModal}>
           <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 flex flex-col items-center text-center shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -468,7 +479,7 @@ const App = () => {
           <div className="w-full h-[90vh] sm:h-auto sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-8 relative flex flex-col shadow-2xl border-t border-cyan-500/20" onClick={e => e.stopPropagation()}>
             <div className="w-14 h-1.5 bg-white/10 rounded-full mx-auto mb-8 sm:hidden" />
             <button onClick={closeModal} className="absolute top-8 right-8 p-2 text-white/20 hover:text-white transition-colors"><X size={22} /></button>
-            <div className="mb-6">
+            <div className="mb-6 text-left">
               <div className="flex items-center gap-3 text-cyan-400 mb-2"><Activity size={14} /><span className="font-brand text-[9px] font-bold uppercase tracking-[0.5em]">Digital Trace Sync</span></div>
               <h2 className="text-2xl font-black uppercase tracking-tighter leading-none">Synchronize Reality</h2>
             </div>
