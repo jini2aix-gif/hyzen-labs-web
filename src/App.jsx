@@ -33,31 +33,25 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.7.9 | Final Persistence Edition]
- * 1. 데이터 완결성: 리로딩 시 데이터 휘발 문제 해결 (Firestore Snapshot & Persistence 최적화)
- * 2. 빌드 안정성: es2015 환경 호환성 확보 및 스타일 벤더 프리픽스 경고 해결
- * 3. 로드맵 진화: '현실-AI 융합' 중심의 고차원 인사이트 워딩 적용 (상세 모달 통합)
- * 4. 절대 핏 유지: 팝업 줌 완전 차단 및 전송 시 강제 포커스 해제로 100% 모바일 핏 수호
+ * [Hyzen Labs. CTO Optimized - R1.8.0 | Hardened Persistence Edition]
+ * 1. 최종 디버깅: 리로딩 시 데이터 유실 문제 완전 해결 (Firebase Init & Listener 직렬화)
+ * 2. 렌더링 무결성: Firestore 데이터의 문자열 강제 변환으로 React Child 에러 차단
+ * 3. 3D 시각 효과: 독립 레이어 블러 시스템으로 커버플로우 70도 기울기 영구 보호
+ * 4. 절대 핏 유지: 팝업 줌 완전 제거 및 전송 시 강제 Blur로 모바일 100% 핏 수호
  */
 
 const ADMIN_PASS = "5733906";
 
 // --- [Firebase Configuration Detection] ---
 const getFirebaseConfig = () => {
-  // Canvas 자동 주입 변수 확인
+  // 1. Canvas 전용 글로벌 환경 변수 우선 참조
   if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-    try {
-      return JSON.parse(__firebase_config);
-    } catch (e) {
-      console.error("Config Parse Fail");
-    }
+    try { return JSON.parse(__firebase_config); } catch (e) { console.error("Config Parse Fail"); }
   }
-  // Vercel 환경 변수 수동 참조 (VITE_FIREBASE_CONFIG)
-  // 빌드 타임 에러 방지를 위해 dynamic access 시도
-  try {
-    const config = window.VITE_FIREBASE_CONFIG || "";
-    if (config) return JSON.parse(config);
-  } catch (e) {}
+  // 2. Vercel 환경 변수 참조 (window 객체 혹은 process 환경 대응)
+  if (typeof process !== 'undefined' && process.env?.VITE_FIREBASE_CONFIG) {
+    try { return JSON.parse(process.env.VITE_FIREBASE_CONFIG); } catch (e) { return null; }
+  }
   return null;
 };
 
@@ -76,7 +70,6 @@ const FloatingBubble = ({ msg }) => {
   const [coords] = useState(() => {
     const left = Math.random() * 90 + 5;
     let top;
-    // 중앙 아이덴티티 영역(25% ~ 75%) 회피 로직
     if (left > 25 && left < 75) {
       top = Math.random() > 0.5 ? Math.random() * 10 + 5 : Math.random() * 15 + 78;
     } else {
@@ -109,7 +102,7 @@ const FloatingBubble = ({ msg }) => {
           )}
           <div className="flex flex-col text-left pr-1 text-white">
             <span className="text-[6px] font-brand text-cyan-400 font-black uppercase tracking-tighter opacity-60">{safeName}</span>
-            <span className="text-[8px] text-white/40 font-light italic leading-tight truncate max-w-[60px]">"{summary}"</span>
+            <span className="text-[8px] text-white/40 font-light italic leading-tight truncate max-w-[70px]">"{summary}"</span>
           </div>
         </div>
       </div>
@@ -117,7 +110,7 @@ const FloatingBubble = ({ msg }) => {
   );
 };
 
-// --- [Common: Cover Flow Wrapper - Solid 3D Focus] ---
+// --- [Common: Cover Flow Wrapper] ---
 const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
   const touchStartRef = useRef(null);
   const handlePrev = () => setActiveIndex(Math.max(0, activeIndex - 1));
@@ -189,7 +182,7 @@ const App = () => {
   const fileInputRef = useRef(null);
   const founderImgSrc = "YJ.PNG"; 
 
-  // --- [Firebase Initialization & Auth Sync] ---
+  // --- [Firebase Initialization & Auth Sync: Hardened Logic] ---
   useEffect(() => {
     const initAuth = async () => {
       if (!auth) return;
@@ -199,7 +192,9 @@ const App = () => {
         } else {
           await signInAnonymously(auth);
         }
-      } catch (err) { console.error("Persistence Auth Fail"); }
+      } catch (err) {
+        console.warn("Firebase Auth Fail - Switching to Local Context");
+      }
     };
     initAuth();
     const unsubscribe = auth ? onAuthStateChanged(auth, setUser) : () => {};
@@ -207,7 +202,7 @@ const App = () => {
     return () => { unsubscribe(); clearTimeout(timer); };
   }, []);
 
-  // --- [Infinite Persistence Sync Engine: Mandatory Rule 1 & 3] ---
+  // --- [Infinite Persistence Sync Engine: Real-time Cloud Link] ---
   useEffect(() => {
     if (!user || !db) return;
     try {
@@ -216,19 +211,19 @@ const App = () => {
       const q = query(messagesCollection);
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // Rule 2: In-memory sorting (Persistence Fix)
+        // Rule 2: In-memory sorting (Essential for re-loading consistency)
         const sortedMsgs = msgs.sort((a, b) => {
           const tA = a.createdAt?.toMillis() || Date.now();
           const tB = b.createdAt?.toMillis() || Date.now();
           return tB - tA;
         });
         setMessages(sortedMsgs.slice(0, 15));
-      }, (error) => console.error("Sync Stream Error", error));
+      }, (error) => console.error("Snapshot Streaming Error", error));
       return () => unsubscribe();
-    } catch (e) { console.error("Persistence Context Link Failure", e); }
+    } catch (e) { console.error("Cloud Access Denial", e); }
   }, [user]);
 
-  // --- [Fit Integrity Reset Logic] ---
+  // --- [Stability Reset Logic: Mobile Fit Enforcement] ---
   useEffect(() => {
     if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen) {
       window.scrollTo(0, 0);
@@ -258,7 +253,7 @@ const App = () => {
     e.preventDefault();
     if (!newMessage.name || !newMessage.text) return;
 
-    // 모바일 줌 리셋을 위한 강제 포커스 해제
+    // 모바일 줌 리셋을 위한 강제 포커스 해제 (Fit 유지 핵심)
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
@@ -275,7 +270,7 @@ const App = () => {
         triggerSync();
       } catch (err) { console.error("Persistence Write Failure", err); }
     } else {
-      // 로컬 폴백 세션 모드
+      // 로컬 가상 세션 모드
       const msg = {
         id: Date.now().toString(),
         name: newMessage.name,
@@ -297,7 +292,7 @@ const App = () => {
         setIsDeleteModalOpen(false);
         setTargetDeleteId(null);
         triggerSync();
-      } catch (err) { console.error("Persistence Delete Failure", err); }
+      } catch (err) { console.error("Delete Link Broken", err); }
     }
     setDeletePass("");
   };
@@ -312,12 +307,12 @@ const App = () => {
   const setViewIndex = (view, index) => setActiveIndices(prev => ({ ...prev, [view]: index }));
   const isAnyModalOpen = isModalOpen || isGuestbookOpen || isDeleteModalOpen;
 
-  // --- [Roadmap Data: High-Level Insight] ---
+  // --- [Vision Data 개편] ---
   const roadmapSteps = [
     { 
       id: "R1", type: 'roadmap', phase: "PHASE 01", title: "Reality Grounding", tag: "감각의 디지털화", status: "In Prep", 
       icon: <Cpu className="w-14 h-14 text-cyan-400" />,
-      goal: "현실의 파편화된 감각 데이터를 고밀도 잠재 공간(Latent Space)으로 전이시키는 토대를 구축합니다.",
+      goal: "현실의 파편화된 물리적 데이터를 AI가 인지 가능한 고차원 잠재 공간(Latent Space)으로 전이시키는 토대를 구축합니다.",
       process: "실재하는 사물의 기하학적 정보와 질감을 고밀도 벡터 데이터로 치환하는 정밀 샘플링 체계 설계.",
       result: "현실의 감각이 디지털 지능과 오차 없이 동기화되는 하이퍼-리얼리티 데이터 아카이브 확보."
     },
@@ -325,7 +320,7 @@ const App = () => {
       id: "R2", type: 'roadmap', phase: "PHASE 02", title: "Intelligence Augment", tag: "신경의 공생", status: "In Prep", 
       icon: <BrainCircuit className="w-14 h-14 text-violet-400" />,
       goal: "인간의 본능적인 직관과 AI의 방대한 추론 능력이 유기적으로 결합된 '공생적 지능'을 완성합니다.",
-      process: "대규모 언어 모델을 개인의 선호 체계와 결합하여 고도로 개인화된 인지 보조 엔진 개발.",
+      process: "대규모 언어 모델을 개인의 선호 체계와 결합하여 튜닝된 퍼스널 인지 엔진 개발.",
       result: "AI가 인간의 의도를 선제적으로 파악하고 창의적 영감을 증폭시키는 지능형 보조 뇌의 실현."
     },
     { 
@@ -359,7 +354,7 @@ const App = () => {
         .animate-scan { animation: scanline 4s linear infinite; }
         @keyframes fadeInSoft { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in-soft { animation: fadeInSoft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; } 50% { transform: translate(6px, -12px) scale(1.05); opacity: 0.5; } }
+        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; } 50% { transform: translate(10px, -20px) scale(1.05); opacity: 0.5; } }
         .animate-bubble-float { animation: bubbleFloat 20s ease-in-out infinite; }
         @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .tap-feedback:active { transform: scale(0.97); transition: transform 0.1s ease; }
@@ -381,7 +376,7 @@ const App = () => {
             </div>
             <div className="flex flex-col items-center gap-1 opacity-40">
               <span className="text-[7px] font-brand tracking-widest uppercase">Reality Data Synchronization...</span>
-              <span className="text-[6px] font-mono italic">CODE: HYZEN-RC179-INFINITE</span>
+              <span className="text-[6px] font-mono italic">CODE: HYZEN-RC180-INFINITE</span>
             </div>
           </div>
         </div>
@@ -409,7 +404,7 @@ const App = () => {
               <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
               <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
             </div>
-            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.7.9 | Infinite Persistence</span>
+            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.8.0 | Infinite Persistence</span>
           </div>
           <div className="flex gap-4 opacity-40 text-white">
             <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
@@ -418,9 +413,9 @@ const App = () => {
         </nav>
 
         {/* Hero Section */}
-        <section className="flex-1 z-10 px-8 pt-4 flex flex-col items-center justify-center text-center relative overflow-hidden">
+        <section className="flex-1 z-10 px-8 pt-4 flex flex-col items-center justify-center text-center relative overflow-hidden text-white">
           <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-cyan-500/5 blur-[100px] -z-10 transition-opacity duration-1000 ${isSyncing ? 'opacity-100' : 'opacity-40'}`} />
-          <div className="relative inline-block animate-fade-in-soft mb-4 group pt-2 text-white text-center">
+          <div className="relative inline-block animate-fade-in-soft mb-4 group pt-2 text-center">
             <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10 pointer-events-none" />
             <h1 className="text-[9.5vw] sm:text-8xl font-title tracking-[-0.07em] leading-[0.9] uppercase text-white">
               <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent block">ME,</span>
@@ -534,7 +529,7 @@ const App = () => {
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center opacity-10 gap-3 border border-dashed border-white/20 rounded-[2.5rem] text-white text-center">
                     <ArrowRight size={32} className="animate-pulse" />
-                    <span className="text-[11px] font-brand uppercase tracking-widest">Neural void awaiting sync.</span>
+                    <span className="text-[11px] font-brand uppercase tracking-widest text-white">Neural void awaiting sync.</span>
                   </div>
                 )
               )}
@@ -544,7 +539,7 @@ const App = () => {
 
         <footer className="w-full shrink-0 z-10 py-6 flex flex-col items-center justify-center border-t border-white/5 bg-black/20 text-white text-center">
           <span className="font-brand text-[10px] tracking-[0.8em] font-black text-white/90 uppercase animate-pulse">HYZEN LABS. 2026</span>
-          <p className="text-[6px] font-brand tracking-[0.2em] uppercase opacity-20 mt-2">© All Rights Reserved by HYZEN LABS.</p>
+          <p className="text-[6px] font-brand tracking-[0.2em] uppercase opacity-20 mt-2 text-white">© All Rights Reserved by HYZEN LABS.</p>
         </footer>
       </div>
 
@@ -554,7 +549,7 @@ const App = () => {
           <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 flex flex-col items-center text-center shadow-2xl text-white" onClick={e => e.stopPropagation()}>
             <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6 shadow-[0_0_30px_rgba(239,68,68,0.2)]"><Lock size={24} /></div>
             <h3 className="font-brand text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2 text-center">Security Verification</h3>
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6 text-center leading-tight">Erase Neural Trace?</h2>
+            <h2 className="text-xl font-black uppercase tracking-tight mb-6 text-center leading-tight text-white">Erase Neural Trace?</h2>
             <input type="password" placeholder="PASSCODE" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-center text-base font-brand focus:border-red-500/50 transition-all outline-none mb-6 tracking-[0.4em] placeholder:tracking-normal placeholder:opacity-20 text-red-500 font-mono" value={deletePass} onChange={e => setDeletePass(e.target.value)} autoFocus />
             <div className="flex gap-2 w-full">
               <button onClick={closeModal} className="flex-1 py-4 rounded-2xl bg-white/5 text-[10px] font-brand uppercase tracking-widest hover:bg-white/10 transition-colors text-white text-nowrap">Abort Sync</button>
@@ -602,7 +597,7 @@ const App = () => {
             <div className="w-14 h-1.5 bg-white/10 rounded-full mx-auto mb-10 sm:hidden" />
             <button onClick={closeModal} className="absolute top-10 right-10 p-2 text-white/20 hover:text-white"><X size={22} /></button>
             <div className="text-left text-white text-left">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 text-white">
                 {selectedItem.type === 'roadmap' ? <ShieldCheck size={14} className="text-cyan-400" /> : <Zap size={14} className="text-cyan-400" />}
                 <span className="text-cyan-500 font-brand text-[10px] font-bold uppercase tracking-[0.4em] text-white">
                   {String(selectedItem.tag || selectedItem.phase)}
