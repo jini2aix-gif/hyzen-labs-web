@@ -22,45 +22,63 @@ import {
   Maximize2,
   Camera,
   Image as ImageIcon,
-  Flame
+  Trash2,
+  Lock,
+  Clock,
+  Quote
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.1.7 | Visual Expansion Edition]
- * 1. 브랜드: "ME," 쉼표 포함 키네틱 타이포그래피 & 'HYZEN LABS.' 푸터
- * 2. 시각 요소: 확대된 아이콘/이미지(w-16) 및 배경 플로팅 트윙클 Spark 효과
- * 3. 탐색: ROADMAP / WORKS / TRACES 3개 탭의 수평 스크롤 및 화살표 내비게이션
- * 4. UX: 방명록 진입 시 폼 리셋, 전송 후 자동 팝업 닫힘 및 페이드인 애니메이션
+ * [Hyzen Labs. CTO Optimized - R1.2.3 | Atmospheric Gravity Edition]
+ * 1. 시각화: 데이터 버블 유영 범위를 상단 45% 이내로 제한하여 시각적 질서 확립
+ * 2. 디자인: 히어로 상단 집중형 버블 레이아웃으로 로고/문구 가독성 강화
+ * 3. UI: 심리스 적색 삭제 버튼 및 정교한 타이포그래피 유지
+ * 4. UX: 탭 전환 애니메이션 및 비밀번호(5733906) 보안 시스템 유지
  */
 
-// --- [배경 플로팅 요소 컴포넌트] ---
-const FloatingMessage = ({ msg }) => {
+const ADMIN_PASS = "5733906";
+
+// --- [시각화 컴포넌트: 버블 메시지] ---
+const FloatingBubble = ({ msg }) => {
+  // 상단 중앙 부분으로 유영 범위 제한
   const [coords] = useState({
-    top: `${Math.random() * 60 + 15}%`,
-    left: `${Math.random() * 75 + 5}%`,
+    top: `${Math.random() * 35 + 10}%`, // 10% ~ 45% 구간 (상단)
+    left: `${Math.random() * 60 + 20}%`, // 20% ~ 80% 구간 (중앙 집중)
+    duration: `${Math.random() * 10 + 20}s`,
+    delay: `${Math.random() * 5}s`
   });
 
-  const summary = msg.text.length > 20 ? msg.text.substring(0, 20) + "..." : msg.text;
+  const summary = msg.text.length > 15 ? msg.text.substring(0, 15) + ".." : msg.text;
 
   return (
     <div 
-      className="absolute pointer-events-none select-none transition-opacity duration-1000 ease-in-out animate-float z-[2]"
-      style={{ ...coords, opacity: 0.45 }}
+      className="absolute pointer-events-none select-none animate-bubble-float z-[2]"
+      style={{ 
+        top: coords.top, 
+        left: coords.left, 
+        animationDuration: coords.duration,
+        animationDelay: coords.delay
+      }}
     >
-      <div className="relative flex items-center gap-2 glass-panel px-3 py-2 rounded-2xl border border-cyan-500/10 scale-75 sm:scale-100 shadow-2xl">
-        {/* Intelligence Spark Effect */}
-        <div className="absolute -top-1 -left-1 w-2 h-2">
-          <div className="w-full h-full bg-cyan-400 rounded-full animate-twinkle shadow-[0_0_8px_#22d3ee]" />
-        </div>
-        {msg.image && (
-          <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/10">
-            <img src={msg.image} className="w-full h-full object-cover grayscale" alt="" />
+      <div className="relative group scale-75 sm:scale-90 transition-transform duration-1000">
+        {/* Bubble Body with Reflection Highlight */}
+        <div className="relative flex items-center gap-2 px-4 py-3 rounded-full glass-panel border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden">
+          <div className="absolute top-1 left-3 w-4 h-2 bg-white/10 rounded-full blur-[1px] rotate-[-20deg]" />
+          <div className="absolute bottom-1 right-3 w-2 h-1 bg-cyan-400/10 rounded-full blur-[2px]" />
+          
+          {msg.image && (
+            <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-white/20">
+              <img src={msg.image} className="w-full h-full object-cover grayscale brightness-125" alt="" />
+            </div>
+          )}
+          <div className="flex flex-col text-left pr-2">
+            <span className="text-[6px] font-brand text-cyan-400 font-black uppercase tracking-tighter opacity-70">{msg.name}</span>
+            <span className="text-[9px] text-white/50 font-light italic leading-tight truncate max-w-[80px]">"{summary}"</span>
           </div>
-        )}
-        <div className="flex flex-col text-left">
-          <span className="text-[7px] font-brand text-cyan-400 font-black uppercase tracking-tighter">{msg.name}</span>
-          <span className="text-[9px] text-white/70 font-light italic leading-tight">"{summary}"</span>
         </div>
+        
+        {/* Glow Spark */}
+        <div className="absolute -top-1 -right-1 w-1 h-1 bg-white rounded-full animate-twinkle shadow-[0_0_5px_white]" />
       </div>
     </div>
   );
@@ -71,6 +89,9 @@ const App = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [targetDeleteId, setTargetDeleteId] = useState(null);
+  const [deletePass, setDeletePass] = useState("");
   const [imgLoadStatus, setImgLoadStatus] = useState('loading');
   const [isSyncing, setIsSyncing] = useState(false);
   
@@ -89,7 +110,7 @@ const App = () => {
 
   const scroll = (direction) => {
     if (scrollRef.current) {
-      const scrollAmount = 300;
+      const scrollAmount = 320;
       scrollRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
@@ -98,33 +119,9 @@ const App = () => {
   };
 
   const projects = [
-    {
-      id: 1,
-      tag: "Visual Synthesis",
-      title: "잠재적 공간의 초상",
-      desc: "매니페스토의 '유한한 직관'을 AI 데이터로 변환한 비주얼 실험.",
-      goal: "인간의 무의식적 직관을 AI 잠재 공간과 연결합니다.",
-      process: "SDXL과 커스텀 LoRA를 활용한 현실 질감 이식.",
-      result: "AI 생성물에서 인간적 직관의 흔적을 발견함."
-    },
-    {
-      id: 2,
-      tag: "Spatial Computing",
-      title: "물리적 공간의 디지털 증강",
-      desc: "현실 오브젝트 인식 실시간 AR 시각화 엔진.",
-      goal: "현실 사물을 AI가 이해하고 새로운 인터페이스를 제공하는 목적.",
-      process: "On-device AI 비전 모델 기반 객체 감지 기술.",
-      result: "하이퍼-리얼리스틱 렌더링 기술 확보."
-    },
-    {
-      id: 3,
-      tag: "Energy Resonance",
-      title: "배터리 에너지의 지능적 가시화",
-      desc: "물리적 배터리팩의 열 역학 데이터를 AI가 분석하여 AR로 시각화하는 지능형 코어.",
-      goal: "보이지 않는 에너지의 흐름을 지능적으로 가시화하여 안전과 효율을 극대화합니다.",
-      process: "BMS 데이터와 AI 물리 모델링을 융합한 실시간 렌더링 시스템 개발.",
-      result: "물리적 배터리 상태에 대한 직관적 인지 능력을 300% 이상 향상."
-    }
+    { id: 1, tag: "Visual Synthesis", title: "잠재적 공간의 초상", desc: "매니페스토의 '유한한 직관'을 AI 데이터로 변환한 비주얼 실험.", goal: "인간의 무의식적 직관을 AI 잠재 공간과 연결합니다.", process: "SDXL과 커스텀 LoRA를 활용한 현실 질감 이식.", result: "AI 생성물에서 인간적 직관의 흔적을 발견함." },
+    { id: 2, tag: "Spatial Computing", title: "물리적 공간의 디지털 증강", desc: "현실 오브젝트 인식 실시간 AR 시각화 엔진.", goal: "현실 사물을 AI가 이해하고 새로운 인터페이스를 제공하는 목적.", process: "On-device AI 비전 모델 기반 객체 감지 기술.", result: "하이퍼-리얼리스틱 렌더링 기술 확보." },
+    { id: 3, tag: "Energy Resonance", title: "배터리 에너지의 지능적 가시화", desc: "물리적 배터리팩의 열 역학 데이터를 AI가 분석하여 AR로 시각화하는 지능형 코어.", goal: "보이지 않는 에너지의 흐름을 지능적으로 가시화하여 안전과 효율을 극대화합니다.", process: "BMS 데이터와 AI 물리 모델링을 융합한 실시간 렌더링 시스템 개발.", result: "물리적 배터리 상태에 대한 직관적 인지 능력을 300% 이상 향상." }
   ];
 
   const roadmapSteps = [
@@ -137,9 +134,7 @@ const App = () => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewMessage(prev => ({ ...prev, image: reader.result }));
-      };
+      reader.onloadend = () => setNewMessage(prev => ({ ...prev, image: reader.result }));
       reader.readAsDataURL(file);
     }
   };
@@ -154,15 +149,27 @@ const App = () => {
       image: newMessage.image,
       date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
     };
-    const updatedMessages = [msg, ...messages].slice(0, 10);
-    setMessages(updatedMessages);
+    setMessages([msg, ...messages].slice(0, 10));
     setNewMessage({ name: '', text: '', image: null });
     triggerSync();
-    
-    setTimeout(() => {
-      setIsGuestbookOpen(false);
-      document.body.style.overflow = 'auto';
-    }, 500);
+    closeModal();
+  };
+
+  const handleDeleteRequest = (id) => {
+    setTargetDeleteId(id);
+    setDeletePass("");
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deletePass === ADMIN_PASS) {
+      setMessages(messages.filter(m => m.id !== targetDeleteId));
+      setIsDeleteModalOpen(false);
+      setTargetDeleteId(null);
+      triggerSync();
+    } else {
+      setDeletePass("");
+    }
   };
 
   const openGuestbook = () => {
@@ -174,18 +181,18 @@ const App = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setIsGuestbookOpen(false);
+    setIsDeleteModalOpen(false);
     document.body.style.overflow = 'auto';
   };
 
   return (
     <div className="h-screen w-screen bg-[#010101] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col relative">
-      {/* Background System */}
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] pointer-events-none z-[1] mix-blend-overlay" />
       
-      {/* Floating Trace Layer */}
+      {/* Floating Bubbles Layer - Top portion only */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {messages.map(msg => (
-          <FloatingMessage key={msg.id} msg={msg} />
+          <FloatingBubble key={msg.id} msg={msg} />
         ))}
       </div>
 
@@ -193,53 +200,40 @@ const App = () => {
         @import url('https://fonts.googleapis.com/css2?family=Michroma&family=Orbitron:wght@400;700;900&family=JetBrains+Mono&display=swap');
         .font-brand { font-family: 'Orbitron', sans-serif; }
         .font-title { font-family: 'Michroma', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
         .glass-panel { 
-          background: rgba(255, 255, 255, 0.02); 
-          backdrop-filter: blur(20px); 
-          border: 1px solid rgba(255, 255, 255, 0.06);
+          background: rgba(255, 255, 255, 0.03); 
+          backdrop-filter: blur(25px); 
+          border: 1px solid rgba(255, 255, 255, 0.12);
         }
         .text-outline { -webkit-text-stroke: 1px rgba(255,255,255,0.2); color: transparent; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        @keyframes scanline {
-          0% { top: -10%; opacity: 0; }
-          50% { opacity: 1; }
-          100% { top: 110%; opacity: 0; }
-        }
+        @keyframes scanline { 0% { top: -10%; opacity: 0; } 50% { opacity: 1; } 100% { top: 110%; opacity: 0; } }
         .animate-scan { animation: scanline 4s linear infinite; }
-        
-        @keyframes fadeInSoft { 
-          from { opacity: 0; transform: translateY(15px) scale(0.98); } 
-          to { opacity: 1; transform: translateY(0) scale(1); } 
-        }
+        @keyframes fadeInSoft { from { opacity: 0; transform: translateY(15px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .animate-fade-in-soft { animation: fadeInSoft 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
         
-        @keyframes float {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          25% { transform: translate(8px, -12px) rotate(0.5deg); }
-          50% { transform: translate(-4px, 8px) rotate(-0.5deg); }
-          75% { transform: translate(-8px, -4px) rotate(0.2deg); }
+        @keyframes bubbleFloat { 
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; } 
+          50% { transform: translate(10px, -20px) scale(1.03); opacity: 0.5; } 
         }
-        .animate-float { animation: float 20s ease-in-out infinite; }
+        .animate-bubble-float { animation: bubbleFloat 20s ease-in-out infinite; }
 
-        @keyframes twinkle {
-          0%, 100% { opacity: 0.3; transform: scale(0.8); }
-          50% { opacity: 1; transform: scale(1.2); }
-        }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
         .animate-twinkle { animation: twinkle 2s infinite ease-in-out; }
         
         @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .tap-feedback:active { transform: scale(0.97); transition: transform 0.1s ease; }
       `}</style>
 
-      {/* Header Navigation */}
+      {/* Header */}
       <nav className="w-full z-[100] px-6 py-4 flex justify-between items-center shrink-0">
         <div className="flex flex-col text-left group">
           <div className="flex items-center gap-2">
             <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
             <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
           </div>
-          <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.1.7 | Visual Expansion</span>
+          <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.2.3 | Atmospheric Gravity</span>
         </div>
         <div className="flex gap-4 opacity-40">
           <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
@@ -252,10 +246,10 @@ const App = () => {
         <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-cyan-500/5 blur-[100px] -z-10 transition-opacity duration-1000 ${isSyncing ? 'opacity-100' : 'opacity-40'}`} />
         
         <div className="relative inline-block animate-fade-in-soft mb-6 group">
-          <div className="absolute -top-3 -left-3 w-3 h-3 border-t border-l border-cyan-500/40" />
-          <div className="absolute -top-3 -right-3 w-3 h-3 border-t border-r border-cyan-500/40" />
-          <div className="absolute -bottom-3 -left-3 w-3 h-3 border-b border-l border-cyan-500/40" />
-          <div className="absolute -bottom-3 -right-3 w-3 h-3 border-b border-r border-cyan-500/40" />
+          <div className="absolute -top-3 -left-3 w-3 h-3 border-t-2 border-l-2 border-cyan-500/40" />
+          <div className="absolute -top-3 -right-3 w-3 h-3 border-t-2 border-r-2 border-cyan-500/40" />
+          <div className="absolute -bottom-3 -left-3 w-3 h-3 border-b-2 border-l-2 border-cyan-500/40" />
+          <div className="absolute -bottom-3 -right-3 w-3 h-3 border-b-2 border-r-2 border-cyan-500/40" />
           <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10 pointer-events-none" />
 
           <div className="flex flex-col items-center">
@@ -274,16 +268,10 @@ const App = () => {
         <div className="flex flex-col items-center gap-6 animate-fade-in-soft" style={{ animationDelay: '0.2s' }}>
           <div className="relative group scale-110 sm:scale-125" onClick={triggerSync}>
             <div className="absolute -inset-4 border border-white/5 rounded-full animate-[orbit_20s_linear_infinite] pointer-events-none" />
-            <div className="relative w-16 h-16 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent">
-              <div className="w-full h-full rounded-full border border-white/10 overflow-hidden bg-zinc-900 flex items-center justify-center relative shadow-2xl">
+            <div className="relative w-16 h-16 rounded-full p-[1px] bg-gradient-to-br from-white/20 to-transparent">
+              <div className="w-full h-full rounded-full border border-white/10 overflow-hidden bg-zinc-900 flex items-center justify-center relative shadow-2xl shadow-black">
                 {imgLoadStatus !== 'error' ? (
-                  <img 
-                    src={founderImgSrc} 
-                    alt="Founder"
-                    className={`w-full h-full object-cover grayscale brightness-90 transition-all duration-1000 group-hover:grayscale-0 ${imgLoadStatus === 'loading' ? 'opacity-0' : 'opacity-100'}`}
-                    onLoad={() => setImgLoadStatus('success')}
-                    onError={() => setImgLoadStatus('error')}
-                  />
+                  <img src={founderImgSrc} alt="Founder" className={`w-full h-full object-cover grayscale brightness-90 transition-all duration-1000 group-hover:grayscale-0 ${imgLoadStatus === 'loading' ? 'opacity-0' : 'opacity-100'}`} onLoad={() => setImgLoadStatus('success')} onError={() => setImgLoadStatus('error')} />
                 ) : (
                   <User size={24} strokeWidth={1} className="text-white/10" />
                 )}
@@ -295,10 +283,7 @@ const App = () => {
             <h3 className="text-[14px] font-title tracking-tight text-white font-bold">Youngji.Park</h3>
             <span className="text-[8px] font-brand tracking-[0.4em] uppercase font-bold text-white/20 mb-6">Founder</span>
             
-            <button 
-              onClick={openGuestbook}
-              className="group flex items-center gap-3 px-8 py-3.5 rounded-full border border-white/15 glass-panel hover:bg-cyan-500/10 hover:border-cyan-500/50 transition-all active:scale-95 shadow-2xl"
-            >
+            <button onClick={openGuestbook} className="group flex items-center gap-3 px-8 py-3.5 rounded-full border border-white/20 glass-panel hover:bg-cyan-500/10 hover:border-cyan-500/50 transition-all active:scale-95 shadow-2xl">
               <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center text-black shadow-lg shadow-cyan-500/20 group-hover:rotate-12 transition-transform">
                 <MessageSquare size={12} strokeWidth={2.5} />
               </div>
@@ -308,37 +293,32 @@ const App = () => {
         </div>
       </section>
 
-      {/* Controller Section */}
+      {/* Controller & Viewport */}
       <div className="shrink-0 z-10 pb-4 animate-fade-in-soft" style={{ animationDelay: '0.3s' }}>
         <div className="px-6 mb-4 max-w-lg mx-auto">
-          <div className="glass-panel p-1 rounded-2xl flex gap-1 relative overflow-hidden">
+          <div className="glass-panel p-1 rounded-2xl flex gap-1 relative overflow-hidden border border-white/10 shadow-2xl">
             {['roadmap', 'works', 'traces'].map((view) => (
-              <button 
-                key={view}
-                onClick={() => { setActiveView(view); triggerSync(); }}
-                className={`flex-1 py-3.5 rounded-xl text-[7px] font-brand tracking-[0.1em] transition-all tap-feedback uppercase ${activeView === view ? 'bg-white text-black font-black' : 'text-white/30'}`}
-              >
+              <button key={view} onClick={() => { setActiveView(view); triggerSync(); }} className={`flex-1 py-3.5 rounded-xl text-[7px] font-brand tracking-[0.1em] transition-all tap-feedback uppercase ${activeView === view ? 'bg-white text-black font-black shadow-lg' : 'text-white/30'}`}>
                 {view}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Content Area - Visual Elements Enlarged */}
-        <div className="px-6 max-w-4xl mx-auto h-[180px] relative">
+        <div className="px-6 max-w-5xl mx-auto h-[180px] relative">
           <button onClick={() => scroll('left')} className="absolute left-1 top-1/2 -translate-y-1/2 z-20 p-2 text-white/20 hover:text-white/60 transition-colors hidden sm:block"><ChevronLeft size={24} /></button>
           <button onClick={() => scroll('right')} className="absolute right-1 top-1/2 -translate-y-1/2 z-20 p-2 text-white/20 hover:text-white/60 transition-colors hidden sm:block"><ChevronRight size={24} /></button>
 
           <div ref={scrollRef} key={activeView} className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2 h-full animate-fade-in-soft">
             {activeView === 'roadmap' ? (
               roadmapSteps.map((step, idx) => (
-                <div key={idx} className="glass-panel p-5 rounded-[2.5rem] relative overflow-hidden flex-shrink-0 w-[85%] sm:w-[35%] snap-center border border-white/5 flex flex-col justify-between">
+                <div key={idx} className="glass-panel p-5 rounded-[2.5rem] relative overflow-hidden flex-shrink-0 w-[85%] sm:w-[35%] snap-center border border-cyan-500/40 flex flex-col justify-between shadow-[0_15px_40px_rgba(0,0,0,0.6)]">
                   <div className="absolute bottom-0 left-0 h-[1px] bg-cyan-500/20 w-full" />
                   <div className="flex justify-between items-start mb-2">
-                    <div className="w-16 h-16 flex items-center justify-center bg-white/[0.03] rounded-[1.5rem] border border-white/5 text-cyan-400">
+                    <div className="w-16 h-16 flex items-center justify-center bg-white/[0.03] rounded-[1.5rem] border border-white/15 text-cyan-400">
                       {step.icon}
                     </div>
-                    <div className={`text-[6px] font-brand px-2.5 py-1 rounded-full border ${step.status === 'In Prep' ? 'border-cyan-500/50 text-cyan-400' : 'border-white/10 text-white/20'}`}>
+                    <div className="text-[6px] font-brand px-2.5 py-1 rounded-full border border-cyan-500/50 text-cyan-400 bg-cyan-500/5 uppercase font-black">
                       {step.status}
                     </div>
                   </div>
@@ -350,7 +330,7 @@ const App = () => {
               ))
             ) : activeView === 'works' ? (
               projects.map(project => (
-                <div key={project.id} className="glass-panel p-5 rounded-[2.5rem] relative overflow-hidden flex-shrink-0 w-[85%] sm:w-[35%] snap-center border border-white/5 flex flex-col justify-between tap-feedback group" onClick={() => { setSelectedProject(project); setIsModalOpen(true); }}>
+                <div key={project.id} className="glass-panel p-5 rounded-[2.5rem] relative overflow-hidden flex-shrink-0 w-[85%] sm:w-[35%] snap-center border border-white/20 flex flex-col justify-between tap-feedback group hover:border-cyan-500/40 transition-all shadow-[0_15px_40px_rgba(0,0,0,0.6)]" onClick={() => { setSelectedProject(project); setIsModalOpen(true); }}>
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-cyan-500 font-brand text-[8px] font-bold uppercase tracking-[0.3em]">{project.tag}</span>
                     <Maximize2 size={12} className="text-white/20 group-hover:text-cyan-400" />
@@ -364,24 +344,42 @@ const App = () => {
             ) : (
               messages.length > 0 ? (
                 messages.map(msg => (
-                  <div key={msg.id} className="glass-panel p-5 rounded-[2.5rem] relative overflow-hidden flex-shrink-0 w-[85%] sm:w-[35%] snap-center border border-white/5 flex flex-col justify-between">
-                    <div className="absolute bottom-0 left-0 h-[1px] bg-violet-500/20 w-full" />
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="w-16 h-16 flex items-center justify-center bg-white/[0.03] rounded-[1.5rem] border border-white/5 overflow-hidden text-cyan-400 shrink-0 shadow-lg">
-                        {msg.image ? <img src={msg.image} className="w-full h-full object-cover grayscale brightness-110" alt="Trace" /> : <User size={24} strokeWidth={1} className="opacity-20" />}
+                  <div key={msg.id} className="glass-panel rounded-[2.5rem] relative overflow-hidden flex-shrink-0 w-[90%] sm:w-[45%] snap-center border border-violet-500/30 shadow-[0_25px_60px_rgba(0,0,0,0.8)] group">
+                    {msg.image && (
+                      <div className="absolute right-0 top-0 w-full h-full z-0 overflow-hidden pointer-events-none">
+                        <img src={msg.image} className="absolute right-0 h-full w-[70%] object-cover grayscale brightness-[0.4] contrast-125 opacity-50 transition-all duration-700 group-hover:opacity-70 group-hover:scale-105" alt="" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#010101] via-[#010101]/90 to-transparent z-1" />
                       </div>
-                      <span className="text-[8px] font-mono text-white/20 uppercase bg-white/5 px-2 py-0.5 rounded-full">{msg.date}</span>
+                    )}
+                    
+                    <div className="relative z-10 p-7 h-full flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center gap-2.5 mb-4">
+                          <div className="w-1 h-1 bg-violet-400 rounded-full shadow-[0_0_10px_rgba(167,139,250,1)]" />
+                          <span className="text-[10px] font-brand text-violet-400/90 font-black uppercase tracking-[0.3em] drop-shadow-md">{msg.name}</span>
+                        </div>
+                        <div className="relative">
+                          <Quote size={12} className="text-violet-500/20 absolute -top-2 -left-3" />
+                          <p className="text-[14px] text-white/90 font-light italic leading-[1.6] line-clamp-3 drop-shadow-xl pl-1">{msg.text}</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-end mt-4">
+                        <div className="flex items-center gap-2 bg-white/[0.03] px-2.5 py-1 rounded-full border border-white/5 backdrop-blur-sm">
+                          <Clock size={10} className="text-white/20" />
+                          <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.15em]">{msg.date}</span>
+                        </div>
+                        <button onClick={() => handleDeleteRequest(msg.id)} className="p-3 bg-white/[0.02] hover:bg-red-500 rounded-2xl text-white/5 hover:text-black transition-all duration-300 active:scale-90 border border-white/5 hover:border-red-500">
+                          <Trash2 size={15} strokeWidth={2} />
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-[9px] font-brand text-violet-400 tracking-[0.1em] uppercase font-bold">{msg.name}</span>
-                      <p className="text-[12px] text-white/70 font-light italic mt-1 leading-tight line-clamp-2">"{msg.text}"</p>
-                    </div>
+                    <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-violet-500/60 to-transparent w-full opacity-30" />
                   </div>
                 ))
               ) : (
-                <div className="w-full flex flex-col items-center justify-center opacity-10 gap-2 border border-dashed border-white/10 rounded-[2.5rem]">
+                <div className="w-full flex flex-col items-center justify-center opacity-10 gap-3 border border-dashed border-white/20 rounded-[2.5rem]">
                   <Sparkles size={32} />
-                  <span className="text-[10px] font-brand uppercase tracking-widest text-center">Awaiting traces.</span>
+                  <span className="text-[11px] font-brand uppercase tracking-widest text-center">Neural void awaiting sync.</span>
                 </div>
               )
             )}
@@ -395,10 +393,28 @@ const App = () => {
         <p className="text-[6px] font-brand tracking-[0.2em] uppercase opacity-20 mt-2">© All Rights Reserved by HYZEN LABS.</p>
       </footer>
 
-      {/* Modals */}
+      {/* Delete Password Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/90 backdrop-blur-2xl p-6 animate-fade-in-soft" onClick={closeModal}>
+          <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 flex flex-col items-center text-center shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+              <Lock size={24} />
+            </div>
+            <h3 className="font-brand text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">Security Verification</h3>
+            <h2 className="text-xl font-black uppercase tracking-tight mb-6">Erase Neural Trace?</h2>
+            <input type="password" placeholder="PASSCODE" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-center text-[13px] font-brand focus:border-red-500/50 transition-all outline-none mb-6 tracking-[0.4em] placeholder:tracking-normal placeholder:opacity-20 text-red-500" value={deletePass} onChange={e => setDeletePass(e.target.value)} autoFocus />
+            <div className="flex gap-2 w-full">
+              <button onClick={closeModal} className="flex-1 py-4 rounded-2xl bg-white/5 text-[10px] font-brand uppercase tracking-widest hover:bg-white/10 transition-colors">Abort</button>
+              <button onClick={confirmDelete} className="flex-1 py-4 rounded-2xl bg-red-500 text-black text-[10px] font-brand font-black uppercase tracking-widest shadow-lg shadow-red-500/40 transition-all">Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Guestbook Input Modal */}
       {isGuestbookOpen && (
         <div className="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-3xl p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
-          <div className="w-full h-[90vh] sm:h-auto sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-8 relative flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="w-full h-[90vh] sm:h-auto sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-8 relative flex flex-col shadow-2xl border-t border-cyan-500/20" onClick={e => e.stopPropagation()}>
             <div className="w-14 h-1.5 bg-white/10 rounded-full mx-auto mb-8 sm:hidden" />
             <button onClick={closeModal} className="absolute top-8 right-8 p-2 text-white/20 hover:text-white transition-colors"><X size={22} /></button>
             <div className="mb-6">
@@ -407,13 +423,13 @@ const App = () => {
             </div>
             <form onSubmit={handleMessageSubmit} className="space-y-4 pt-4 safe-pb">
               <div className="flex gap-2">
-                <input type="text" placeholder="NAME" className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-[11px] font-brand focus:outline-none focus:border-cyan-500/50 uppercase tracking-widest" value={newMessage.name} required onChange={e => setNewMessage({...newMessage, name: e.target.value})} />
+                <input type="text" placeholder="IDENTIFIER" className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-[11px] font-brand focus:outline-none focus:border-cyan-500/50 uppercase tracking-widest placeholder:opacity-20" value={newMessage.name} required onChange={e => setNewMessage({...newMessage, name: e.target.value})} />
                 <button type="button" onClick={() => fileInputRef.current?.click()} className={`px-4 rounded-2xl border transition-all ${newMessage.image ? 'bg-cyan-500 border-cyan-500 text-black shadow-[0_0_15px_rgba(34,211,238,0.5)]' : 'bg-white/5 border-white/10 text-white/30'}`}><Camera size={18} /></button>
                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
               </div>
               {newMessage.image && <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-cyan-500 shadow-xl"><img src={newMessage.image} className="w-full h-full object-cover" alt="" /><button onClick={() => setNewMessage(prev => ({...prev, image: null}))} className="absolute top-1 right-1 bg-black/50 p-1 text-white rounded-lg"><X size={10} /></button></div>}
               <div className="relative">
-                <textarea placeholder="Leave your trace..." className="w-full h-24 bg-white/5 border border-white/10 rounded-3xl px-6 py-4 text-[13px] font-light focus:outline-none focus:border-cyan-500/50 resize-none" value={newMessage.text} required onChange={e => setNewMessage({...newMessage, text: e.target.value})} />
+                <textarea placeholder="Input your reality data..." className="w-full h-24 bg-white/5 border border-white/10 rounded-3xl px-6 py-4 text-[13px] font-light focus:outline-none focus:border-cyan-500/50 resize-none placeholder:opacity-20" value={newMessage.text} required onChange={e => setNewMessage({...newMessage, text: e.target.value})} />
                 <button type="submit" className="absolute bottom-3 right-3 p-3 bg-cyan-500 rounded-2xl text-black active:scale-90 transition-all shadow-xl shadow-cyan-500/30"><Send size={18} strokeWidth={2.5} /></button>
               </div>
             </form>
@@ -421,9 +437,10 @@ const App = () => {
         </div>
       )}
 
+      {/* Project Detail Modal */}
       {isModalOpen && selectedProject && (
         <div className="fixed inset-0 z-[4000] flex items-end sm:items-center justify-center bg-black/98 backdrop-blur-3xl p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
-          <div className="w-full h-[80vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-10 relative overflow-y-auto no-scrollbar" onClick={e => e.stopPropagation()}>
+          <div className="w-full h-[80vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-10 relative overflow-y-auto no-scrollbar border-t border-white/10" onClick={e => e.stopPropagation()}>
             <div className="w-14 h-1.5 bg-white/10 rounded-full mx-auto mb-10 sm:hidden" />
             <button onClick={closeModal} className="absolute top-10 right-10 p-2 text-white/20"><X size={22} /></button>
             <div className="text-left">
