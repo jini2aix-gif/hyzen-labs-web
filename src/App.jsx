@@ -33,25 +33,34 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.6.1 | Precision Stability Edition]
- * 1. 디버깅: 누락된 openGuestbook, handleDeleteRequest 함수 복구 및 팝업 스케일 간섭 제거
- * 2. 시각화: 커버플로우 3D 효과(기울기/투명도) 상시 유지 및 여백 집중형 버블 배치
- * 3. 모바일: 히어로 폰트 축소(9.5vw) 및 프로필 사진 확대(w-24)로 최적의 밸런스 확보
- * 4. 데이터: Firestore 연동으로 방명록 영구 보존 및 실시간 동기화
+ * [Hyzen Labs. CTO Optimized - R1.6.2 | Vercel Deployment Stable]
+ * 1. 환경 분석: Vercel 배포 시 __firebase_config 부재로 인한 크래시 방지 로직 추가
+ * 2. 디버깅: 리액트 차일드 객체 에러(Timestamp Object) 방어를 위한 데이터 정제 강화
+ * 3. 시각화: 3D Cover Flow 효과(기울기/투명도) 상시 유지 및 여백 버블 시스템 고도화
+ * 4. 레이아웃: 팝업 종료 시 모바일 Fit 강제 리셋 엔진 탑재
  */
 
-// --- [Firebase Initialization] ---
-const firebaseConfig = JSON.parse(__firebase_config);
+// --- [Firebase Initialization with Safety Checks] ---
+const getFirebaseConfig = () => {
+  try {
+    return typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+      apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: ""
+    };
+  } catch (e) {
+    return { apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
+  }
+};
+
+const firebaseConfig = getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'hyzen-labs-v1';
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'hyzen-labs-prod';
 const ADMIN_PASS = "5733906";
 
 // --- [시각화 컴포넌트: 여백 유영 버블 메시지] ---
 const FloatingBubble = ({ msg }) => {
   const [coords] = useState(() => {
-    // 중앙 텍스트/사진 영역(25%~75%)을 피해 좌우 여백으로만 생성
     const isLeft = Math.random() > 0.5;
     const horizontalPos = isLeft ? Math.random() * 15 + 5 : Math.random() * 15 + 80;
     return {
@@ -62,7 +71,9 @@ const FloatingBubble = ({ msg }) => {
     };
   });
 
-  const summary = (msg.text || "").length > 15 ? msg.text.substring(0, 15) + ".." : (msg.text || "");
+  // 데이터 안전 추출 (객체 에러 방지)
+  const safeText = String(msg?.text || "");
+  const summary = safeText.length > 15 ? safeText.substring(0, 15) + ".." : safeText;
 
   return (
     <div 
@@ -70,7 +81,7 @@ const FloatingBubble = ({ msg }) => {
       style={{ top: coords.top, left: coords.left, animationDuration: coords.duration, animationDelay: coords.delay }}
     >
       <div className="relative group scale-75 sm:scale-90 transition-transform duration-1000">
-        <div className="relative flex items-center gap-2 px-3 py-2 rounded-full glass-panel border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden">
+        <div className="relative flex items-center gap-2 px-4 py-2.5 rounded-full glass-panel border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden">
           <div className="absolute top-1 left-3 w-4 h-2 bg-white/10 rounded-full blur-[1px] rotate-[-20deg]" />
           {msg.image && (
             <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-white/20">
@@ -78,7 +89,7 @@ const FloatingBubble = ({ msg }) => {
             </div>
           )}
           <div className="flex flex-col text-left pr-1">
-            <span className="text-[6px] font-brand text-cyan-400 font-black uppercase tracking-tighter opacity-60">{msg.name || "Anon"}</span>
+            <span className="text-[6px] font-brand text-cyan-400 font-black uppercase tracking-tighter opacity-60">{String(msg?.name || "Anon")}</span>
             <span className="text-[8px] text-white/40 font-light italic leading-tight truncate max-w-[70px]">"{summary}"</span>
           </div>
         </div>
@@ -87,7 +98,7 @@ const FloatingBubble = ({ msg }) => {
   );
 };
 
-// --- [공통 컴포넌트: Cover Flow Wrapper - 정밀 3D 튜닝] ---
+// --- [공통 컴포넌트: Cover Flow Wrapper - 정밀 3D 고정] ---
 const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
   const touchStartRef = useRef(null);
   const handlePrev = () => setActiveIndex(Math.max(0, activeIndex - 1));
@@ -111,9 +122,8 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
           const offset = idx - activeIndex;
           const isCenter = offset === 0;
           
-          // 극적인 3D 효과 유지를 위한 변환 상수 (RC-1.5.2 기준 복구)
           let transform = `translateX(${offset * 85}%) translateZ(${Math.abs(offset) * -350}px) rotateY(${offset * -62}deg)`;
-          if (isCenter) transform = `translateZ(180px) scale(1.1)`;
+          if (isCenter) transform = `translateZ(200px) scale(1.1)`;
 
           return (
             <div 
@@ -164,10 +174,15 @@ const App = () => {
   // --- [Firebase & Core Logic] ---
   useEffect(() => {
     const initAuth = async () => {
-      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        await signInWithCustomToken(auth, __initial_auth_token);
-      } else {
-        await signInAnonymously(auth);
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) {
+        console.warn("Auth Fallback to Anonymous");
+        await signInAnonymously(auth).catch(() => {});
       }
     };
     initAuth();
@@ -178,20 +193,24 @@ const App = () => {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'messages'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setMessages(msgs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)).slice(0, 15));
-    }, (error) => console.error("Sync Error:", error));
-    return () => unsubscribe();
+    try {
+      const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'messages'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setMessages(msgs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)).slice(0, 15));
+      }, (error) => console.error("Sync Error:", error));
+      return () => unsubscribe();
+    } catch (e) {
+      console.error("Firestore access error:", e);
+    }
   }, [user]);
 
-  // --- [Scale Reset & Fit Logic: Fixed] ---
+  // --- [Fit Logic: 정밀 리셋] ---
   useEffect(() => {
     if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen) {
-      // 팝업 종료 시 모바일 화면 핏 강제 리셋
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      window.scrollTo(0, 0);
       document.body.style.overflow = 'hidden';
+      window.dispatchEvent(new Event('resize'));
     }
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
 
@@ -200,7 +219,6 @@ const App = () => {
     setTimeout(() => setIsSyncing(false), 1500);
   }, []);
 
-  // --- [Handers: Restored] ---
   const openGuestbook = () => {
     setNewMessage({ name: '', text: '', image: null });
     setIsGuestbookOpen(true);
@@ -217,8 +235,8 @@ const App = () => {
     if (!newMessage.name || !newMessage.text || !user) return;
     try {
       await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
-        name: newMessage.name,
-        text: newMessage.text,
+        name: String(newMessage.name),
+        text: String(newMessage.text),
         image: newMessage.image,
         createdAt: serverTimestamp(),
         date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
@@ -278,8 +296,8 @@ const App = () => {
         @keyframes scanline { 0% { top: -10%; opacity: 0; } 50% { opacity: 1; } 100% { top: 110%; opacity: 0; } }
         .animate-scan { animation: scanline 4s linear infinite; }
         @keyframes fadeInSoft { from { opacity: 0; transform: translateY(15px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        .animate-fade-in-soft { animation: fadeInSoft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; } 50% { transform: translate(8px, -15px) scale(1.05); opacity: 0.4; } }
+        .animate-fade-in-soft { animation: fadeInSoft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; } 50% { transform: translate(10px, -20px) scale(1.05); opacity: 0.4; } }
         .animate-bubble-float { animation: bubbleFloat 20s ease-in-out infinite; }
         @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .tap-feedback:active { transform: scale(0.97); transition: transform 0.1s ease; }
@@ -301,13 +319,13 @@ const App = () => {
             </div>
             <div className="flex flex-col items-center gap-1 opacity-40">
               <span className="text-[7px] font-brand tracking-widest uppercase">Reality Data Synchronization...</span>
-              <span className="text-[6px] font-mono italic">CODE: HYZEN-RC161-PRECISION</span>
+              <span className="text-[6px] font-mono italic">CODE: HYZEN-RC162-DEPLOY</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- [Main Layer: Scale Stability Fixed] --- */}
+      {/* --- [Main Layer: Absolute Stability Enforcement] --- */}
       <div 
         className={`flex-1 flex flex-col relative transition-all duration-700 origin-center ${isInitializing ? 'opacity-0 scale-105' : 'opacity-100'} ${isAnyModalOpen ? 'blur-md brightness-50 pointer-events-none' : 'blur-0 brightness-100'}`}
         style={{ transform: 'scale(1)' }}
@@ -324,7 +342,7 @@ const App = () => {
               <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
               <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
             </div>
-            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.6.1 | Precision Sync</span>
+            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.6.2 | Stable Deploy</span>
           </div>
           <div className="flex gap-4 opacity-40">
             <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
@@ -375,6 +393,7 @@ const App = () => {
           </div>
         </section>
 
+        {/* Controller Section */}
         <div className="shrink-0 z-10 pb-6 animate-fade-in-soft" style={{ animationDelay: '0.4s' }}>
           <div className="px-6 mb-6 max-w-lg mx-auto">
             <div className="glass-panel p-1 rounded-2xl flex gap-1 relative border border-white/10 shadow-2xl overflow-hidden">
@@ -386,7 +405,7 @@ const App = () => {
             </div>
           </div>
 
-          <div className="px-6 max-w-5xl mx-auto h-[180px] relative overflow-visible">
+          <div className="px-6 max-w-5xl mx-auto h-[180px] relative overflow-visible text-white">
             <div key={activeView} className="w-full h-full animate-fade-in-soft">
               {activeView === 'roadmap' && (
                 <CoverFlow items={roadmapSteps} activeIndex={activeIndices.roadmap} setActiveIndex={(i) => setViewIndex('roadmap', i)} renderItem={(step) => (
@@ -395,7 +414,7 @@ const App = () => {
                       <div className="w-14 h-14 flex items-center justify-center bg-white/[0.03] rounded-[1.2rem] border border-white/15 text-cyan-400">{step.icon}</div>
                       <div className="text-[6px] font-brand px-2.5 py-1 rounded-full border border-cyan-500/50 text-cyan-400 bg-cyan-500/5 uppercase font-black">In Prep</div>
                     </div>
-                    <div className="text-left text-white">
+                    <div className="text-left">
                       <span className="text-[8px] font-brand text-white/30 tracking-[0.2em] uppercase font-bold">{step.phase}</span>
                       <h3 className="text-[13px] font-bold tracking-tight mt-1 leading-tight">{step.title}</h3>
                     </div>
@@ -409,7 +428,7 @@ const App = () => {
                       <span className="text-cyan-500 font-brand text-[8px] font-bold uppercase tracking-[0.3em]">{project.tag}</span>
                       <Maximize2 size={12} className="text-white/20 group-hover:text-cyan-400" />
                     </div>
-                    <div className="flex-1 flex flex-col justify-center text-left text-white">
+                    <div className="flex-1 flex flex-col justify-center text-left">
                       <h3 className="text-[15px] font-black mb-1 uppercase tracking-tight leading-tight">{project.title}</h3>
                       <p className="text-white/40 text-[9px] leading-relaxed line-clamp-2 font-light">{project.desc}</p>
                     </div>
@@ -426,18 +445,18 @@ const App = () => {
                           <div className="absolute inset-0 bg-gradient-to-r from-[#010101] via-[#010101]/90 to-transparent z-1" />
                         </div>
                       )}
-                      <div className="relative z-10 p-6 h-full flex flex-col justify-between text-left text-white">
+                      <div className="relative z-10 p-6 h-full flex flex-col justify-between text-left">
                         <div>
                           <div className="flex items-center gap-2.5 mb-3">
                             <div className="w-1 h-1 bg-violet-400 rounded-full shadow-[0_0_10px_#a78bfa]" />
-                            <span className="text-[10px] font-brand text-violet-400/90 font-black uppercase tracking-[0.3em] drop-shadow-md">{msg.name || "Anon"}</span>
+                            <span className="text-[10px] font-brand text-violet-400/90 font-black uppercase tracking-[0.3em] drop-shadow-md">{String(msg?.name || "Anon")}</span>
                           </div>
-                          <p className="text-[12px] text-white/95 font-light italic leading-[1.6] line-clamp-3 drop-shadow-xl pl-1">{msg.text || ""}</p>
+                          <p className="text-[12px] text-white/95 font-light italic leading-[1.6] line-clamp-3 drop-shadow-xl pl-1">{String(msg?.text || "")}</p>
                         </div>
                         <div className="flex justify-between items-end mt-4">
                           <div className="flex items-center gap-2 bg-white/[0.03] px-2.5 py-1 rounded-full border border-white/5 backdrop-blur-sm">
                             <Clock size={10} className="text-white/20" />
-                            <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.15em]">{msg.date || ""}</span>
+                            <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.15em]">{String(msg?.date || "")}</span>
                           </div>
                           <button onClick={(e) => { e.stopPropagation(); handleDeleteRequest(msg.id); }} className="p-3 bg-white/[0.02] hover:bg-red-500 rounded-2xl text-white/5 hover:text-black transition-all duration-300 active:scale-90 border border-white/5 hover:border-red-500"><Trash2 size={15} strokeWidth={2} /></button>
                         </div>
@@ -455,9 +474,9 @@ const App = () => {
           </div>
         </div>
 
-        <footer className="w-full shrink-0 z-10 py-6 flex flex-col items-center justify-center border-t border-white/5 bg-black/20">
+        <footer className="w-full shrink-0 z-10 py-6 flex flex-col items-center justify-center border-t border-white/5 bg-black/20 text-white">
           <span className="font-brand text-[10px] tracking-[0.8em] font-black text-white/90 uppercase animate-pulse">HYZEN LABS. 2026</span>
-          <p className="text-[6px] font-brand tracking-[0.2em] uppercase opacity-20 mt-2 text-white">© All Rights Reserved by HYZEN LABS.</p>
+          <p className="text-[6px] font-brand tracking-[0.2em] uppercase opacity-20 mt-2">© All Rights Reserved by HYZEN LABS.</p>
         </footer>
       </div>
 
@@ -486,7 +505,7 @@ const App = () => {
               <div className="flex items-center gap-3 text-cyan-400 mb-2"><Activity size={14} /><span className="font-brand text-[9px] font-bold uppercase tracking-[0.5em]">Digital Trace Sync</span></div>
               <h2 className="text-2xl font-black uppercase tracking-tighter leading-none">Synchronize Reality</h2>
             </div>
-            <form onSubmit={handleMessageSubmit} className="space-y-4 pt-4 safe-pb">
+            <form onSubmit={handleMessageSubmit} className="space-y-4 pt-4 safe-pb text-white">
               <div className="flex gap-2">
                 <input type="text" placeholder="IDENTIFIER" className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-[11px] font-brand focus:outline-none focus:border-cyan-500/50 uppercase tracking-widest placeholder:opacity-20 text-white" value={newMessage.name} required onChange={e => setNewMessage({...newMessage, name: e.target.value})} />
                 <button type="button" onClick={() => fileInputRef.current?.click()} className={`px-4 rounded-2xl border transition-all ${newMessage.image ? 'bg-cyan-500 border-cyan-500 text-black shadow-[0_0_15px_rgba(34,211,238,0.5)]' : 'bg-white/5 border-white/10 text-white/30'}`}><Camera size={18} /></button>
@@ -511,10 +530,10 @@ const App = () => {
 
       {isModalOpen && selectedProject && (
         <div className="fixed inset-0 z-[4000] flex items-end sm:items-center justify-center bg-black/98 backdrop-blur-3xl p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
-          <div className="w-full h-[80vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-10 relative overflow-y-auto no-scrollbar border-t border-white/10" onClick={e => e.stopPropagation()}>
+          <div className="w-full h-[80vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-10 relative overflow-y-auto no-scrollbar border-t border-white/10 text-white" onClick={e => e.stopPropagation()}>
             <div className="w-14 h-1.5 bg-white/10 rounded-full mx-auto mb-10 sm:hidden" />
             <button onClick={closeModal} className="absolute top-10 right-10 p-2 text-white/20"><X size={22} /></button>
-            <div className="text-left text-white">
+            <div className="text-left">
               <div className="flex items-center gap-2 mb-2"><Zap size={14} className="text-cyan-400" /><span className="text-cyan-500 font-brand text-[9px] font-bold uppercase tracking-[0.4em]">{selectedProject.tag}</span></div>
               <h2 className="text-3xl font-black mb-10 uppercase tracking-tighter leading-tight">{selectedProject.title}</h2>
               <div className="space-y-6 pb-12">
