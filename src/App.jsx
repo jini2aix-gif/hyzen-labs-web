@@ -25,15 +25,16 @@ import {
   Trash2,
   Lock,
   Clock,
-  Quote
+  Quote,
+  ShieldCheck
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.3.7 | Biometric Identity Edition]
- * 1. 기능 복구: 프로필 이미지 위 지문(Fingerprint) 로그인 오버레이 효과 재적용
- * 2. 시각화: 지문 아이콘의 스케일 애니메이션 및 사이언 글로우 효과 고도화
- * 3. 모바일 최적화: Compact Identity 레이아웃(수직 간격 압축) 유지
- * 4. 유지보수: 3D Cover Flow, 터치 슬라이드, 보안 삭제 시스템 완벽 작동
+ * [Hyzen Labs. CTO Optimized - R1.4.0 | Neural Genesis Edition]
+ * 1. 진입 효과: 시스템 초기화 시퀀스(Initializing Overlay) 추가
+ * 2. 애니메이션: 인트로 종료 후 메인 콘텐츠의 부드러운 줌아웃 등장 연출
+ * 3. 레이아웃: Compact Identity 및 Precision Spacing 유지
+ * 4. 인터랙션: 3D Cover Flow, 터치 슬라이드, 지문 인식 프로필, 보안 삭제(5733906) 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -121,6 +122,7 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
 };
 
 const App = () => {
+  const [isInitializing, setIsInitializing] = useState(true);
   const [activeView, setActiveView] = useState('traces');
   const [activeIndices, setActiveIndices] = useState({ roadmap: 0, works: 0, traces: 0 });
   const [selectedProject, setSelectedProject] = useState(null);
@@ -136,7 +138,16 @@ const App = () => {
   const [newMessage, setNewMessage] = useState({ name: '', text: '', image: null });
   
   const fileInputRef = useRef(null);
+  const scrollRef = useRef(null);
   const founderImgSrc = "YJ.PNG"; 
+
+  // --- [Intro Sequence Effect] ---
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitializing(false);
+    }, 2800); // 2.8초 후 메인 화면 진입
+    return () => clearTimeout(timer);
+  }, []);
 
   const triggerSync = useCallback(() => {
     setIsSyncing(true);
@@ -218,210 +229,218 @@ const App = () => {
     <div className="h-screen w-screen bg-[#010101] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col relative">
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] pointer-events-none z-[1] mix-blend-overlay" />
       
-      {/* Floating Bubbles Background */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        {messages.map(msg => (
-          <FloatingBubble key={msg.id} msg={msg} />
-        ))}
-      </div>
-
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Michroma&family=Orbitron:wght@400;700;900&family=JetBrains+Mono&display=swap');
         .font-brand { font-family: 'Orbitron', sans-serif; }
         .font-title { font-family: 'Michroma', sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
-        .glass-panel { 
-          background: rgba(255, 255, 255, 0.03); 
-          backdrop-filter: blur(25px); 
-          border: 1px solid rgba(255, 255, 255, 0.12);
-        }
+        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.12); }
         .text-outline { -webkit-text-stroke: 1px rgba(255,255,255,0.2); color: transparent; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .preserve-3d { transform-style: preserve-3d; }
         @keyframes scanline { 0% { top: -10%; opacity: 0; } 50% { opacity: 1; } 100% { top: 110%; opacity: 0; } }
         .animate-scan { animation: scanline 4s linear infinite; }
         @keyframes fadeInSoft { from { opacity: 0; transform: translateY(15px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        .animate-fade-in-soft { animation: fadeInSoft 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        .animate-fade-in-soft { animation: fadeInSoft 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; } 50% { transform: translate(10px, -20px) scale(1.03); opacity: 0.5; } }
         .animate-bubble-float { animation: bubbleFloat 20s ease-in-out infinite; }
         @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .tap-feedback:active { transform: scale(0.97); transition: transform 0.1s ease; }
+        @keyframes initProgress { 0% { width: 0%; } 100% { width: 100%; } }
+        .animate-init-progress { animation: initProgress 2.2s ease-in-out forwards; }
       `}</style>
 
-      {/* Header */}
-      <nav className="w-full z-[100] px-6 py-4 flex justify-between items-center shrink-0">
-        <div className="flex flex-col text-left group">
-          <div className="flex items-center gap-2">
-            <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
-            <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
-          </div>
-          <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.3.7 | Biometric Identity</span>
-        </div>
-        <div className="flex gap-4 opacity-40">
-          <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
-          <Share2 size={14} />
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <section className="flex-1 z-10 px-8 pt-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
-        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-cyan-500/5 blur-[100px] -z-10 transition-opacity duration-1000 ${isSyncing ? 'opacity-100' : 'opacity-40'}`} />
-        
-        <div className="relative inline-block animate-fade-in-soft mb-4 group pt-4">
-          <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10 pointer-events-none" />
-          <div className="flex flex-col items-center">
-            <h1 className="text-[11vw] sm:text-8xl font-title tracking-[-0.07em] leading-[0.9] uppercase">
-              <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent block">ME,</span>
-              <span className="text-outline block my-1 group-hover:text-white transition-all duration-1000">REALITY</span>
-              <span className="bg-gradient-to-b from-cyan-400 to-cyan-700 bg-clip-text text-transparent block">AND AI</span>
-            </h1>
+      {/* --- [Entry Sequence: Initializing Layer] --- */}
+      {isInitializing && (
+        <div className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center p-8 transition-opacity duration-700">
+          <div className="absolute top-0 left-0 w-full h-[1px] bg-cyan-500/20 blur-[1px] animate-scan" />
+          <div className="flex flex-col items-center gap-6">
+            <div className="flex items-center gap-4 text-cyan-400">
+              <ShieldCheck size={28} className="animate-pulse" />
+              <span className="font-brand text-[10px] tracking-[1em] font-black uppercase">Hyzen Labs. System</span>
+            </div>
+            <div className="relative w-48 h-[1px] bg-white/10 overflow-hidden">
+              <div className="absolute top-0 left-0 h-full bg-cyan-500 animate-init-progress shadow-[0_0_10px_#22d3ee]" />
+            </div>
+            <div className="flex flex-col items-center gap-1 opacity-40">
+              <span className="text-[7px] font-brand tracking-widest uppercase">Reality Data Synchronization...</span>
+              <span className="text-[6px] font-mono">CODE: HYZEN-RC140-ACTIVE</span>
+            </div>
           </div>
         </div>
-        
-        <p className="text-[2.5vw] sm:text-[11px] text-cyan-400/60 tracking-[0.5em] font-brand font-black uppercase mb-6 animate-fade-in-soft">
-          Augmented Reality Grounding
-        </p>
+      )}
 
-        {/* --- [Unified Identity Hub - Fingerprint Restored] --- */}
-        <div className="flex flex-col items-center gap-2 animate-fade-in-soft" style={{ animationDelay: '0.2s' }}>
-          <div onClick={openGuestbook} className="relative group cursor-pointer tap-feedback active:scale-95 transition-all">
-            {/* Interactive Orbit Rings */}
-            <div className="absolute -inset-6 border border-white/5 rounded-full animate-[orbit_25s_linear_infinite] pointer-events-none" />
-            <div className="absolute -inset-4 border border-cyan-500/10 rounded-full animate-[orbit_15s_linear_infinite_reverse] pointer-events-none" />
-            
-            {/* Founder Profile Circle with Fingerprint Sync Effect */}
-            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent shadow-2xl shadow-black">
-              <div className="w-full h-full rounded-full border border-white/10 overflow-hidden bg-zinc-900 flex items-center justify-center relative">
-                {imgLoadStatus !== 'error' ? (
-                  <img 
-                    src={founderImgSrc} 
-                    alt="Founder" 
-                    className={`w-full h-full object-cover grayscale brightness-90 transition-all duration-1000 group-hover:grayscale-0 group-hover:scale-110 ${imgLoadStatus === 'loading' ? 'opacity-0' : 'opacity-100'}`} 
-                    onLoad={() => setImgLoadStatus('success')} 
-                    onError={() => setImgLoadStatus('error')} 
-                  />
-                ) : (
-                  <User size={24} strokeWidth={1} className="text-white/10" />
-                )}
-                
-                {/* Fingerprint Overlay - RESTORED & ENHANCED */}
-                <div className="absolute inset-0 bg-cyan-500/0 group-hover:bg-cyan-500/20 backdrop-blur-[0px] group-hover:backdrop-blur-[2px] transition-all duration-500 flex items-center justify-center pointer-events-none">
-                  <Fingerprint 
-                    size={32} 
-                    className="text-cyan-400 opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 rotate-12 group-hover:rotate-0 transition-all duration-500 drop-shadow-[0_0_10px_rgba(34,211,238,1)]" 
-                  />
+      {/* --- [Main Content Layer] --- */}
+      <div className={`flex-1 flex flex-col relative transition-all duration-1000 ${isInitializing ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}>
+        
+        {/* Floating Bubbles Layer */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+          {messages.map(msg => (
+            <FloatingBubble key={msg.id} msg={msg} />
+          ))}
+        </div>
+
+        {/* Header */}
+        <nav className="w-full z-[100] px-6 py-4 flex justify-between items-center shrink-0">
+          <div className="flex flex-col text-left group">
+            <div className="flex items-center gap-2">
+              <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase leading-none">Hyzen Labs.</span>
+              <div className={`w-1 h-1 rounded-full ${isSyncing ? 'bg-cyan-400 animate-ping' : 'bg-cyan-900'}`} />
+            </div>
+            <span className="text-[7px] opacity-20 mt-1 uppercase tracking-[0.3em] font-brand font-bold">R1.4.0 | Neural Genesis</span>
+          </div>
+          <div className="flex gap-4 opacity-40">
+            <a href="mailto:jini2aix@gmail.com"><Mail size={14} /></a>
+            <Share2 size={14} />
+          </div>
+        </nav>
+
+        {/* Hero Section */}
+        <section className="flex-1 z-10 px-8 pt-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
+          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-cyan-500/5 blur-[100px] -z-10 transition-opacity duration-1000 ${isSyncing ? 'opacity-100' : 'opacity-40'}`} />
+          
+          <div className="relative inline-block animate-fade-in-soft mb-4 group pt-4">
+            <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10 pointer-events-none" />
+            <div className="flex flex-col items-center">
+              <h1 className="text-[11vw] sm:text-8xl font-title tracking-[-0.07em] leading-[0.9] uppercase">
+                <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent block">ME,</span>
+                <span className="text-outline block my-1 group-hover:text-white transition-all duration-1000">REALITY</span>
+                <span className="bg-gradient-to-b from-cyan-400 to-cyan-700 bg-clip-text text-transparent block">AND AI</span>
+              </h1>
+            </div>
+          </div>
+          
+          <p className="text-[2.5vw] sm:text-[11px] text-cyan-400/60 tracking-[0.5em] font-brand font-black uppercase mb-6 animate-fade-in-soft">
+            Augmented Reality Grounding
+          </p>
+
+          {/* Unified Identity Hub */}
+          <div className="flex flex-col items-center gap-2 animate-fade-in-soft" style={{ animationDelay: '0.2s' }}>
+            <div onClick={openGuestbook} className="relative group cursor-pointer tap-feedback active:scale-95 transition-all">
+              <div className="absolute -inset-6 border border-white/5 rounded-full animate-[orbit_25s_linear_infinite] pointer-events-none" />
+              <div className="absolute -inset-4 border border-cyan-500/10 rounded-full animate-[orbit_15s_linear_infinite_reverse] pointer-events-none" />
+              
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent shadow-2xl shadow-black overflow-visible">
+                <div className="w-full h-full rounded-full border border-white/10 overflow-hidden bg-zinc-900 flex items-center justify-center relative">
+                  {imgLoadStatus !== 'error' ? (
+                    <img src={founderImgSrc} alt="Founder" className={`w-full h-full object-cover grayscale brightness-90 transition-all duration-1000 group-hover:grayscale-0 group-hover:scale-110 ${imgLoadStatus === 'loading' ? 'opacity-0' : 'opacity-100'}`} onLoad={() => setImgLoadStatus('success')} onError={() => setImgLoadStatus('error')} />
+                  ) : (
+                    <User size={24} strokeWidth={1} className="text-white/10" />
+                  )}
+                  <div className="absolute inset-0 bg-cyan-500/0 group-hover:bg-cyan-500/20 backdrop-blur-[0px] group-hover:backdrop-blur-[2px] transition-all duration-500 flex items-center justify-center pointer-events-none">
+                    <Fingerprint size={32} className="text-cyan-400 opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 rotate-12 group-hover:rotate-0 transition-all duration-500 drop-shadow-[0_0_10px_rgba(34,211,238,1)]" />
+                  </div>
                 </div>
+              </div>
+
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 glass-panel border border-cyan-500/40 rounded-full flex items-center gap-2 shadow-[0_5px_20px_rgba(34,211,238,0.2)] bg-black transition-all group-hover:border-cyan-300">
+                <MessageSquare size={10} className="text-cyan-400" />
+                <span className="text-[8px] font-brand tracking-[0.2em] font-black uppercase text-white/80 whitespace-nowrap">Sync Trace</span>
               </div>
             </div>
 
-            {/* Fused Sync Badge */}
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 glass-panel border border-cyan-500/40 rounded-full flex items-center gap-2 shadow-[0_5px_20px_rgba(34,211,238,0.2)] bg-black transition-all group-hover:border-cyan-300">
-              <MessageSquare size={10} className="text-cyan-400" />
-              <span className="text-[8px] font-brand tracking-[0.2em] font-black uppercase text-white/80 whitespace-nowrap">Sync Trace</span>
+            <div className="mt-3 flex flex-col items-center">
+              <h3 className="text-[12px] font-title tracking-tight text-white font-bold leading-none">Youngji.Park</h3>
+              <span className="text-[7px] font-brand tracking-[0.4em] uppercase font-bold text-white/20 mt-1 pb-1">Founder</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Controller Section */}
+        <div className="shrink-0 z-10 pb-4 animate-fade-in-soft" style={{ animationDelay: '0.4s' }}>
+          <div className="px-6 mb-6 max-w-lg mx-auto">
+            <div className="glass-panel p-1 rounded-2xl flex gap-1 relative overflow-hidden border border-white/10 shadow-2xl">
+              {['roadmap', 'works', 'traces'].map((view) => (
+                <button key={view} onClick={() => { setActiveView(view); triggerSync(); }} className={`flex-1 py-3.5 rounded-xl text-[7px] font-brand tracking-[0.1em] transition-all tap-feedback uppercase ${activeView === view ? 'bg-white text-black font-black shadow-lg' : 'text-white/30'}`}>
+                  {view}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="mt-3 flex flex-col items-center">
-            <h3 className="text-[12px] font-title tracking-tight text-white font-bold leading-none">Youngji.Park</h3>
-            <span className="text-[7px] font-brand tracking-[0.4em] uppercase font-bold text-white/20 mt-2">Founder</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Controller Section */}
-      <div className="shrink-0 z-10 pb-4 animate-fade-in-soft" style={{ animationDelay: '0.3s' }}>
-        <div className="px-6 mb-6 max-w-lg mx-auto">
-          <div className="glass-panel p-1 rounded-2xl flex gap-1 relative overflow-hidden border border-white/10 shadow-2xl">
-            {['roadmap', 'works', 'traces'].map((view) => (
-              <button key={view} onClick={() => { setActiveView(view); triggerSync(); }} className={`flex-1 py-3.5 rounded-xl text-[7px] font-brand tracking-[0.1em] transition-all tap-feedback uppercase ${activeView === view ? 'bg-white text-black font-black shadow-lg' : 'text-white/30'}`}>
-                {view}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* --- [3D Cover Flow Viewport] --- */}
-        <div className="px-6 max-w-5xl mx-auto h-[180px] relative overflow-visible">
-          <div key={activeView} className="w-full h-full animate-fade-in-soft">
-            {activeView === 'roadmap' && (
-              <CoverFlow items={roadmapSteps} activeIndex={activeIndices.roadmap} setActiveIndex={(i) => setViewIndex('roadmap', i)} renderItem={(step) => (
-                  <div className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-cyan-500/30 flex flex-col justify-between shadow-2xl">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="w-14 h-14 flex items-center justify-center bg-white/[0.03] rounded-[1.2rem] border border-white/15 text-cyan-400">{step.icon}</div>
-                      <div className="text-[6px] font-brand px-2.5 py-1 rounded-full border border-cyan-500/50 text-cyan-400 bg-cyan-500/5 uppercase font-black">In Prep</div>
-                    </div>
-                    <div>
-                      <span className="text-[8px] font-brand text-white/30 tracking-[0.2em] uppercase font-bold">{step.phase}</span>
-                      <h3 className="text-[13px] font-bold tracking-tight mt-1 leading-tight">{step.title}</h3>
-                    </div>
-                  </div>
-                )}
-              />
-            )}
-            
-            {activeView === 'works' && (
-              <CoverFlow items={projects} activeIndex={activeIndices.works} setActiveIndex={(i) => setViewIndex('works', i)} renderItem={(project) => (
-                  <div onClick={() => { setSelectedProject(project); setIsModalOpen(true); }} className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-white/20 flex flex-col justify-between tap-feedback group hover:border-cyan-500/40 transition-all shadow-2xl">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-cyan-500 font-brand text-[8px] font-bold uppercase tracking-[0.3em]">{project.tag}</span>
-                      <Maximize2 size={12} className="text-white/20 group-hover:text-cyan-400" />
-                    </div>
-                    <div className="flex-1 flex flex-col justify-center">
-                      <h3 className="text-[14px] font-black mb-1 uppercase tracking-tight leading-tight">{project.title}</h3>
-                      <p className="text-white/40 text-[9px] leading-relaxed line-clamp-2 font-light">{project.desc}</p>
-                    </div>
-                  </div>
-                )}
-              />
-            )}
-
-            {activeView === 'traces' && (
-              messages.length > 0 ? (
-                <CoverFlow items={messages} activeIndex={activeIndices.traces} setActiveIndex={(i) => setViewIndex('traces', i)} renderItem={(msg) => (
-                    <div className="w-full h-full glass-panel rounded-[2.5rem] relative overflow-hidden border border-violet-500/30 shadow-2xl group">
-                      {msg.image && (
-                        <div className="absolute right-0 top-0 w-full h-full z-0 overflow-hidden pointer-events-none">
-                          <img src={msg.image} className="absolute right-0 h-full w-[70%] object-cover grayscale brightness-[0.4] contrast-125 opacity-50 transition-all duration-700 group-hover:opacity-70 group-hover:scale-105" alt="" />
-                          <div className="absolute inset-0 bg-gradient-to-r from-[#010101] via-[#010101]/90 to-transparent z-1" />
-                        </div>
-                      )}
-                      <div className="relative z-10 p-6 h-full flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center gap-2.5 mb-3">
-                            <div className="w-1 h-1 bg-violet-400 rounded-full shadow-[0_0_10px_rgba(167,139,250,1)]" />
-                            <span className="text-[10px] font-brand text-violet-400/90 font-black uppercase tracking-[0.3em] drop-shadow-md">{msg.name}</span>
-                          </div>
-                          <p className="text-[12px] text-white/90 font-light italic leading-[1.6] line-clamp-3 drop-shadow-xl pl-1">{msg.text}</p>
-                        </div>
-                        <div className="flex justify-between items-end mt-4">
-                          <div className="flex items-center gap-2 bg-white/[0.03] px-2.5 py-1 rounded-full border border-white/5 backdrop-blur-sm">
-                            <Clock size={10} className="text-white/20" />
-                            <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.15em]">{msg.date}</span>
-                          </div>
-                          <button onClick={(e) => { e.stopPropagation(); handleDeleteRequest(msg.id); }} className="p-3 bg-white/[0.02] hover:bg-red-500 rounded-2xl text-white/5 hover:text-black transition-all duration-300 active:scale-90 border border-white/5 hover:border-red-500"><Trash2 size={15} strokeWidth={2} /></button>
-                        </div>
+          {/* 3D Cover Flow Viewport */}
+          <div className="px-6 max-w-5xl mx-auto h-[180px] relative overflow-visible">
+            <div key={activeView} className="w-full h-full animate-fade-in-soft">
+              {activeView === 'roadmap' && (
+                <CoverFlow items={roadmapSteps} activeIndex={activeIndices.roadmap} setActiveIndex={(i) => setViewIndex('roadmap', i)} renderItem={(step) => (
+                    <div className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-cyan-500/30 flex flex-col justify-between shadow-2xl">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="w-14 h-14 flex items-center justify-center bg-white/[0.03] rounded-[1.2rem] border border-white/15 text-cyan-400">{step.icon}</div>
+                        <div className="text-[6px] font-brand px-2.5 py-1 rounded-full border border-cyan-500/50 text-cyan-400 bg-cyan-500/5 uppercase font-black">In Prep</div>
+                      </div>
+                      <div>
+                        <span className="text-[8px] font-brand text-white/30 tracking-[0.2em] uppercase font-bold">{step.phase}</span>
+                        <h3 className="text-[13px] font-bold tracking-tight mt-1 leading-tight">{step.title}</h3>
                       </div>
                     </div>
                   )}
                 />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center opacity-10 gap-3 border border-dashed border-white/20 rounded-[2.5rem]">
-                  <ArrowRight size={32} className="animate-pulse" />
-                  <span className="text-[11px] font-brand uppercase tracking-widest text-center">Neural void awaiting sync.</span>
-                </div>
-              )
-            )}
+              )}
+              
+              {activeView === 'works' && (
+                <CoverFlow items={projects} activeIndex={activeIndices.works} setActiveIndex={(i) => setViewIndex('works', i)} renderItem={(project) => (
+                    <div onClick={() => { setSelectedProject(project); setIsModalOpen(true); }} className="w-full h-full glass-panel p-6 rounded-[2.5rem] border border-white/20 flex flex-col justify-between tap-feedback group hover:border-cyan-500/40 transition-all shadow-2xl">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-cyan-500 font-brand text-[8px] font-bold uppercase tracking-[0.3em]">{project.tag}</span>
+                        <Maximize2 size={12} className="text-white/20 group-hover:text-cyan-400" />
+                      </div>
+                      <div className="flex-1 flex flex-col justify-center">
+                        <h3 className="text-[14px] font-black mb-1 uppercase tracking-tight leading-tight">{project.title}</h3>
+                        <p className="text-white/40 text-[9px] leading-relaxed line-clamp-2 font-light">{project.desc}</p>
+                      </div>
+                    </div>
+                  )}
+                />
+              )}
+
+              {activeView === 'traces' && (
+                messages.length > 0 ? (
+                  <CoverFlow items={messages} activeIndex={activeIndices.traces} setActiveIndex={(i) => setViewIndex('traces', i)} renderItem={(msg) => (
+                      <div className="w-full h-full glass-panel rounded-[2.5rem] relative overflow-hidden border border-violet-500/30 shadow-2xl group">
+                        {msg.image && (
+                          <div className="absolute right-0 top-0 w-full h-full z-0 overflow-hidden pointer-events-none">
+                            <img src={msg.image} className="absolute right-0 h-full w-[70%] object-cover grayscale brightness-[0.4] contrast-125 opacity-50 transition-all duration-700 group-hover:opacity-70 group-hover:scale-105" alt="" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#010101] via-[#010101]/90 to-transparent z-1" />
+                          </div>
+                        )}
+                        <div className="relative z-10 p-6 h-full flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-center gap-2.5 mb-3">
+                              <div className="w-1 h-1 bg-violet-400 rounded-full shadow-[0_0_10px_rgba(167,139,250,1)]" />
+                              <span className="text-[10px] font-brand text-violet-400/90 font-black uppercase tracking-[0.3em] drop-shadow-md">{msg.name}</span>
+                            </div>
+                            <p className="text-[12px] text-white/90 font-light italic leading-[1.6] line-clamp-3 drop-shadow-xl pl-1">{msg.text}</p>
+                          </div>
+                          <div className="flex justify-between items-end mt-4">
+                            <div className="flex items-center gap-2 bg-white/[0.03] px-2.5 py-1 rounded-full border border-white/5 backdrop-blur-sm">
+                              <Clock size={10} className="text-white/20" />
+                              <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.15em]">{msg.date}</span>
+                            </div>
+                            <button onClick={(e) => { e.stopPropagation(); handleDeleteRequest(msg.id); }} className="p-3 bg-white/[0.02] hover:bg-red-500 rounded-2xl text-white/5 hover:text-black transition-all duration-300 active:scale-90 border border-white/5 hover:border-red-500"><Trash2 size={15} strokeWidth={2} /></button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center opacity-10 gap-3 border border-dashed border-white/20 rounded-[2.5rem]">
+                    <ArrowRight size={32} className="animate-pulse" />
+                    <span className="text-[11px] font-brand uppercase tracking-widest text-center">Neural void awaiting sync.</span>
+                  </div>
+                )
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Footer */}
+        <footer className="w-full shrink-0 z-10 py-6 flex flex-col items-center justify-center border-t border-white/5 bg-black/20">
+          <span className="font-brand text-[10px] tracking-[0.8em] font-black text-white/90 uppercase animate-pulse">HYZEN LABS. 2026</span>
+          <p className="text-[6px] font-brand tracking-[0.2em] uppercase opacity-20 mt-2">© All Rights Reserved by HYZEN LABS.</p>
+        </footer>
       </div>
 
-      {/* Footer */}
-      <footer className="w-full shrink-0 z-10 py-6 flex flex-col items-center justify-center border-t border-white/5 bg-black/20">
-        <span className="font-brand text-[10px] tracking-[0.8em] font-black text-white/90 uppercase animate-pulse">HYZEN LABS. 2026</span>
-        <p className="text-[6px] font-brand tracking-[0.2em] uppercase opacity-20 mt-2">© All Rights Reserved by HYZEN LABS.</p>
-      </footer>
-
-      {/* Modals - Same logic */}
+      {/* Security Modals */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/90 backdrop-blur-2xl p-6 animate-fade-in-soft" onClick={closeModal}>
           <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 flex flex-col items-center text-center shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -437,6 +456,7 @@ const App = () => {
         </div>
       )}
 
+      {/* Guestbook Modal */}
       {isGuestbookOpen && (
         <div className="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-3xl p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
           <div className="w-full h-[90vh] sm:h-auto sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-8 relative flex flex-col shadow-2xl border-t border-cyan-500/20" onClick={e => e.stopPropagation()}>
@@ -462,6 +482,7 @@ const App = () => {
         </div>
       )}
 
+      {/* Project Detail Modal */}
       {isModalOpen && selectedProject && (
         <div className="fixed inset-0 z-[4000] flex items-end sm:items-center justify-center bg-black/98 backdrop-blur-3xl p-0 sm:p-4 animate-fade-in-soft" onClick={closeModal}>
           <div className="w-full h-[80vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-10 relative overflow-y-auto no-scrollbar border-t border-white/10" onClick={e => e.stopPropagation()}>
