@@ -21,15 +21,16 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
-  Fingerprint
+  Fingerprint,
+  Sparkles
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.0.0 | Identity & Typography Refined]
- * 1. 타이틀 아이덴티티: "AND" 문구를 화이트(White)로 변경하고 미세한 발광(Glow) 효과를 추가하여 연결성 강조
- * 2. 시각적 조형미: "AND"의 크기를 최적화(0.35em)하여 "ME"와 "AI" 사이의 황금 비율 구현
- * 3. 통합 시스템: 인트로 사운드, 지문 스캔, 브리딩 푸터, 실시간 버블 시스템의 완벽한 융합
- * 4. 안정성 최우선: Firebase 권한 및 빌드 환경 호환성을 위한 하이브리드 설정 로직 유지
+ * [Hyzen Labs. CTO Optimized - R2.1.1 | Presence Priority Edition]
+ * 1. 진입점 변경: 초기 activeView를 'traces'로 설정하여 연구 기록과 흔적을 최우선 노출
+ * 2. 버블 시스템 유지: 텍스트 사이즈 확대, 메세지 프리뷰, 별빛 반짝임(Twinkle) 효과 적용
+ * 3. 자율 슬라이드: 하단 커버플로우 1.2초 자동 전환 및 무한 루프 시스템 유지
+ * 4. 스케일 핏: 팝업 종료 후 레이아웃 리플로우 최적화
  */
 
 const ADMIN_PASS = "5733906";
@@ -114,14 +115,22 @@ const compressImage = (file) => {
 
 const FloatingBubble = ({ msg }) => {
   const [coords] = useState(() => ({
-    top: `${Math.random() * 70 + 15}%`, left: `${Math.random() * 80 + 10}%`,
-    duration: `${Math.random() * 15 + 20}s`, delay: `${Math.random() * 10}s`
+    top: `${Math.random() * 65 + 15}%`, left: `${Math.random() * 75 + 10}%`,
+    duration: `${Math.random() * 15 + 20}s`, delay: `${Math.random() * 10}s`,
+    twinkleDuration: `${Math.random() * 2 + 1}s`
   }));
+  
+  const preview = msg.text ? (msg.text.length > 10 ? msg.text.substring(0, 10) + '...' : msg.text) : '';
+
   return (
     <div className="absolute pointer-events-none select-none animate-bubble-float z-[2]" style={{ top: coords.top, left: coords.left, animationDuration: coords.duration, animationDelay: coords.delay }}>
-      <div className="relative flex items-center gap-2 px-3 py-1.5 rounded-full glass-panel border border-white/10 shadow-2xl scale-[0.6] sm:scale-75 opacity-40 hover:opacity-100 transition-opacity">
-        {msg.image && <div className="w-5 h-5 rounded-full overflow-hidden shrink-0 border border-white/20"><img src={msg.image} className="w-full h-full object-cover grayscale" alt="" /></div>}
-        <span className="text-[7px] font-brand text-cyan-400 font-black uppercase truncate max-w-[50px]">{msg?.name || 'ANON'}</span>
+      <div className="relative flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-white/20 shadow-[0_0_20px_rgba(34,211,238,0.2)] scale-90 sm:scale-100 transition-all">
+        <Sparkles size={10} className="text-white absolute -top-1 -right-1 animate-pulse" style={{ animationDuration: coords.twinkleDuration }} />
+        {msg.image && <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-white/20"><img src={msg.image} className="w-full h-full object-cover grayscale brightness-125" alt="" /></div>}
+        <div className="flex flex-col text-left">
+          <span className="text-[8px] font-brand text-cyan-400 font-black uppercase tracking-tighter">{msg?.name || 'ANON'}</span>
+          {preview && <span className="text-[7px] text-white/60 font-light truncate max-w-[80px]">{preview}</span>}
+        </div>
       </div>
     </div>
   );
@@ -129,8 +138,9 @@ const FloatingBubble = ({ msg }) => {
 
 const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
   const touchStartRef = useRef(null);
-  const handlePrev = () => setActiveIndex(Math.max(0, activeIndex - 1));
-  const handleNext = () => setActiveIndex(Math.min(items.length - 1, activeIndex + 1));
+  const handlePrev = () => setActiveIndex(activeIndex === 0 ? items.length - 1 : activeIndex - 1);
+  const handleNext = () => setActiveIndex((activeIndex + 1) % items.length);
+
   return (
     <div className="relative w-full h-full flex items-center justify-center perspective-[1500px] overflow-visible touch-pan-y" 
       onTouchStart={(e) => { touchStartRef.current = e.touches[0].clientX; }}
@@ -140,8 +150,8 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
         if (Math.abs(diff) > 40) diff > 0 ? handleNext() : handlePrev();
         touchStartRef.current = null;
       }}>
-      <button onClick={handlePrev} className={`absolute left-0 z-[100] p-2 text-white/20 hover:text-white transition-all ${activeIndex === 0 ? 'opacity-0' : 'opacity-100'}`}><ChevronLeft size={24} /></button>
-      <button onClick={handleNext} className={`absolute right-0 z-[100] p-2 text-white/20 hover:text-white transition-all ${activeIndex === items.length - 1 ? 'opacity-0' : 'opacity-100'}`}><ChevronRight size={24} /></button>
+      <button onClick={handlePrev} className={`absolute left-[-20px] sm:left-0 z-[100] p-2 text-white/20 hover:text-white transition-all`}><ChevronLeft size={24} /></button>
+      <button onClick={handleNext} className={`absolute right-[-20px] sm:right-0 z-[100] p-2 text-white/20 hover:text-white transition-all`}><ChevronRight size={24} /></button>
       <div className="relative w-full h-full flex items-center justify-center preserve-3d">
         {items.map((item, idx) => {
           const offset = idx - activeIndex;
@@ -161,7 +171,8 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
 const App = () => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [showMainTitle, setShowMainTitle] = useState(false);
-  const [activeView, setActiveView] = useState('roadmap');
+  // 초기 뷰를 'traces'로 설정 (요청 사항 반영)
+  const [activeView, setActiveView] = useState('traces');
   const [activeIndices, setActiveIndices] = useState({ roadmap: 0, works: 0, traces: 0 });
   const [selectedItem, setSelectedItem] = useState(null); 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -178,6 +189,25 @@ const App = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState({ name: '', text: '', image: null });
   const fileInputRef = useRef(null);
+
+  // 1.2초 자동 슬라이드 타이머
+  useEffect(() => {
+    if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || isInitializing) return;
+    
+    const timer = setInterval(() => {
+      setActiveIndices(prev => {
+        const currentItems = activeView === 'roadmap' ? roadmapSteps : activeView === 'works' ? projects : messages.slice(0, 15);
+        if (currentItems.length === 0) return prev;
+        
+        return {
+          ...prev,
+          [activeView]: (prev[activeView] + 1) % currentItems.length
+        };
+      });
+    }, 1200);
+
+    return () => clearInterval(timer);
+  }, [activeView, isModalOpen, isGuestbookOpen, isDeleteModalOpen, messages, isInitializing]);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -206,7 +236,16 @@ const App = () => {
     }, (err) => { setCloudStatus('error'); setDiagInfo("Access Denied"); });
   }, [user]);
 
-  const closeModal = () => { setIsModalOpen(false); setIsGuestbookOpen(false); setIsDeleteModalOpen(false); setSelectedItem(null); };
+  const closeModal = () => { 
+    setIsModalOpen(false); 
+    setIsGuestbookOpen(false); 
+    setIsDeleteModalOpen(false); 
+    setSelectedItem(null);
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      document.body.style.zoom = "1.0";
+    }, 50);
+  };
 
   const roadmapSteps = [
     { id: "R1", phase: "PHASE 01", title: "Reality Grounding", tag: "감각의 디지털화", icon: <Cpu />, goal: "물리적 질감 정보를 디지털 지능으로 전이시키는 토대 구축.", process: "정밀 샘플링 체계 설계.", result: "하이퍼-리얼리티 데이터 확보." },
@@ -221,7 +260,7 @@ const App = () => {
   ];
 
   return (
-    <div className="h-screen w-screen bg-[#010101] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col relative">
+    <div className="h-screen w-screen bg-[#010101] text-white selection:bg-cyan-500/30 overflow-x-hidden overflow-y-hidden font-sans flex flex-col relative max-w-full">
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] pointer-events-none z-[1] mix-blend-overlay" />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Michroma&family=Orbitron:wght@400;700;900&family=JetBrains+Mono&display=swap');
@@ -234,7 +273,7 @@ const App = () => {
         .animate-scan { animation: scanline 4s linear infinite; }
         @keyframes breathe { 0%, 100% { opacity: 0.25; filter: blur(1px); } 50% { opacity: 1; filter: blur(0px); } }
         .animate-breathe { animation: breathe 4s ease-in-out infinite; }
-        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; } 50% { transform: translate(15px, -15px) scale(1.1); opacity: 0.6; } }
+        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; } 50% { transform: translate(15px, -15px) scale(1.1); opacity: 0.7; } }
         .animate-bubble-float { animation: bubbleFloat 20s ease-in-out infinite; }
         @keyframes heroPop { 0% { opacity: 0; transform: translateY(40px) scale(0.9); filter: blur(10px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); } }
         .animate-hero-pop { animation: heroPop 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -255,7 +294,7 @@ const App = () => {
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.0.0 | Identity Refined</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.1.1 | Presence Priority</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
@@ -268,10 +307,9 @@ const App = () => {
 
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none z-[1]">
-          {messages.slice(0, 15).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
+          {messages.slice(0, 12).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
         </div>
         
-        {/* --- Main Title with Refined "AND" (White & Glow) --- */}
         <div className={`relative inline-block mb-4 pt-2 z-10 ${showMainTitle ? 'animate-hero-pop' : 'opacity-0'}`}>
           <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10" />
           <h1 className="text-[10vw] sm:text-8xl font-title tracking-[-0.07em] leading-none uppercase">
@@ -284,7 +322,6 @@ const App = () => {
           </h1>
         </div>
 
-        {/* --- Profile Section --- */}
         <div className={`mt-4 sm:mt-6 mb-2 flex flex-col items-center gap-6 z-10 transition-all duration-1000 delay-700 ${showMainTitle ? 'opacity-100' : 'opacity-0'}`}>
           <div onClick={() => setIsGuestbookOpen(true)} className="group relative cursor-pointer active:scale-95 transition-all">
             <div className="absolute -inset-8 border border-white/5 rounded-full animate-[spin_25s_linear_infinite]" />
@@ -310,7 +347,6 @@ const App = () => {
         </div>
       </section>
 
-      {/* --- Bottom Navigation & Content --- */}
       <div className="z-10 pb-4 px-6 max-w-lg mx-auto w-full shrink-0 transition-all duration-1000 delay-[1.2s]" style={{ opacity: showMainTitle ? 1 : 0 }}>
         <div className="glass-panel p-1 rounded-2xl flex gap-1 mb-6 border border-white/10">
           {['roadmap', 'works', 'traces'].map((view) => (
@@ -366,7 +402,7 @@ const App = () => {
       {/* --- Modals --- */}
       {isGuestbookOpen && (
         <div className="fixed inset-0 z-[5000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-md" onClick={closeModal}>
-          <div className="w-full sm:max-w-md glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-8" onClick={e => e.stopPropagation()}>
+          <div className="w-full sm:max-w-md glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-8 max-w-full" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-black font-brand uppercase tracking-tight">Sync Trace</h2>
               <button onClick={closeModal}><X size={20} className="opacity-40 hover:opacity-100" /></button>
@@ -378,6 +414,7 @@ const App = () => {
                 const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
                 await addDoc(q, { ...newMessage, createdAt: serverTimestamp(), date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) });
                 setNewMessage({ name: '', text: '', image: null }); setIsGuestbookOpen(false); playSystemSound('popup');
+                closeModal();
               } catch (err) { setErrorMsg("Sync Error"); } finally { setIsUploading(false); }
             }} className="space-y-4">
               <div className="flex gap-2">
@@ -424,7 +461,7 @@ const App = () => {
 
       {isModalOpen && selectedItem && (
         <div className="fixed inset-0 z-[4000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md" onClick={closeModal}>
-          <div className="w-full h-[70vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-10 relative overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="w-full h-[70vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-10 relative overflow-y-auto shadow-2xl max-w-full" onClick={e => e.stopPropagation()}>
             <button onClick={closeModal} className="absolute top-8 right-8 text-white/20 hover:text-white"><X size={24} /></button>
             <span className="text-cyan-400 font-brand text-[10px] font-bold uppercase tracking-[0.4em]">{selectedItem.phase || selectedItem.tag}</span>
             <h2 className="text-3xl font-black mt-2 mb-8 uppercase tracking-tighter leading-tight font-title">{selectedItem.title}</h2>
