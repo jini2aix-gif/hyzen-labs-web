@@ -27,11 +27,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.2.2 | Visual Breath Edition]
- * 1. 지문 인식 브리딩: 프로필 영역의 지문 아이콘이 자동으로 명멸(Breathing)하며 사용자 참여 유도
- * 2. 상호작용형 자율주행: 터치 시 정지 및 팝업 종료 후 재개 시스템 유지
- * 3. 데이터 버블 최적화: Mail 아이콘 적용 및 프리뷰 텍스트 가시성 강화
- * 4. 아이덴티티: Founder 직함 및 화이트 글로우 "AND" 타이틀 유지
+ * [Hyzen Labs. CTO Optimized - R2.3.0 | Sync & Boot-Load Edition]
+ * 1. 버튼 동기화: 'SYNC TRACE' 버튼의 테두리가 지문 인식 브리딩(Breathing)과 동일한 컬러 및 타이밍으로 명멸
+ * 2. 부팅 비주얼: 초기 로딩 바의 두께를 키우고 글로우 효과 및 계단식 진행 애니메이션을 적용하여 로딩감 강화
+ * 3. 지능형 상호작용: 터치 시 자동 슬라이드 정지 및 팝업 종료 후 재개 로직 유지
+ * 4. 아이덴티티: Founder 직함 및 화이트 "AND" 타이틀 시각적 밸런스 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -214,7 +214,7 @@ const App = () => {
     const timer = setTimeout(() => {
       setIsInitializing(false); playSystemSound('start');
       setTimeout(() => { setShowMainTitle(true); playSystemSound('popup'); }, 500);
-    }, 2500);
+    }, 3000);
     return () => { unsubscribe(); clearTimeout(timer); };
   }, []);
 
@@ -264,24 +264,47 @@ const App = () => {
         .animate-hero-pop { animation: heroPop 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes fScan { 0% { transform: translateY(-100%); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(100%); opacity: 0; } }
         .animate-f-scan { animation: fScan 2s linear infinite; }
-        @keyframes fBreath { 0%, 100% { opacity: 0.2; transform: scale(0.9); } 50% { opacity: 0.7; transform: scale(1.1); } }
+        @keyframes fBreath { 
+          0%, 100% { opacity: 0.2; transform: scale(0.95); border-color: rgba(34, 211, 238, 0.2); box-shadow: 0 0 5px rgba(34, 211, 238, 0.1); } 
+          50% { opacity: 0.8; transform: scale(1.05); border-color: rgba(34, 211, 238, 0.8); box-shadow: 0 0 20px rgba(34, 211, 238, 0.4); } 
+        }
         .animate-f-breath { animation: fBreath 3s ease-in-out infinite; }
         @keyframes subtleGlow { 0%, 100% { text-shadow: 0 0 10px rgba(255,255,255,0.4); } 50% { text-shadow: 0 0 20px rgba(255,255,255,0.7); } }
         .animate-text-glow { animation: subtleGlow 3s ease-in-out infinite; }
+        @keyframes bootProgress {
+          0% { width: 0%; filter: brightness(1); }
+          20% { width: 10%; }
+          40% { width: 45%; }
+          60% { width: 70%; }
+          80% { width: 95%; filter: brightness(1.5); }
+          100% { width: 100%; filter: brightness(2); }
+        }
+        .animate-boot-load { animation: bootProgress 3s cubic-bezier(0.65, 0, 0.35, 1) forwards; }
       `}</style>
 
+      {/* --- Enhanced Initializing Overlay --- */}
       {isInitializing && (
         <div className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center p-8">
-          <ShieldCheck size={40} className="text-cyan-400 animate-pulse mb-6" />
-          <div className="w-48 h-[1px] bg-white/10 overflow-hidden relative"><div className="absolute inset-0 bg-cyan-500 animate-[initProgress_2.5s_ease-in-out_forwards]" /></div>
-          <span className="mt-4 font-brand text-[8px] tracking-[0.5em] text-white/30 uppercase">Neural Link Booting...</span>
+          <div className="relative mb-12">
+            <ShieldCheck size={50} className="text-cyan-400 animate-pulse" />
+            <div className="absolute inset-0 bg-cyan-400/20 blur-xl animate-pulse" />
+          </div>
+          <div className="flex flex-col items-center gap-4 w-64 sm:w-80">
+             <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/10 relative p-[2px]">
+                <div className="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-white rounded-full shadow-[0_0_15px_rgba(34,211,238,0.8)] animate-boot-load relative" />
+             </div>
+             <div className="flex justify-between w-full">
+                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.0</span>
+             </div>
+          </div>
         </div>
       )}
 
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.2.2 | Identity Refined</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.0 | Sync Evolution</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
@@ -315,11 +338,9 @@ const App = () => {
             
             {/* --- Fingerprint Breathing Overlay --- */}
             <div className="absolute inset-0 z-20 rounded-full flex items-center justify-center pointer-events-none overflow-hidden">
-               {/* 자동 브리딩 레이어 */}
                <div className="absolute inset-0 flex items-center justify-center animate-f-breath">
                   <Fingerprint className="text-cyan-400/40" size={50} />
                </div>
-               {/* 호버 시 스캔 레이어 */}
                <div className="w-full h-full bg-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                   <div className="w-full h-1 bg-cyan-400 blur-sm absolute animate-f-scan" />
                   <div className="flex items-center justify-center h-full"><Fingerprint className="text-cyan-400" size={40} /></div>
@@ -331,8 +352,11 @@ const App = () => {
                 <img src="YJ.PNG" className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700" alt="Founder" onError={(e) => { e.target.src = "https://via.placeholder.com/150/000000/FFFFFF?text=YJ"; }} />
               </div>
             </div>
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 glass-panel border border-cyan-500/40 rounded-full flex items-center gap-2 z-30 shadow-lg shadow-cyan-500/20">
-              <MessageSquare size={10} className="text-cyan-400" /><span className="text-[8px] font-brand font-black uppercase tracking-widest">Sync Trace</span>
+
+            {/* --- Synced Breathing Button --- */}
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 glass-panel border animate-f-breath rounded-full flex items-center gap-2 z-30 transition-all">
+              <MessageSquare size={10} className="text-cyan-400" />
+              <span className="text-[8px] font-brand font-black uppercase tracking-widest text-white/90">Sync Trace</span>
             </div>
           </div>
           <div className="text-center pb-4">
