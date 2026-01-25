@@ -22,15 +22,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Fingerprint,
+  Mail,
   Sparkles
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.1.1 | Presence Priority Edition]
- * 1. 진입점 변경: 초기 activeView를 'traces'로 설정하여 연구 기록과 흔적을 최우선 노출
- * 2. 버블 시스템 유지: 텍스트 사이즈 확대, 메세지 프리뷰, 별빛 반짝임(Twinkle) 효과 적용
- * 3. 자율 슬라이드: 하단 커버플로우 1.2초 자동 전환 및 무한 루프 시스템 유지
- * 4. 스케일 핏: 팝업 종료 후 레이아웃 리플로우 최적화
+ * [Hyzen Labs. CTO Optimized - R2.2.2 | Visual Breath Edition]
+ * 1. 지문 인식 브리딩: 프로필 영역의 지문 아이콘이 자동으로 명멸(Breathing)하며 사용자 참여 유도
+ * 2. 상호작용형 자율주행: 터치 시 정지 및 팝업 종료 후 재개 시스템 유지
+ * 3. 데이터 버블 최적화: Mail 아이콘 적용 및 프리뷰 텍스트 가시성 강화
+ * 4. 아이덴티티: Founder 직함 및 화이트 글로우 "AND" 타이틀 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -76,8 +77,7 @@ const playSystemSound = (type) => {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    osc.connect(gain); gain.connect(audioCtx.destination);
     if (type === 'start') {
       osc.type = 'sine'; osc.frequency.setValueAtTime(440, audioCtx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
@@ -119,39 +119,37 @@ const FloatingBubble = ({ msg }) => {
     duration: `${Math.random() * 15 + 20}s`, delay: `${Math.random() * 10}s`,
     twinkleDuration: `${Math.random() * 2 + 1}s`
   }));
-  
   const preview = msg.text ? (msg.text.length > 10 ? msg.text.substring(0, 10) + '...' : msg.text) : '';
-
   return (
     <div className="absolute pointer-events-none select-none animate-bubble-float z-[2]" style={{ top: coords.top, left: coords.left, animationDuration: coords.duration, animationDelay: coords.delay }}>
       <div className="relative flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-white/20 shadow-[0_0_20px_rgba(34,211,238,0.2)] scale-90 sm:scale-100 transition-all">
-        <Sparkles size={10} className="text-white absolute -top-1 -right-1 animate-pulse" style={{ animationDuration: coords.twinkleDuration }} />
+        <Mail size={10} className="text-white absolute -top-1 -right-1 animate-pulse" style={{ animationDuration: coords.twinkleDuration }} />
         {msg.image && <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-white/20"><img src={msg.image} className="w-full h-full object-cover grayscale brightness-125" alt="" /></div>}
         <div className="flex flex-col text-left">
-          <span className="text-[8px] font-brand text-cyan-400 font-black uppercase tracking-tighter">{msg?.name || 'ANON'}</span>
-          {preview && <span className="text-[7px] text-white/60 font-light truncate max-w-[80px]">{preview}</span>}
+          <span className="text-[9px] font-brand text-cyan-400 font-black uppercase tracking-tighter leading-tight">{msg?.name || 'ANON'}</span>
+          {preview && <span className="text-[8px] text-white/80 font-light truncate max-w-[100px] leading-tight">{preview}</span>}
         </div>
       </div>
     </div>
   );
 };
 
-const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
+const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex, onUserInteraction }) => {
   const touchStartRef = useRef(null);
-  const handlePrev = () => setActiveIndex(activeIndex === 0 ? items.length - 1 : activeIndex - 1);
-  const handleNext = () => setActiveIndex((activeIndex + 1) % items.length);
-
+  const handlePrev = () => { setActiveIndex(activeIndex === 0 ? items.length - 1 : activeIndex - 1); onUserInteraction(); };
+  const handleNext = () => { setActiveIndex((activeIndex + 1) % items.length); onUserInteraction(); };
   return (
     <div className="relative w-full h-full flex items-center justify-center perspective-[1500px] overflow-visible touch-pan-y" 
-      onTouchStart={(e) => { touchStartRef.current = e.touches[0].clientX; }}
+      onMouseDown={onUserInteraction}
+      onTouchStart={(e) => { touchStartRef.current = e.touches[0].clientX; onUserInteraction(); }}
       onTouchEnd={(e) => {
         if (!touchStartRef.current) return;
         const diff = touchStartRef.current - e.changedTouches[0].clientX;
         if (Math.abs(diff) > 40) diff > 0 ? handleNext() : handlePrev();
         touchStartRef.current = null;
       }}>
-      <button onClick={handlePrev} className={`absolute left-[-20px] sm:left-0 z-[100] p-2 text-white/20 hover:text-white transition-all`}><ChevronLeft size={24} /></button>
-      <button onClick={handleNext} className={`absolute right-[-20px] sm:right-0 z-[100] p-2 text-white/20 hover:text-white transition-all`}><ChevronRight size={24} /></button>
+      <button onClick={handlePrev} className="absolute left-[-20px] sm:left-0 z-[100] p-2 text-white/20 hover:text-white transition-all"><ChevronLeft size={24} /></button>
+      <button onClick={handleNext} className="absolute right-[-20px] sm:right-0 z-[100] p-2 text-white/20 hover:text-white transition-all"><ChevronRight size={24} /></button>
       <div className="relative w-full h-full flex items-center justify-center preserve-3d">
         {items.map((item, idx) => {
           const offset = idx - activeIndex;
@@ -171,7 +169,6 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex }) => {
 const App = () => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [showMainTitle, setShowMainTitle] = useState(false);
-  // 초기 뷰를 'traces'로 설정 (요청 사항 반영)
   const [activeView, setActiveView] = useState('traces');
   const [activeIndices, setActiveIndices] = useState({ roadmap: 0, works: 0, traces: 0 });
   const [selectedItem, setSelectedItem] = useState(null); 
@@ -181,33 +178,26 @@ const App = () => {
   const [targetDeleteId, setTargetDeleteId] = useState(null);
   const [deletePass, setDeletePass] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState(null);
   const [cloudStatus, setCloudStatus] = useState('disconnected');
   const [diagInfo, setDiagInfo] = useState("");
+  const [isAutoPlayPaused, setIsAutoPlayPaused] = useState(false);
   
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState({ name: '', text: '', image: null });
   const fileInputRef = useRef(null);
 
-  // 1.2초 자동 슬라이드 타이머
   useEffect(() => {
-    if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || isInitializing) return;
-    
+    if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || isInitializing || isAutoPlayPaused) return;
     const timer = setInterval(() => {
       setActiveIndices(prev => {
         const currentItems = activeView === 'roadmap' ? roadmapSteps : activeView === 'works' ? projects : messages.slice(0, 15);
         if (currentItems.length === 0) return prev;
-        
-        return {
-          ...prev,
-          [activeView]: (prev[activeView] + 1) % currentItems.length
-        };
+        return { ...prev, [activeView]: (prev[activeView] + 1) % currentItems.length };
       });
     }, 1200);
-
     return () => clearInterval(timer);
-  }, [activeView, isModalOpen, isGuestbookOpen, isDeleteModalOpen, messages, isInitializing]);
+  }, [activeView, isModalOpen, isGuestbookOpen, isDeleteModalOpen, messages, isInitializing, isAutoPlayPaused]);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -233,18 +223,13 @@ const App = () => {
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
     return onSnapshot(q, s => {
       setMessages(s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
-    }, (err) => { setCloudStatus('error'); setDiagInfo("Access Denied"); });
+    }, (err) => { setCloudStatus('error'); });
   }, [user]);
 
   const closeModal = () => { 
-    setIsModalOpen(false); 
-    setIsGuestbookOpen(false); 
-    setIsDeleteModalOpen(false); 
-    setSelectedItem(null);
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-      document.body.style.zoom = "1.0";
-    }, 50);
+    setIsModalOpen(false); setIsGuestbookOpen(false); setIsDeleteModalOpen(false); 
+    setSelectedItem(null); setIsAutoPlayPaused(false);
+    setTimeout(() => { window.scrollTo(0, 0); document.body.style.zoom = "1.0"; }, 50);
   };
 
   const roadmapSteps = [
@@ -273,12 +258,14 @@ const App = () => {
         .animate-scan { animation: scanline 4s linear infinite; }
         @keyframes breathe { 0%, 100% { opacity: 0.25; filter: blur(1px); } 50% { opacity: 1; filter: blur(0px); } }
         .animate-breathe { animation: breathe 4s ease-in-out infinite; }
-        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; } 50% { transform: translate(15px, -15px) scale(1.1); opacity: 0.7; } }
+        @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; } 50% { transform: translate(10px, -10px) scale(1.1); opacity: 0.7; } }
         .animate-bubble-float { animation: bubbleFloat 20s ease-in-out infinite; }
         @keyframes heroPop { 0% { opacity: 0; transform: translateY(40px) scale(0.9); filter: blur(10px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); } }
         .animate-hero-pop { animation: heroPop 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes fingerprintScan { 0% { transform: translateY(-100%); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(100%); opacity: 0; } }
-        .animate-f-scan { animation: fingerprintScan 2s linear infinite; }
+        @keyframes fScan { 0% { transform: translateY(-100%); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(100%); opacity: 0; } }
+        .animate-f-scan { animation: fScan 2s linear infinite; }
+        @keyframes fBreath { 0%, 100% { opacity: 0.2; transform: scale(0.9); } 50% { opacity: 0.7; transform: scale(1.1); } }
+        .animate-f-breath { animation: fBreath 3s ease-in-out infinite; }
         @keyframes subtleGlow { 0%, 100% { text-shadow: 0 0 10px rgba(255,255,255,0.4); } 50% { text-shadow: 0 0 20px rgba(255,255,255,0.7); } }
         .animate-text-glow { animation: subtleGlow 3s ease-in-out infinite; }
       `}</style>
@@ -294,7 +281,7 @@ const App = () => {
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.1.1 | Presence Priority</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.2.2 | Identity Refined</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
@@ -325,24 +312,32 @@ const App = () => {
         <div className={`mt-4 sm:mt-6 mb-2 flex flex-col items-center gap-6 z-10 transition-all duration-1000 delay-700 ${showMainTitle ? 'opacity-100' : 'opacity-0'}`}>
           <div onClick={() => setIsGuestbookOpen(true)} className="group relative cursor-pointer active:scale-95 transition-all">
             <div className="absolute -inset-8 border border-white/5 rounded-full animate-[spin_25s_linear_infinite]" />
+            
+            {/* --- Fingerprint Breathing Overlay --- */}
             <div className="absolute inset-0 z-20 rounded-full flex items-center justify-center pointer-events-none overflow-hidden">
-               <div className="w-full h-full bg-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity">
+               {/* 자동 브리딩 레이어 */}
+               <div className="absolute inset-0 flex items-center justify-center animate-f-breath">
+                  <Fingerprint className="text-cyan-400/40" size={50} />
+               </div>
+               {/* 호버 시 스캔 레이어 */}
+               <div className="w-full h-full bg-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                   <div className="w-full h-1 bg-cyan-400 blur-sm absolute animate-f-scan" />
-                  <div className="flex items-center justify-center h-full"><Fingerprint className="text-cyan-400/50" size={40} /></div>
+                  <div className="flex items-center justify-center h-full"><Fingerprint className="text-cyan-400" size={40} /></div>
                </div>
             </div>
+
             <div className="w-24 h-24 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent relative z-10 overflow-hidden">
               <div className="w-full h-full rounded-full bg-zinc-900 flex items-center justify-center overflow-hidden border border-white/10">
                 <img src="YJ.PNG" className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700" alt="Founder" onError={(e) => { e.target.src = "https://via.placeholder.com/150/000000/FFFFFF?text=YJ"; }} />
               </div>
             </div>
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 glass-panel border border-cyan-500/40 rounded-full flex items-center gap-2 z-30">
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 glass-panel border border-cyan-500/40 rounded-full flex items-center gap-2 z-30 shadow-lg shadow-cyan-500/20">
               <MessageSquare size={10} className="text-cyan-400" /><span className="text-[8px] font-brand font-black uppercase tracking-widest">Sync Trace</span>
             </div>
           </div>
           <div className="text-center pb-4">
             <h3 className="text-sm font-title font-bold tracking-tight">Youngji.Park</h3>
-            <span className="text-[8px] font-brand text-white/40 uppercase tracking-[0.4em] block mt-1.5">Managing Director</span>
+            <span className="text-[8px] font-brand text-white/40 uppercase tracking-[0.4em] block mt-1.5">Founder</span>
           </div>
         </div>
       </section>
@@ -350,7 +345,7 @@ const App = () => {
       <div className="z-10 pb-4 px-6 max-w-lg mx-auto w-full shrink-0 transition-all duration-1000 delay-[1.2s]" style={{ opacity: showMainTitle ? 1 : 0 }}>
         <div className="glass-panel p-1 rounded-2xl flex gap-1 mb-6 border border-white/10">
           {['roadmap', 'works', 'traces'].map((view) => (
-            <button key={view} onClick={() => setActiveView(view)} 
+            <button key={view} onClick={() => { setActiveView(view); setIsAutoPlayPaused(false); }} 
               className={`flex-1 py-3 rounded-xl text-[8px] font-brand tracking-widest uppercase transition-all ${activeView === view ? 'bg-white text-black font-black shadow-xl scale-105' : 'text-white/30 hover:text-white/60'}`}>
               {view}
             </button>
@@ -361,7 +356,7 @@ const App = () => {
           {activeView === 'traces' ? (
             <div className="h-full flex flex-col">
               {messages.length > 0 ? (
-                <CoverFlow items={messages.slice(0, 15)} activeIndex={activeIndices.traces} setActiveIndex={(i) => setActiveIndices({...activeIndices, traces: i})} renderItem={(msg) => (
+                <CoverFlow items={messages.slice(0, 15)} activeIndex={activeIndices.traces} setActiveIndex={(i) => setActiveIndices({...activeIndices, traces: i})} onUserInteraction={() => setIsAutoPlayPaused(true)} renderItem={(msg) => (
                   <div className="w-full h-full glass-panel rounded-[2.5rem] relative overflow-hidden border border-violet-500/30 p-6 flex flex-col justify-between">
                     {msg.image && <img src={msg.image} className="absolute inset-0 w-full h-full object-cover opacity-20 grayscale" alt="" />}
                     <div className="relative z-10 text-left">
@@ -381,8 +376,7 @@ const App = () => {
               )}
             </div>
           ) : (
-            <CoverFlow items={activeView === 'roadmap' ? roadmapSteps : projects} activeIndex={activeView === 'roadmap' ? activeIndices.roadmap : activeIndices.works} 
-              setActiveIndex={(i) => setActiveIndices({...activeIndices, [activeView]: i})} renderItem={(item) => (
+            <CoverFlow items={activeView === 'roadmap' ? roadmapSteps : projects} activeIndex={activeView === 'roadmap' ? activeIndices.roadmap : activeIndices.works} setActiveIndex={(i) => setActiveIndices({...activeIndices, [activeView]: i})} onUserInteraction={() => setIsAutoPlayPaused(true)} renderItem={(item) => (
               <div onClick={() => { setSelectedItem(item); setIsModalOpen(true); }} className={`w-full h-full glass-panel p-6 rounded-[2.5rem] border ${activeView === 'roadmap' ? 'border-cyan-500/30 shadow-[0_0_30px_-10px_rgba(34,211,238,0.3)]' : 'border-emerald-500/30 shadow-[0_0_30px_-10px_rgba(16,185,129,0.3)]'} flex flex-col justify-between text-left cursor-pointer hover:bg-white/5 transition-colors`}>
                 <div className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-cyan-400">{item.icon}</div>
                 <div><span className="text-[7px] font-brand text-white/30 uppercase tracking-widest">{item.phase || item.tag}</span><h3 className="text-xs font-bold mt-1 uppercase">{item.title}</h3></div>
@@ -413,28 +407,19 @@ const App = () => {
               try {
                 const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
                 await addDoc(q, { ...newMessage, createdAt: serverTimestamp(), date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) });
-                setNewMessage({ name: '', text: '', image: null }); setIsGuestbookOpen(false); playSystemSound('popup');
-                closeModal();
+                setNewMessage({ name: '', text: '', image: null }); setIsGuestbookOpen(false); playSystemSound('popup'); closeModal();
               } catch (err) { setErrorMsg("Sync Error"); } finally { setIsUploading(false); }
             }} className="space-y-4">
               <div className="flex gap-2">
                 <input type="text" placeholder="IDENTITY ID" className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-brand outline-none focus:border-cyan-500/50" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
-                <button type="button" onClick={() => fileInputRef.current?.click()} className={`px-4 rounded-xl border transition-all ${newMessage.image ? 'bg-cyan-500 border-cyan-500 text-black' : 'bg-white/5 border-white/10 text-white/30'}`} disabled={isUploading}>
-                  {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
-                </button>
+                <button type="button" onClick={() => fileInputRef.current?.click()} className={`px-4 rounded-xl border transition-all ${newMessage.image ? 'bg-cyan-500 border-cyan-500 text-black' : 'bg-white/5 border-white/10 text-white/30'}`} disabled={isUploading}>{isUploading ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}</button>
                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={async (e) => {
                   const file = e.target.files[0];
-                  if (file) {
-                    setIsUploading(true);
-                    try { const compressed = await compressImage(file); setNewMessage(prev => ({ ...prev, image: compressed })); }
-                    catch (e) { setErrorMsg("Compression Failed."); } finally { setIsUploading(false); }
-                  }
+                  if (file) { setIsUploading(true); try { const compressed = await compressImage(file); setNewMessage(prev => ({ ...prev, image: compressed })); } catch (e) { } finally { setIsUploading(false); } }
                 }} />
               </div>
               <textarea placeholder="LOG DATA..." className="w-full h-24 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-500/50 resize-none" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
-              <button type="submit" className="w-full bg-cyan-500 py-4 rounded-2xl text-black font-brand font-black uppercase tracking-widest shadow-lg shadow-cyan-500/20 active:scale-95 transition-all disabled:opacity-50" disabled={isUploading}>
-                {isUploading ? "PROCESS..." : "INITIATE SYNC"}
-              </button>
+              <button type="submit" className="w-full bg-cyan-500 py-4 rounded-2xl text-black font-brand font-black uppercase tracking-widest shadow-lg shadow-cyan-500/20 active:scale-95 transition-all disabled:opacity-50" disabled={isUploading}>{isUploading ? "PROCESS..." : "INITIATE SYNC"}</button>
             </form>
           </div>
         </div>
@@ -449,10 +434,7 @@ const App = () => {
             <div className="flex gap-2">
               <button onClick={closeModal} className="flex-1 py-3 rounded-xl bg-white/5 text-[10px] font-brand uppercase">Abort</button>
               <button onClick={async () => {
-                if (deletePass === ADMIN_PASS && targetDeleteId && db) {
-                  await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', targetDeleteId));
-                  closeModal(); setDeletePass("");
-                }
+                if (deletePass === ADMIN_PASS && targetDeleteId && db) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', targetDeleteId)); closeModal(); setDeletePass(""); }
               }} className="flex-1 py-3 rounded-xl bg-red-500 text-black font-brand font-black text-[10px] uppercase">Confirm</button>
             </div>
           </div>
