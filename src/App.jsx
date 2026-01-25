@@ -27,11 +27,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.3.0 | Sync & Boot-Load Edition]
- * 1. 버튼 동기화: 'SYNC TRACE' 버튼의 테두리가 지문 인식 브리딩(Breathing)과 동일한 컬러 및 타이밍으로 명멸
- * 2. 부팅 비주얼: 초기 로딩 바의 두께를 키우고 글로우 효과 및 계단식 진행 애니메이션을 적용하여 로딩감 강화
- * 3. 지능형 상호작용: 터치 시 자동 슬라이드 정지 및 팝업 종료 후 재개 로직 유지
- * 4. 아이덴티티: Founder 직함 및 화이트 "AND" 타이틀 시각적 밸런스 유지
+ * [Hyzen Labs. CTO Optimized - R2.3.1 | Spatial Balance & Rescale Edition]
+ * 1. 버블 랜덤화: 디지털 버블이 화면 특정 영역에 치우치지 않고 전역(Random spread)에 걸쳐 생성되도록 좌표 로직 수정
+ * 2. 강제 리스케일(Force Rescale): 팝업 종료 시 브라우저 줌 및 뷰포트를 강제로 초기화하여 레이아웃 무결성 보장
+ * 3. 상호작용 지능: 사용자가 터치 시 슬라이드 일시정지 및 복귀 후 자율주행 재개 로직 최적화
+ * 4. 시각적 동기화: 지문 인식 및 SYNC TRACE 버튼의 통합 브리딩 효과 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -114,9 +114,12 @@ const compressImage = (file) => {
 };
 
 const FloatingBubble = ({ msg }) => {
+  // 버블 위치를 화면 전역에 랜덤으로 분산 배치 (기존의 특정 영역 쏠림 해결)
   const [coords] = useState(() => ({
-    top: `${Math.random() * 65 + 15}%`, left: `${Math.random() * 75 + 10}%`,
-    duration: `${Math.random() * 15 + 20}s`, delay: `${Math.random() * 10}s`,
+    top: `${Math.random() * 80 + 10}%`, 
+    left: `${Math.random() * 80 + 10}%`,
+    duration: `${Math.random() * 15 + 20}s`, 
+    delay: `${Math.random() * 10}s`,
     twinkleDuration: `${Math.random() * 2 + 1}s`
   }));
   const preview = msg.text ? (msg.text.length > 10 ? msg.text.substring(0, 10) + '...' : msg.text) : '';
@@ -181,6 +184,7 @@ const App = () => {
   const [cloudStatus, setCloudStatus] = useState('disconnected');
   const [diagInfo, setDiagInfo] = useState("");
   const [isAutoPlayPaused, setIsAutoPlayPaused] = useState(false);
+  const [rescaleCounter, setRescaleCounter] = useState(0); // 강제 리렌더링을 위한 카운터
   
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -226,10 +230,22 @@ const App = () => {
     }, (err) => { setCloudStatus('error'); });
   }, [user]);
 
+  // 강제 리스케일 및 자율주행 재개 로직
   const closeModal = () => { 
-    setIsModalOpen(false); setIsGuestbookOpen(false); setIsDeleteModalOpen(false); 
-    setSelectedItem(null); setIsAutoPlayPaused(false);
-    setTimeout(() => { window.scrollTo(0, 0); document.body.style.zoom = "1.0"; }, 50);
+    setIsModalOpen(false); 
+    setIsGuestbookOpen(false); 
+    setIsDeleteModalOpen(false); 
+    setSelectedItem(null); 
+    setIsAutoPlayPaused(false);
+    setRescaleCounter(prev => prev + 1); // 리플로우 유도
+    
+    // 모바일 브라우저의 뷰포트 버그 수정을 위한 강제 명령
+    setTimeout(() => { 
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      document.body.style.zoom = "1.0";
+      // 브라우저가 화면 사이즈를 재계산하도록 강제 트리거
+      window.dispatchEvent(new Event('resize'));
+    }, 100);
   };
 
   const roadmapSteps = [
@@ -245,7 +261,7 @@ const App = () => {
   ];
 
   return (
-    <div className="h-screen w-screen bg-[#010101] text-white selection:bg-cyan-500/30 overflow-x-hidden overflow-y-hidden font-sans flex flex-col relative max-w-full">
+    <div key={`app-root-${rescaleCounter}`} className="h-screen w-screen bg-[#010101] text-white selection:bg-cyan-500/30 overflow-x-hidden overflow-y-hidden font-sans flex flex-col relative max-w-full">
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] pointer-events-none z-[1] mix-blend-overlay" />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Michroma&family=Orbitron:wght@400;700;900&family=JetBrains+Mono&display=swap');
@@ -282,7 +298,6 @@ const App = () => {
         .animate-boot-load { animation: bootProgress 3s cubic-bezier(0.65, 0, 0.35, 1) forwards; }
       `}</style>
 
-      {/* --- Enhanced Initializing Overlay --- */}
       {isInitializing && (
         <div className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center p-8">
           <div className="relative mb-12">
@@ -295,7 +310,7 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.0</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.1</span>
              </div>
           </div>
         </div>
@@ -304,7 +319,7 @@ const App = () => {
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.0 | Sync Evolution</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.1 | Spatial Edition</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
@@ -316,6 +331,7 @@ const App = () => {
       </nav>
 
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
+        {/* --- Floating Bubbles Spread Across Screen --- */}
         <div className="absolute inset-0 pointer-events-none z-[1]">
           {messages.slice(0, 12).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
         </div>
@@ -335,8 +351,6 @@ const App = () => {
         <div className={`mt-4 sm:mt-6 mb-2 flex flex-col items-center gap-6 z-10 transition-all duration-1000 delay-700 ${showMainTitle ? 'opacity-100' : 'opacity-0'}`}>
           <div onClick={() => setIsGuestbookOpen(true)} className="group relative cursor-pointer active:scale-95 transition-all">
             <div className="absolute -inset-8 border border-white/5 rounded-full animate-[spin_25s_linear_infinite]" />
-            
-            {/* --- Fingerprint Breathing Overlay --- */}
             <div className="absolute inset-0 z-20 rounded-full flex items-center justify-center pointer-events-none overflow-hidden">
                <div className="absolute inset-0 flex items-center justify-center animate-f-breath">
                   <Fingerprint className="text-cyan-400/40" size={50} />
@@ -346,14 +360,11 @@ const App = () => {
                   <div className="flex items-center justify-center h-full"><Fingerprint className="text-cyan-400" size={40} /></div>
                </div>
             </div>
-
             <div className="w-24 h-24 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent relative z-10 overflow-hidden">
               <div className="w-full h-full rounded-full bg-zinc-900 flex items-center justify-center overflow-hidden border border-white/10">
                 <img src="YJ.PNG" className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700" alt="Founder" onError={(e) => { e.target.src = "https://via.placeholder.com/150/000000/FFFFFF?text=YJ"; }} />
               </div>
             </div>
-
-            {/* --- Synced Breathing Button --- */}
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 glass-panel border animate-f-breath rounded-full flex items-center gap-2 z-30 transition-all">
               <MessageSquare size={10} className="text-cyan-400" />
               <span className="text-[8px] font-brand font-black uppercase tracking-widest text-white/90">Sync Trace</span>
