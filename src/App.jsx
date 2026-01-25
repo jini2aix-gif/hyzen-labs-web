@@ -23,15 +23,16 @@ import {
   ChevronRight,
   Fingerprint,
   Mail,
-  Sparkles
+  Sparkles,
+  User
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.3.6 | Stylish Identity Edition]
- * 1. 작성자 스타일 업그레이드: 방명록 카드의 성함 폰트 크기 확대 및 이탈릭/글로우 효과로 스타일리시하게 변경
- * 2. 지능형 자율주행 복귀: 터치 시 일시정지 후 3초 뒤 자동 재개 로직 유지
- * 3. 구조적 리사이징: fixed inset-0 및 동적 vh 변수를 통해 레이아웃 무결성 보장
- * 4. 통합 UX: 지문 인식 브리딩, SYNC TRACE 버튼 동기화, Founder 직함 유지
+ * [Hyzen Labs. CTO Optimized - R2.3.7 | Circular Data Edition]
+ * 1. 버블 디자인 개편: 타원형 캡슐에서 정원형(Circular)으로 변경 및 사진 풀-필(Full-fill) 적용
+ * 2. 정보 간소화: 메세지 미리보기를 제거하고 작성자 이름(Identity)만 명확하게 표기
+ * 3. 지능형 자율주행: 터치 시 정지 및 마지막 상호작용 3초 후 자동 재개 시스템 유지
+ * 4. 리사이징 무결성: fixed inset-0 레이아웃 및 동적 vh 변수 기반 핏(Fit) 보장
  */
 
 const ADMIN_PASS = "5733906";
@@ -121,16 +122,28 @@ const FloatingBubble = ({ msg }) => {
     delay: `${Math.random() * 10}s`,
     twinkleDuration: `${Math.random() * 2 + 1}s`
   }));
-  const preview = msg.text ? (msg.text.length > 10 ? msg.text.substring(0, 10) + '...' : msg.text) : '';
+  
   return (
     <div className="absolute pointer-events-none select-none animate-bubble-float z-[2]" style={{ top: coords.top, left: coords.left, animationDuration: coords.duration, animationDelay: coords.delay }}>
-      <div className="relative flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-white/20 shadow-[0_0_20px_rgba(34,211,238,0.2)] scale-90 sm:scale-100 transition-all">
-        <Mail size={10} className="text-white absolute -top-1 -right-1 animate-pulse" style={{ animationDuration: coords.twinkleDuration }} />
-        {msg.image && <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-white/20"><img src={msg.image} className="w-full h-full object-cover grayscale brightness-125" alt="" /></div>}
-        <div className="flex flex-col text-left">
-          <span className="text-[9px] font-brand text-cyan-400 font-black uppercase tracking-tighter leading-tight">{msg?.name || 'ANON'}</span>
-          {preview && <span className="text-[8px] text-white/80 font-light truncate max-w-[100px] leading-tight">{preview}</span>}
+      <div className="flex flex-col items-center gap-1.5">
+        {/* --- Circular Frame with Full Image --- */}
+        <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full glass-panel border border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.15)] overflow-hidden transition-transform active:scale-110">
+          <Mail size={8} className="text-cyan-400 absolute top-1.5 right-1.5 z-20 animate-pulse drop-shadow-lg" style={{ animationDuration: coords.twinkleDuration }} />
+          {msg.image ? (
+            <img src={msg.image} className="absolute inset-0 w-full h-full object-cover grayscale brightness-110" alt="" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-white/5 opacity-30">
+              <User size={20} className="text-white" />
+            </div>
+          )}
+          {/* Overlay for depth */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 to-transparent pointer-events-none" />
         </div>
+        
+        {/* --- Style-Consistent Identity Name --- */}
+        <span className="text-[7px] sm:text-[8px] font-brand text-white/90 font-black uppercase tracking-tighter bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-md border border-white/5">
+          {msg?.name || 'ANON'}
+        </span>
       </div>
     </div>
   );
@@ -215,7 +228,6 @@ const App = () => {
     return () => clearInterval(timer);
   }, [activeView, isModalOpen, isGuestbookOpen, isDeleteModalOpen, messages, isInitializing, isAutoPlayPaused]);
 
-  // 상호작용 감지 및 3초 뒤 재개 로직
   const handleUserInteraction = useCallback(() => {
     setIsAutoPlayPaused(true);
     if (autoPlayResumeTimerRef.current) clearTimeout(autoPlayResumeTimerRef.current);
@@ -255,8 +267,7 @@ const App = () => {
 
   const closeModal = () => { 
     setIsModalOpen(false); setIsGuestbookOpen(false); setIsDeleteModalOpen(false); 
-    setSelectedItem(null); 
-    setIsAutoPlayPaused(false);
+    setSelectedItem(null); setIsAutoPlayPaused(false);
     if (autoPlayResumeTimerRef.current) clearTimeout(autoPlayResumeTimerRef.current);
     setTimeout(() => { 
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -328,7 +339,7 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.6</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.7</span>
              </div>
           </div>
         </div>
@@ -337,7 +348,7 @@ const App = () => {
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.6 | Stylish Identity</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.7 | Circular Data</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
@@ -349,6 +360,7 @@ const App = () => {
       </nav>
 
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
+        {/* --- Floating Circular Bubbles with Identity Tag --- */}
         <div className="absolute inset-0 pointer-events-none z-[1]">
           {messages.slice(0, 12).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
         </div>
@@ -416,7 +428,6 @@ const App = () => {
                       </div>
                     )}
                     <div className="relative z-10 text-left">
-                      {/* --- Stylish Author Name --- */}
                       <span className="text-[12px] sm:text-[14px] font-brand text-violet-400 font-black uppercase tracking-[0.25em] italic drop-shadow-[0_0_8px_rgba(167,139,250,0.4)]">
                         {msg.name}
                       </span>
