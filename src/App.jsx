@@ -27,11 +27,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.3.2 | Structural Rescale Fix]
- * 1. 동적 높이 보정(--vh): 모바일 브라우저 주소창/툴바 대응을 위해 실제 뷰포트 높이를 계산하여 적용
- * 2. 리사이징 안정화: 팝업 종료 시 앱 전체 재마운트(key 변경) 없이 브라우저 레이아웃만 강제 초기화
- * 3. 뷰포트 동기화: closeModal 시점에 window.scrollTo 및 resize 이벤트 강제 발생으로 핏(Fit) 보장
- * 4. 기존 UX 보존: 인트로, 지문 스캔, 버블 시스템, Founder 직함 등 기존 요소 유지
+ * [Hyzen Labs. CTO Optimized - R2.3.5 | Inactivity Resume Edition]
+ * 1. 지능형 자율주행 복귀: 터치 시 일시정지 후, 마지막 상호작용으로부터 3초 뒤 자율주행 자동 재개
+ * 2. 이미지 상호작용: Traces 카드를 터치하거나 호버 시 배경 이미지가 부드럽게 확대 및 이동하는 효과 유지
+ * 3. 구조적 리사이징: fixed inset-0 및 동적 vh 변수를 통해 팝업 종료 후 레이아웃 무결성 보장
+ * 4. 통합 아이덴티티: 지문 인식 브리딩, SYNC TRACE 버튼 동기화, Founder 직함 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -188,20 +188,21 @@ const App = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState({ name: '', text: '', image: null });
   const fileInputRef = useRef(null);
+  const autoPlayResumeTimerRef = useRef(null);
 
-  // --- [Dynamic Viewport Rescale System] ---
+  // --- [Dynamic Viewport Correction] ---
   useEffect(() => {
-    const setVh = () => {
-      // 실제 브라우저 가시영역 높이를 기반으로 1vh 단위를 계산
+    const handleResize = () => {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
+      if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen) { window.scrollTo(0, 0); }
     };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
 
-    setVh();
-    window.addEventListener('resize', setVh);
-    return () => window.removeEventListener('resize', setVh);
-  }, []);
-
+  // --- [Autonomous Auto-Play Logic] ---
   useEffect(() => {
     if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || isInitializing || isAutoPlayPaused) return;
     const timer = setInterval(() => {
@@ -213,6 +214,19 @@ const App = () => {
     }, 1200);
     return () => clearInterval(timer);
   }, [activeView, isModalOpen, isGuestbookOpen, isDeleteModalOpen, messages, isInitializing, isAutoPlayPaused]);
+
+  // 상호작용 감지 및 3초 뒤 재개 로직
+  const handleUserInteraction = useCallback(() => {
+    setIsAutoPlayPaused(true);
+    if (autoPlayResumeTimerRef.current) clearTimeout(autoPlayResumeTimerRef.current);
+    
+    // 3초 뒤에 다시 자율주행 모드로 변경
+    autoPlayResumeTimerRef.current = setTimeout(() => {
+      if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen) {
+        setIsAutoPlayPaused(false);
+      }
+    }, 3000);
+  }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -241,24 +255,18 @@ const App = () => {
     }, (err) => { setCloudStatus('error'); });
   }, [user]);
 
-  // 강제 리스케일 및 자율주행 재개 로직
   const closeModal = () => { 
-    setIsModalOpen(false); 
-    setIsGuestbookOpen(false); 
-    setIsDeleteModalOpen(false); 
+    setIsModalOpen(false); setIsGuestbookOpen(false); setIsDeleteModalOpen(false); 
     setSelectedItem(null); 
-    setIsAutoPlayPaused(false);
-    
-    // 모바일 브라우저의 뷰포트 정합성을 위한 강제 초기화 명령
+    setIsAutoPlayPaused(false); // 팝업 종료 즉시 자율주행 재개
+    if (autoPlayResumeTimerRef.current) clearTimeout(autoPlayResumeTimerRef.current);
+
     setTimeout(() => { 
-      // 1. 스크롤 강제 상단 고정
-      window.scrollTo(0, 0);
-      // 2. 뷰포트 메타 데이터 강제 싱크
-      document.body.style.overflow = 'hidden';
-      setTimeout(() => { document.body.style.overflow = ''; }, 10);
-      // 3. 리사이징 이벤트 강제 트리거
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
       window.dispatchEvent(new Event('resize'));
-    }, 50);
+    }, 60);
   };
 
   const roadmapSteps = [
@@ -274,7 +282,7 @@ const App = () => {
   ];
 
   return (
-    <div className="h-screen w-screen bg-[#010101] text-white selection:bg-cyan-500/30 overflow-x-hidden overflow-y-hidden font-sans flex flex-col relative max-w-full" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
+    <div className="fixed inset-0 bg-[#010101] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col max-w-full touch-none" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] pointer-events-none z-[1] mix-blend-overlay" />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Michroma&family=Orbitron:wght@400;700;900&family=JetBrains+Mono&display=swap');
@@ -323,7 +331,7 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.2</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.5</span>
              </div>
           </div>
         </div>
@@ -332,7 +340,7 @@ const App = () => {
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.2 | Rescale Fix</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.5 | Smart Resume</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
@@ -403,9 +411,13 @@ const App = () => {
           {activeView === 'traces' ? (
             <div className="h-full flex flex-col">
               {messages.length > 0 ? (
-                <CoverFlow items={messages.slice(0, 15)} activeIndex={activeIndices.traces} setActiveIndex={(i) => setActiveIndices({...activeIndices, traces: i})} onUserInteraction={() => setIsAutoPlayPaused(true)} renderItem={(msg) => (
-                  <div className="w-full h-full glass-panel rounded-[2.5rem] relative overflow-hidden border border-violet-500/30 p-6 flex flex-col justify-between">
-                    {msg.image && <img src={msg.image} className="absolute inset-0 w-full h-full object-cover opacity-20 grayscale" alt="" />}
+                <CoverFlow items={messages.slice(0, 15)} activeIndex={activeIndices.traces} setActiveIndex={(i) => setActiveIndices({...activeIndices, traces: i})} onUserInteraction={handleUserInteraction} renderItem={(msg) => (
+                  <div className="group w-full h-full glass-panel rounded-[2.5rem] relative overflow-hidden border border-violet-500/30 p-6 flex flex-col justify-between cursor-pointer active:scale-[0.98] transition-all">
+                    {msg.image && (
+                      <div className="absolute inset-0 overflow-hidden z-0">
+                        <img src={msg.image} className="w-full h-full object-cover opacity-20 grayscale transition-all duration-[1500ms] ease-out group-hover:scale-125 group-hover:rotate-2 group-active:scale-150 group-active:-translate-y-4" alt="" />
+                      </div>
+                    )}
                     <div className="relative z-10 text-left">
                       <span className="text-[9px] font-brand text-violet-400 font-black uppercase tracking-widest">{msg.name}</span>
                       <p className="text-[11px] font-light mt-2 line-clamp-2 italic opacity-80 leading-relaxed">"{msg.text}"</p>
@@ -423,7 +435,7 @@ const App = () => {
               )}
             </div>
           ) : (
-            <CoverFlow items={activeView === 'roadmap' ? roadmapSteps : projects} activeIndex={activeView === 'roadmap' ? activeIndices.roadmap : activeIndices.works} setActiveIndex={(i) => setActiveIndices({...activeIndices, [activeView]: i})} onUserInteraction={() => setIsAutoPlayPaused(true)} renderItem={(item) => (
+            <CoverFlow items={activeView === 'roadmap' ? roadmapSteps : projects} activeIndex={activeView === 'roadmap' ? activeIndices.roadmap : activeIndices.works} setActiveIndex={(i) => setActiveIndices({...activeIndices, [activeView]: i})} onUserInteraction={handleUserInteraction} renderItem={(item) => (
               <div onClick={() => { setSelectedItem(item); setIsModalOpen(true); }} className={`w-full h-full glass-panel p-6 rounded-[2.5rem] border ${activeView === 'roadmap' ? 'border-cyan-500/30 shadow-[0_0_30px_-10px_rgba(34,211,238,0.3)]' : 'border-emerald-500/30 shadow-[0_0_30px_-10px_rgba(16,185,129,0.3)]'} flex flex-col justify-between text-left cursor-pointer hover:bg-white/5 transition-colors`}>
                 <div className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-cyan-400">{item.icon}</div>
                 <div><span className="text-[7px] font-brand text-white/30 uppercase tracking-widest">{item.phase || item.tag}</span><h3 className="text-xs font-bold mt-1 uppercase">{item.title}</h3></div>
@@ -433,7 +445,7 @@ const App = () => {
         </div>
       </div>
 
-      <footer className="z-10 py-8 flex flex-col items-center gap-2">
+      <footer className="z-10 py-8 flex flex-col items-center gap-2 shrink-0">
         <div className="flex flex-col items-center">
           <span className="font-brand text-[10px] tracking-[0.8em] font-black uppercase animate-breathe text-cyan-400/80">HYZEN LABS. 2026</span>
           <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.2em] mt-1">All right reserved by Hyzen Labs.</span>
@@ -442,7 +454,7 @@ const App = () => {
 
       {/* --- Modals --- */}
       {isGuestbookOpen && (
-        <div className="fixed inset-0 z-[5000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-md" onClick={closeModal}>
+        <div className="fixed inset-0 z-[5000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-md overflow-hidden touch-auto" onClick={closeModal}>
           <div className="w-full sm:max-w-md glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-8 max-w-full" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-black font-brand uppercase tracking-tight">Sync Trace</h2>
@@ -454,18 +466,18 @@ const App = () => {
               try {
                 const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
                 await addDoc(q, { ...newMessage, createdAt: serverTimestamp(), date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) });
-                setNewMessage({ name: '', text: '', image: null }); setIsGuestbookOpen(false); playSystemSound('popup'); closeModal();
+                setNewMessage({ name: '', text: '', image: null }); closeModal(); playSystemSound('popup');
               } catch (err) { setErrorMsg("Sync Error"); } finally { setIsUploading(false); }
             }} className="space-y-4">
               <div className="flex gap-2">
-                <input type="text" placeholder="IDENTITY ID" className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-brand outline-none focus:border-cyan-500/50" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
+                <input type="text" style={{fontSize: '16px'}} placeholder="IDENTITY ID" className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-brand outline-none focus:border-cyan-500/50" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
                 <button type="button" onClick={() => fileInputRef.current?.click()} className={`px-4 rounded-xl border transition-all ${newMessage.image ? 'bg-cyan-500 border-cyan-500 text-black' : 'bg-white/5 border-white/10 text-white/30'}`} disabled={isUploading}>{isUploading ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}</button>
                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={async (e) => {
                   const file = e.target.files[0];
                   if (file) { setIsUploading(true); try { const compressed = await compressImage(file); setNewMessage(prev => ({ ...prev, image: compressed })); } catch (e) { } finally { setIsUploading(false); } }
                 }} />
               </div>
-              <textarea placeholder="LOG DATA..." className="w-full h-24 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-500/50 resize-none" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
+              <textarea style={{fontSize: '16px'}} placeholder="LOG DATA..." className="w-full h-24 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-500/50 resize-none" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
               <button type="submit" className="w-full bg-cyan-500 py-4 rounded-2xl text-black font-brand font-black uppercase tracking-widest shadow-lg shadow-cyan-500/20 active:scale-95 transition-all disabled:opacity-50" disabled={isUploading}>{isUploading ? "PROCESS..." : "INITIATE SYNC"}</button>
             </form>
           </div>
@@ -473,11 +485,11 @@ const App = () => {
       )}
 
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-[6000] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm" onClick={closeModal}>
+        <div className="fixed inset-0 z-[6000] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm overflow-hidden touch-auto" onClick={closeModal}>
           <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 text-center" onClick={e => e.stopPropagation()}>
             <Lock size={32} className="text-red-500 mx-auto mb-4" />
             <h2 className="text-lg font-black uppercase mb-6">Erase Trace?</h2>
-            <input type="password" placeholder="PASSCODE" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center mb-6 outline-none focus:border-red-500" value={deletePass} onChange={e => setDeletePass(e.target.value)} />
+            <input type="password" style={{fontSize: '16px'}} placeholder="PASSCODE" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center mb-6 outline-none focus:border-red-500" value={deletePass} onChange={e => setDeletePass(e.target.value)} />
             <div className="flex gap-2">
               <button onClick={closeModal} className="flex-1 py-3 rounded-xl bg-white/5 text-[10px] font-brand uppercase">Abort</button>
               <button onClick={async () => {
@@ -489,7 +501,7 @@ const App = () => {
       )}
 
       {isModalOpen && selectedItem && (
-        <div className="fixed inset-0 z-[4000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md" onClick={closeModal}>
+        <div className="fixed inset-0 z-[4000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md overflow-hidden touch-auto" onClick={closeModal}>
           <div className="w-full h-[70vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-10 relative overflow-y-auto shadow-2xl max-w-full" onClick={e => e.stopPropagation()}>
             <button onClick={closeModal} className="absolute top-8 right-8 text-white/20 hover:text-white"><X size={24} /></button>
             <span className="text-cyan-400 font-brand text-[10px] font-bold uppercase tracking-[0.4em]">{selectedItem.phase || selectedItem.tag}</span>
