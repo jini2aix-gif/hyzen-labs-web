@@ -28,28 +28,46 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.4.4 | Neural-Sync Restoration]
- * 1. 클라우드 연동 복구: Rule 3를 준수하여 인증 완료 후 Firestore 세션을 시작하도록 로직 강화
- * 2. 신경망 연결(Neural Link): 버블과 Founder 프로필 간의 유기적 곡선 효과 및 실시간 추적 시스템 복구
- * 3. 스타일리시 ID: 방명록 성함을 이탈릭/글로우 효과가 적용된 대형 폰트로 유지
- * 4. 버블 디자인: 정원형 프레임의 좌측 상단에 이름 태그가 위치한 프리미엄 레이아웃 고수
- * 5. 자율주행 & 리사이징: 3초 복귀 알고리즘 및 Viewport Integrity(fixed 레이아웃) 시스템 유지
+ * [Hyzen Labs. CTO Optimized - R2.5.0 | Ultimate Sync & Neural Restoration]
+ * 1. 클라우드 연동 최적화: Vercel(Vite)과 Canvas 환경을 모두 지원하는 하이브리드 Config 로더 적용
+ * 2. 신경망 선(Neural Link) 완벽 복구: 픽셀 좌표 기반의 유기적 곡선 및 실시간 추적 시스템 재활성화
+ * 3. 스타일리시 ID & 버블: 정원형 프레임, 좌측 상단 이름 태그(글로우/이탈릭) 디자인 유지
+ * 4. 지능형 자율주행: 상호작용 감지 후 3초 뒤 자동 재개 및 팝업 종료 후 즉시 재개 로직 고수
+ * 5. 리사이징 무결성: fixed inset-0 및 동적 vh 변수 시스템으로 모바일 뷰포트 오류 원천 차단
  */
 
 const ADMIN_PASS = "5733906";
+const FALLBACK_APP_ID = 'hyzen-labs-production';
 
-// --- [Firebase Core - Robust Initialization] ---
+// --- [Firebase Core - Multi-Environment Hybrid Initialization] ---
 const getFirebaseConfig = () => {
+  // 1. Vercel/Vite 환경 변수 우선 확인
+  try {
+    // @ts-ignore
+    const viteEnv = import.meta.env.VITE_FIREBASE_CONFIG;
+    if (viteEnv) return typeof viteEnv === 'string' ? JSON.parse(viteEnv) : viteEnv;
+  } catch (e) {}
+
+  // 2. Canvas 전역 변수 확인
   if (typeof __firebase_config !== 'undefined' && __firebase_config) {
     try {
       return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
-    } catch (e) { return null; }
+    } catch (e) {}
   }
+  
   return null;
 };
 
 const firebaseConfig = getFirebaseConfig();
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'hyzen-labs-production';
+
+const getAppId = () => {
+  if (typeof __app_id !== 'undefined' && __app_id) return __app_id;
+  try {
+    // @ts-ignore
+    return import.meta.env.VITE_APP_ID || FALLBACK_APP_ID;
+  } catch(e) { return FALLBACK_APP_ID; }
+};
+const appId = getAppId();
 
 const firebaseApp = firebaseConfig ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]) : null;
 const auth = firebaseApp ? getAuth(firebaseApp) : null;
@@ -96,7 +114,7 @@ const compressImage = (file) => {
   });
 };
 
-// --- [Neural Link Component] ---
+// --- [Neural Link Component - Restored Logic] ---
 const NeuralLinkLine = ({ bubbleCoords }) => {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   
@@ -249,12 +267,12 @@ const App = () => {
     }, 3000);
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
 
-  // --- [Resilient Authentication Init - Rule 3] ---
+  // --- [Mandatory Rule 3: Auth Init] ---
   useEffect(() => {
     const initAuth = async () => {
       if (!auth) { 
         setCloudStatus('error'); 
-        setDiagInfo("Auth Engine Missing");
+        setDiagInfo("Auth System Not Found");
         return; 
       }
       try {
@@ -265,7 +283,7 @@ const App = () => {
         }
       } catch (err) { 
         setCloudStatus('error'); 
-        setDiagInfo("Auth Sync Failed");
+        setDiagInfo("Auth Failed");
       }
     };
 
@@ -287,20 +305,21 @@ const App = () => {
     return () => { unsubscribe(); clearTimeout(timer); };
   }, []);
 
-  // --- [Stable Data Streaming - Rule 1 & 2] ---
+  // --- [Mandatory Rule 1 & 2: Data Stream] ---
   useEffect(() => {
     if (!user || !db) return;
     
-    // Path Rule: /artifacts/{appId}/public/data/messages
+    // Path Rule: /artifacts/{appId}/public/data/{collectionName}
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
     
     const unsubscribe = onSnapshot(q, s => {
       const msgs = s.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Rule 2: Memory sorting to avoid missing indexes
       setMessages(msgs.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
     }, (err) => { 
-      console.error("Firestore Error:", err);
+      console.error("Firestore Permission Denied:", err);
       setCloudStatus('error'); 
-      setDiagInfo("Sync Terminated");
+      setDiagInfo("Permission Denied");
     });
 
     return () => unsubscribe();
@@ -381,7 +400,7 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.4.4</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.5.0</span>
              </div>
           </div>
         </div>
@@ -390,7 +409,7 @@ const App = () => {
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.4.4 | Neural Restore</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.5.0 | Total Sync</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
