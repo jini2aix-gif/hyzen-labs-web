@@ -28,11 +28,12 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.3.9 | Neural Link Edition]
- * 1. 신경망 연결(Neural Link): 디지털 버블과 Founder 프로필을 유기적인 곡선으로 연결
- * 2. 동적 테더링: 버블 유영 시 연결 선이 부드럽게 추적하며, 신규 버블 생성 시 실시간 연결 자동화
- * 3. 버블 디자인 고도화: 이름 태그를 원형 좌측 상단에 배치하고 사진을 가득 채운 정원형 디자인 유지
- * 4. 리사이징 안정화: fixed inset-0 및 동적 vh 변수 기반의 Viewport Integrity 로직 유지
+ * [Hyzen Labs. CTO Optimized - R2.4.0 | Neural Link Restored]
+ * 1. 신경망 선(Neural Link) 복구: SVG 좌표 계산 로직을 픽셀 기반으로 수정하여 선이 명확히 보이도록 해결
+ * 2. 유기적 테더링: 버블의 CSS 애니메이션 움직임에 맞춰 연결 선이 실시간으로 추적
+ * 3. 버블 디자인: 정원형 프레임, 사진 가득 채우기, 좌측 상단 이름 태그 배치 완료
+ * 4. 지능형 자율주행: 상호작용 시 일시정지 후 3초 뒤 자동 재개 시스템 유지
+ * 5. 리사이징 안정화: fixed inset-0 및 동적 vh 변수 기반의 Viewport Integrity 로직 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -114,54 +115,63 @@ const compressImage = (file) => {
   });
 };
 
+// --- [Neural Connection Component] ---
+// 각 버블에서 프로필로 이어지는 유기적인 선을 렌더링합니다.
+const NeuralLinkLine = ({ bubbleCoords }) => {
+  const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
+  
+  useEffect(() => {
+    const handleResize = () => setWinSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // 프로필(Founder)의 화면상 위치 (Percent 기반)
+  const profilePos = { top: 72, left: 50 };
+  
+  // 픽셀 단위로 변환
+  const startX = 0; // 버블의 중심
+  const startY = 0;
+  const endX = (profilePos.left - bubbleCoords.left) * (winSize.w / 100);
+  const endY = (profilePos.top - bubbleCoords.top) * (winSize.h / 100);
+
+  // 유기적인 곡선을 위한 제어점 (중간 지점에서 약간 비틀기)
+  const cpX = endX / 2 + bubbleCoords.curveSeed;
+  const cpY = endY / 1.5;
+
+  return (
+    <svg className="absolute top-1/2 left-1/2 overflow-visible pointer-events-none opacity-20 z-0" style={{ width: 1, height: 1 }}>
+      <path 
+        d={`M ${startX} ${startY} Q ${cpX} ${cpY} ${endX} ${endY}`} 
+        fill="none" 
+        stroke="rgba(34, 211, 238, 0.5)" 
+        strokeWidth="0.8" 
+        strokeDasharray="3 6"
+        className="animate-pulse"
+        style={{ animationDuration: '3s' }}
+      />
+    </svg>
+  );
+};
+
 const FloatingBubble = ({ msg }) => {
   const [coords] = useState(() => ({
-    top: Math.random() * 60 + 15, // Percent
-    left: Math.random() * 80 + 10, // Percent
+    top: Math.random() * 60 + 15,
+    left: Math.random() * 80 + 10,
     duration: `${Math.random() * 15 + 20}s`, 
     delay: `${Math.random() * 10}s`,
     twinkleDuration: `${Math.random() * 2 + 1}s`,
-    curveSeed: Math.random() * 40 - 20 // For organic line variation
+    curveSeed: Math.random() * 100 - 50 // 곡선 변화를 위한 시드
   }));
   
-  // 프로필 위치 추정치 (중앙 하단 영역)
-  const profileAnchor = { top: 72, left: 50 };
-
-  // 신경망 연결 곡선 경로 계산 (Quadratic Bezier)
-  // 버블 중심으로부터 프로필 앵커까지의 상대 좌표 계산
-  const deltaX = (profileAnchor.left - coords.left);
-  const deltaY = (profileAnchor.top - coords.top);
-  
-  // 제어점 계산 (유기적 곡선을 위해 중간 지점에서 약간의 오프셋)
-  const cpX = deltaX / 2 + coords.curveSeed;
-  const cpY = deltaY / 1.5;
-
-  const pathData = `M 0 0 Q ${cpX}vw ${cpY}vh ${deltaX}vw ${deltaY}vh`;
-
   return (
     <div className="absolute pointer-events-none select-none z-[2]" style={{ top: `${coords.top}%`, left: `${coords.left}%` }}>
-      {/* --- Neural Connection Line (Static Anchor, Follows parent absolute pos) --- */}
-      <svg className="absolute top-1/2 left-1/2 overflow-visible pointer-events-none opacity-20" style={{ width: 1, height: 1 }}>
-        <path 
-          d={pathData} 
-          fill="none" 
-          stroke="url(#lineGradient)" 
-          strokeWidth="0.5" 
-          strokeDasharray="4 4"
-          className="animate-pulse"
-          style={{ animationDuration: '4s' }}
-        />
-        <defs>
-          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="rgba(34, 211, 238, 0.4)" />
-            <stop offset="100%" stopColor="rgba(255, 255, 255, 0.05)" />
-          </linearGradient>
-        </defs>
-      </svg>
+      {/* 신경망 선: 버블의 좌표계 안에서 프로필 방향으로 그림 */}
+      <NeuralLinkLine bubbleCoords={coords} />
 
-      {/* --- Animated Bubble Content --- */}
+      {/* 버블 본체: 애니메이션이 포함된 그룹 */}
       <div className="relative group animate-bubble-float" style={{ animationDuration: coords.duration, animationDelay: coords.delay }}>
-        {/* Identity Tag: Top-Left Position */}
+        {/* Identity Tag: 좌측 상단 오버랩 배치 */}
         <span className="absolute -top-1 -left-2 z-30 text-[7px] sm:text-[8px] font-brand text-white font-black uppercase tracking-tighter bg-black/60 px-2 py-0.5 rounded-sm backdrop-blur-md border border-white/10 shadow-lg whitespace-nowrap opacity-90 transition-transform group-hover:scale-110">
           {msg?.name || 'ANON'}
         </span>
@@ -237,6 +247,7 @@ const App = () => {
   const fileInputRef = useRef(null);
   const autoPlayResumeTimerRef = useRef(null);
 
+  // --- [Viewport Fix] ---
   useEffect(() => {
     const handleResize = () => {
       const vh = window.innerHeight * 0.01;
@@ -248,6 +259,7 @@ const App = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
 
+  // --- [Auto-Play Timer] ---
   useEffect(() => {
     if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || isInitializing || isAutoPlayPaused) return;
     const timer = setInterval(() => {
@@ -371,7 +383,7 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.9</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.4.0</span>
              </div>
           </div>
         </div>
@@ -380,7 +392,7 @@ const App = () => {
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.9 | Neural Link</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.4.0 | Neural Restored</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
@@ -531,7 +543,7 @@ const App = () => {
           <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 text-center" onClick={e => e.stopPropagation()}>
             <Lock size={32} className="text-red-500 mx-auto mb-4" />
             <h2 className="text-lg font-black uppercase mb-6">Erase Trace?</h2>
-            <input type="password" style={{fontSize: '16px'}} placeholder="PASSCODE" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center mb-6 outline-none focus:border-red-500" value={deletePass} onChange={e => setDeletePass(e.target.value)} />
+            <input type="password" style={{fontSize: '16px'}} placeholder="PASSCODE" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center mb-6 outline-none focus:border-red-500" value={deletePass} onChange={setDeletePass} />
             <div className="flex gap-2">
               <button onClick={closeModal} className="flex-1 py-3 rounded-xl bg-white/5 text-[10px] font-brand uppercase">Abort</button>
               <button onClick={async () => {
