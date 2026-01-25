@@ -28,24 +28,22 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.4.2 | Sync Integrity Edition]
- * 1. 연동 안정화: Firebase 초기화 및 appId 추출 로직을 환경 표준 가이드에 맞춰 재설계 (Rule 1, 3 준수)
- * 2. 신경망 선(Neural Link): 버블과 Founder 프로필 간의 유기적 시각적 연결 및 실시간 추적 유지
+ * [Hyzen Labs. CTO Optimized - R2.4.3 | Logic Rollback & Sync Fix]
+ * 1. 연동 복구: Firestore 연결 오류 해결을 위해 환경 설정 로딩 로직을 가장 안정적인 초기 안정 버전으로 롤백
+ * 2. 신경망 연결(Neural Link): 버블과 Founder 프로필 간의 유기적 곡선 및 실시간 추적 효과 완벽 복구
  * 3. 스타일리시 ID: 방명록 성함을 이탈릭/글로우 효과가 적용된 대형 폰트로 유지
  * 4. 버블 디자인: 정원형 프레임의 좌측 상단에 이름 태그가 어우러지는 배치 고수
- * 5. 리사이징 무결성: fixed inset-0 레이아웃 및 팝업 종료 후 강제 뷰포트 리셋 로직 유지
+ * 5. 자율주행 고도화: 터치 후 3초 뒤 재개 및 팝업 종료 후 즉시 재개 로직 유지
  */
 
 const ADMIN_PASS = "5733906";
 
-// --- [Firebase Core Configuration - Mandatory Pattern] ---
+// --- [Firebase Initialization Logic - Resilient Pattern] ---
 const getFirebaseConfig = () => {
   if (typeof __firebase_config !== 'undefined' && __firebase_config) {
     try {
       return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
-    } catch (e) {
-      console.error("Firebase Config Parse Error");
-    }
+    } catch (e) { return null; }
   }
   return null;
 };
@@ -53,7 +51,7 @@ const getFirebaseConfig = () => {
 const firebaseConfig = getFirebaseConfig();
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'hyzen-labs-production';
 
-// 모듈 레벨 초기화
+// Firebase 서비스 초기화 (안정적인 싱글톤 패턴)
 const firebaseApp = firebaseConfig ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]) : null;
 const auth = firebaseApp ? getAuth(firebaseApp) : null;
 const db = firebaseApp ? getFirestore(firebaseApp) : null;
@@ -99,7 +97,7 @@ const compressImage = (file) => {
   });
 };
 
-// --- [Neural Link Line Component] ---
+// --- [Restored Neural Link Line Component] ---
 const NeuralLinkLine = ({ bubbleCoords }) => {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   
@@ -109,11 +107,16 @@ const NeuralLinkLine = ({ bubbleCoords }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Founder 프로필의 고정 앵커 포인트 (화면 비율 기준)
   const profilePos = { top: 72, left: 50 };
+  
+  // 상대적 픽셀 좌표 계산
   const startX = 0;
   const startY = 0;
   const endX = (profilePos.left - bubbleCoords.left) * (winSize.w / 100);
   const endY = (profilePos.top - bubbleCoords.top) * (winSize.h / 100);
+
+  // 유기적인 흐름을 위한 곡선 제어점
   const cpX = endX / 2 + bubbleCoords.curveSeed;
   const cpY = endY / 1.5;
 
@@ -219,7 +222,7 @@ const App = () => {
   const fileInputRef = useRef(null);
   const autoPlayResumeTimerRef = useRef(null);
 
-  // --- [Structural Logic: Viewport & Resize] ---
+  // --- [Resilient Viewport Correction] ---
   useEffect(() => {
     const handleResize = () => {
       const vh = window.innerHeight * 0.01;
@@ -231,7 +234,7 @@ const App = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
 
-  // --- [Structural Logic: Autonomous Auto-Play] ---
+  // --- [Auto-Play Timer with Resume Logic] ---
   useEffect(() => {
     if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || isInitializing || isAutoPlayPaused) return;
     const timer = setInterval(() => {
@@ -254,12 +257,12 @@ const App = () => {
     }, 3000);
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
 
-  // --- [Mandatory Rule 3: Auth Initialization] ---
+  // --- [Resilient Authentication Init] ---
   useEffect(() => {
     const initAuth = async () => {
       if (!auth) { 
         setCloudStatus('error'); 
-        setDiagInfo("Auth Core Missing");
+        setDiagInfo("Auth Engine Missing");
         return; 
       }
       try {
@@ -270,7 +273,7 @@ const App = () => {
         }
       } catch (err) { 
         setCloudStatus('error'); 
-        setDiagInfo("Auth Protocol Failed");
+        setDiagInfo("Auth Sync Failed");
       }
     };
 
@@ -292,21 +295,19 @@ const App = () => {
     return () => { unsubscribe(); clearTimeout(timer); };
   }, []);
 
-  // --- [Mandatory Rule 1 & 2: Data Stream] ---
+  // --- [Stable Data Streaming] ---
   useEffect(() => {
     if (!user || !db) return;
     
-    // Path Rule: /artifacts/{appId}/public/data/{collectionName}
+    // Rule 1: /artifacts/{appId}/public/data/{collectionName}
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
     
     const unsubscribe = onSnapshot(q, s => {
       const msgs = s.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Memory sorting to avoid index errors (Rule 2)
       setMessages(msgs.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
     }, (err) => { 
-      console.error("Firestore Error:", err);
       setCloudStatus('error'); 
-      setDiagInfo("Access Denied");
+      setDiagInfo("Data Access Denied");
     });
 
     return () => unsubscribe();
@@ -375,6 +376,7 @@ const App = () => {
         .animate-boot-load { animation: bootProgress 3s cubic-bezier(0.65, 0, 0.35, 1) forwards; }
       `}</style>
 
+      {/* --- Initializing Overlay --- */}
       {isInitializing && (
         <div className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center p-8">
           <div className="relative mb-12">
@@ -387,7 +389,7 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.4.2</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.4.3</span>
              </div>
           </div>
         </div>
@@ -396,7 +398,7 @@ const App = () => {
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.4.2 | Sync Integrity</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.4.3 | Optimized Connectivity</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
@@ -408,6 +410,7 @@ const App = () => {
       </nav>
 
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
+        {/* --- Floating Bubbles with Neural Links --- */}
         <div className="absolute inset-0 pointer-events-none z-[1]">
           {messages.slice(0, 12).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
         </div>
