@@ -33,24 +33,31 @@ import {
   ZapOff,
   Globe,
   Loader2,
-  Terminal
+  RefreshCw
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.9.6 | Cloud Diagnostic Edition]
- * 1. 진단 모드 강화: 연결 실패 시 "설정값 부재", "인증 실패", "DB 미할당" 등 원인 세분화
- * 2. 이미지 압축 유지: R1.9.5의 Neural Compression 로직 계승
- * 3. UI 피드백: 상단 상태바에 실시간 연결 현황 표시
- * 4. Rule 준수: Rule 1, 2, 3 엄격 적용 및 에러 콜백 보강
+ * [Hyzen Labs. CTO Optimized - R1.9.8 | Safe-Config Edition]
+ * 1. 환경 변수 정제(Sanitization): __firebase_config의 앞뒤 공백 및 줄바꿈 자동 제거 로직 추가
+ * 2. 진단 기능 유지: 클라우드 연결 상태 및 에러 메시지 실시간 시각화
+ * 3. 이미지 압축 최적화: 1MB 제한 준수를 위한 Neural Compression 로직 유지
+ * 4. Rule 1, 2, 3 준수: Firestore 경로 및 Auth 시퀀스 보호
  */
 
 const ADMIN_PASS = "5733906";
 const FALLBACK_APP_ID = 'hyzen-labs-production';
 
-// --- [Firebase Initialization & Diagnostic] ---
+// --- [Firebase Configuration Sanitize Logic] ---
 const getFirebaseConfig = () => {
   if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-    try { return JSON.parse(__firebase_config); } catch (e) { return null; }
+    try {
+      // 앞뒤 공백, 줄바꿈, 그리고 혹시 섞여 들어왔을지 모를 백틱(`)까지 모두 제거합니다.
+      const sanitizedConfig = __firebase_config.trim().replace(/^`+|`+$/g, '');
+      return JSON.parse(sanitizedConfig);
+    } catch (e) {
+      console.error("JSON Parse Error:", e);
+      return null;
+    }
   }
   return null;
 };
@@ -61,7 +68,6 @@ const auth = firebaseApp ? getAuth(firebaseApp) : null;
 const db = firebaseApp ? getFirestore(firebaseApp) : null;
 const appId = typeof __app_id !== 'undefined' ? __app_id : FALLBACK_APP_ID;
 
-// --- [Utility: Image Compression] ---
 const compressImage = (file) => {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -150,7 +156,7 @@ const App = () => {
   const [deletePass, setDeletePass] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
-  const [cloudStatus, setCloudStatus] = useState('disconnected'); // disconnected, connecting, connected, error
+  const [cloudStatus, setCloudStatus] = useState('disconnected');
   const [diagInfo, setDiagInfo] = useState("");
   
   const [user, setUser] = useState(null);
@@ -159,48 +165,42 @@ const App = () => {
   
   const fileInputRef = useRef(null);
 
-  // --- [Firebase Lifecycle - Auth Rule 3] ---
-  useEffect(() => {
-    const initAuth = async () => {
-      if (!fConfig) {
-        setCloudStatus('error');
-        setDiagInfo("Config missing. Please check __firebase_config.");
-        return;
-      }
-      if (!auth) {
-        setCloudStatus('error');
-        setDiagInfo("Auth service failed to initialize.");
-        return;
-      }
-      
-      setCloudStatus('connecting');
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else { 
-          await signInAnonymously(auth); 
-        }
-      } catch (err) { 
-        console.error("Auth Error:", err);
-        setCloudStatus('error');
-        setDiagInfo(`Auth failed: ${err.message}`);
-      }
-    };
-    initAuth();
+  const initAuthSequence = useCallback(async () => {
+    if (!fConfig || !auth) {
+      setCloudStatus('error');
+      setDiagInfo(!fConfig ? "Check Environment Variables" : "Firebase Init Failed");
+      return;
+    }
     
+    setCloudStatus('connecting');
+    setDiagInfo("Calibrating Neural Sync...");
+    
+    try {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else { 
+        await signInAnonymously(auth); 
+      }
+    } catch (err) { 
+      setCloudStatus('error');
+      setDiagInfo(`Auth Error: ${err.message.substring(0, 30)}...`);
+    }
+  }, []);
+
+  useEffect(() => {
+    initAuthSequence();
     const unsubscribe = auth ? onAuthStateChanged(auth, (u) => {
       setUser(u);
       if (u) {
         setCloudStatus('connected');
-        setDiagInfo("System Synchronized.");
+        setDiagInfo("Cloud Core Synchronized.");
       }
     }) : () => {};
 
     const timer = setTimeout(() => setIsInitializing(false), 2000);
     return () => { unsubscribe(); clearTimeout(timer); };
-  }, []);
+  }, [initAuthSequence]);
 
-  // --- [Data Fetching - Rule 1 & 2] ---
   useEffect(() => {
     if (!user || !db) return;
     const messagesCollection = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
@@ -209,9 +209,8 @@ const App = () => {
       const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setMessages(msgs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)).slice(0, 15));
     }, (err) => {
-      console.error("Snapshot Error:", err);
       setCloudStatus('error');
-      setDiagInfo(`Firestore sync failed: ${err.message}`);
+      setDiagInfo(`Snapshot Fail: ${err.code}`);
     });
     
     return () => unsubscribe();
@@ -265,22 +264,22 @@ const App = () => {
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R1.9.6 | Cloud Diagnostic</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R1.9.8 | Safe-Config</span>
         </div>
         
-        {/* Connection Monitor */}
-        <div className={`flex flex-col items-end gap-1.5 transition-all duration-500 ${cloudStatus === 'error' ? 'animate-pulse' : ''}`}>
-          <div className="flex items-center gap-3">
-             <div className="flex flex-col items-end">
-                <span className={`text-[8px] font-brand uppercase tracking-widest ${cloudStatus === 'connected' ? 'text-cyan-400' : cloudStatus === 'error' ? 'text-red-500' : 'text-amber-500'}`}>
-                  {cloudStatus.toUpperCase()}
-                </span>
-                <span className="text-[6px] font-mono opacity-30 uppercase">{diagInfo}</span>
-             </div>
-             <div className={`w-10 h-10 rounded-xl glass-panel border flex items-center justify-center ${cloudStatus === 'connected' ? 'border-cyan-500/30 text-cyan-400' : cloudStatus === 'error' ? 'border-red-500/30 text-red-500' : 'border-amber-500/30 text-amber-500'}`}>
-                {cloudStatus === 'connected' ? <Cloud size={16} /> : cloudStatus === 'error' ? <ZapOff size={16} /> : <Loader2 size={16} className="animate-spin" />}
-             </div>
-          </div>
+        <div className="flex items-center gap-3">
+           <div className="flex flex-col items-end">
+              <span className={`text-[8px] font-brand uppercase tracking-widest ${cloudStatus === 'connected' ? 'text-cyan-400' : cloudStatus === 'error' ? 'text-red-500' : 'text-amber-500'}`}>
+                {cloudStatus.toUpperCase()}
+              </span>
+              <span className="text-[6px] font-mono opacity-30 uppercase">{diagInfo}</span>
+           </div>
+           <button 
+             onClick={initAuthSequence}
+             disabled={cloudStatus === 'connecting' || cloudStatus === 'connected'}
+             className={`w-10 h-10 rounded-xl glass-panel border flex items-center justify-center transition-all active:scale-90 ${cloudStatus === 'connected' ? 'border-cyan-500/30 text-cyan-400' : cloudStatus === 'error' ? 'border-red-500/30 text-red-500' : 'border-amber-500/30 text-amber-500'}`}>
+              {cloudStatus === 'connected' ? <Cloud size={16} /> : cloudStatus === 'error' ? <RefreshCw size={16} /> : <Loader2 size={16} className="animate-spin" />}
+           </button>
         </div>
       </nav>
 
@@ -342,7 +341,7 @@ const App = () => {
                   </div>
                 )} />
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center opacity-20 gap-2 border border-dashed border-white/10 rounded-[2rem]"><Activity size={24} /><span className="text-[9px] font-brand uppercase tracking-widest">No Cloud Data</span></div>
+                <div className="flex-1 flex flex-col items-center justify-center opacity-20 gap-2 border border-dashed border-white/10 rounded-[2rem]"><Activity size={24} /><span className="text-[9px] font-brand uppercase tracking-widest">Awaiting Neural Data</span></div>
               )}
             </div>
           ) : (
@@ -377,10 +376,8 @@ const App = () => {
               setIsUploading(true);
               setErrorMsg(null);
               
-              // Diagnostic Pre-check
               if (!db || !user) {
-                const reason = !db ? "Database not initialized" : "User not authenticated";
-                setErrorMsg(`Sync Failed: ${reason}`);
+                setErrorMsg(`Sync Failed: ${!db ? "Config Load Error" : "Auth Not Ready"}`);
                 setIsUploading(false);
                 return;
               }
@@ -395,8 +392,7 @@ const App = () => {
                 setNewMessage({ name: '', text: '', image: null });
                 setIsGuestbookOpen(false);
               } catch (err) {
-                console.error("Upload Error:", err);
-                setErrorMsg(`Upload failed: ${err.code || err.message}`);
+                setErrorMsg(`Sync Error: ${err.code || "Network Timeout"}`);
               } finally {
                 setIsUploading(false);
               }
@@ -413,20 +409,17 @@ const App = () => {
                     try {
                       const compressed = await compressImage(file);
                       setNewMessage(prev => ({ ...prev, image: compressed }));
-                    } catch (e) {
-                      setErrorMsg("Image compression failed.");
-                    } finally {
-                      setIsUploading(false);
-                    }
+                    } catch (e) { setErrorMsg("Neural Compression Failed."); }
+                    finally { setIsUploading(false); }
                   }
                 }} />
               </div>
               <textarea placeholder="Share your reality data..." className="w-full h-24 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-500/50 resize-none" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
               
               {errorMsg && (
-                <div className="flex flex-col gap-1 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                <div className="flex flex-col gap-1 p-3 bg-red-500/10 border border-red-500/20 rounded-xl animate-pulse">
                    <div className="flex items-center gap-2 text-red-400 text-[10px] font-brand uppercase">
-                      <AlertCircle size={12} /> Diagnostic Error
+                      <AlertCircle size={12} /> Sync Error
                    </div>
                    <p className="text-[9px] text-red-300/70 font-mono leading-tight">{errorMsg}</p>
                 </div>
