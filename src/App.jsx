@@ -28,17 +28,17 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.4.3 | Logic Rollback & Sync Fix]
- * 1. 연동 복구: Firestore 연결 오류 해결을 위해 환경 설정 로딩 로직을 가장 안정적인 초기 안정 버전으로 롤백
- * 2. 신경망 연결(Neural Link): 버블과 Founder 프로필 간의 유기적 곡선 및 실시간 추적 효과 완벽 복구
+ * [Hyzen Labs. CTO Optimized - R2.4.4 | Neural-Sync Restoration]
+ * 1. 클라우드 연동 복구: Rule 3를 준수하여 인증 완료 후 Firestore 세션을 시작하도록 로직 강화
+ * 2. 신경망 연결(Neural Link): 버블과 Founder 프로필 간의 유기적 곡선 효과 및 실시간 추적 시스템 복구
  * 3. 스타일리시 ID: 방명록 성함을 이탈릭/글로우 효과가 적용된 대형 폰트로 유지
- * 4. 버블 디자인: 정원형 프레임의 좌측 상단에 이름 태그가 어우러지는 배치 고수
- * 5. 자율주행 고도화: 터치 후 3초 뒤 재개 및 팝업 종료 후 즉시 재개 로직 유지
+ * 4. 버블 디자인: 정원형 프레임의 좌측 상단에 이름 태그가 위치한 프리미엄 레이아웃 고수
+ * 5. 자율주행 & 리사이징: 3초 복귀 알고리즘 및 Viewport Integrity(fixed 레이아웃) 시스템 유지
  */
 
 const ADMIN_PASS = "5733906";
 
-// --- [Firebase Initialization Logic - Resilient Pattern] ---
+// --- [Firebase Core - Robust Initialization] ---
 const getFirebaseConfig = () => {
   if (typeof __firebase_config !== 'undefined' && __firebase_config) {
     try {
@@ -51,7 +51,6 @@ const getFirebaseConfig = () => {
 const firebaseConfig = getFirebaseConfig();
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'hyzen-labs-production';
 
-// Firebase 서비스 초기화 (안정적인 싱글톤 패턴)
 const firebaseApp = firebaseConfig ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]) : null;
 const auth = firebaseApp ? getAuth(firebaseApp) : null;
 const db = firebaseApp ? getFirestore(firebaseApp) : null;
@@ -97,7 +96,7 @@ const compressImage = (file) => {
   });
 };
 
-// --- [Restored Neural Link Line Component] ---
+// --- [Neural Link Component] ---
 const NeuralLinkLine = ({ bubbleCoords }) => {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   
@@ -107,16 +106,11 @@ const NeuralLinkLine = ({ bubbleCoords }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Founder 프로필의 고정 앵커 포인트 (화면 비율 기준)
   const profilePos = { top: 72, left: 50 };
-  
-  // 상대적 픽셀 좌표 계산
   const startX = 0;
   const startY = 0;
   const endX = (profilePos.left - bubbleCoords.left) * (winSize.w / 100);
   const endY = (profilePos.top - bubbleCoords.top) * (winSize.h / 100);
-
-  // 유기적인 흐름을 위한 곡선 제어점
   const cpX = endX / 2 + bubbleCoords.curveSeed;
   const cpY = endY / 1.5;
 
@@ -222,7 +216,6 @@ const App = () => {
   const fileInputRef = useRef(null);
   const autoPlayResumeTimerRef = useRef(null);
 
-  // --- [Resilient Viewport Correction] ---
   useEffect(() => {
     const handleResize = () => {
       const vh = window.innerHeight * 0.01;
@@ -234,7 +227,6 @@ const App = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
 
-  // --- [Auto-Play Timer with Resume Logic] ---
   useEffect(() => {
     if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || isInitializing || isAutoPlayPaused) return;
     const timer = setInterval(() => {
@@ -257,7 +249,7 @@ const App = () => {
     }, 3000);
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
 
-  // --- [Resilient Authentication Init] ---
+  // --- [Resilient Authentication Init - Rule 3] ---
   useEffect(() => {
     const initAuth = async () => {
       if (!auth) { 
@@ -295,19 +287,20 @@ const App = () => {
     return () => { unsubscribe(); clearTimeout(timer); };
   }, []);
 
-  // --- [Stable Data Streaming] ---
+  // --- [Stable Data Streaming - Rule 1 & 2] ---
   useEffect(() => {
     if (!user || !db) return;
     
-    // Rule 1: /artifacts/{appId}/public/data/{collectionName}
+    // Path Rule: /artifacts/{appId}/public/data/messages
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
     
     const unsubscribe = onSnapshot(q, s => {
       const msgs = s.docs.map(d => ({ id: d.id, ...d.data() }));
       setMessages(msgs.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
     }, (err) => { 
+      console.error("Firestore Error:", err);
       setCloudStatus('error'); 
-      setDiagInfo("Data Access Denied");
+      setDiagInfo("Sync Terminated");
     });
 
     return () => unsubscribe();
@@ -376,7 +369,6 @@ const App = () => {
         .animate-boot-load { animation: bootProgress 3s cubic-bezier(0.65, 0, 0.35, 1) forwards; }
       `}</style>
 
-      {/* --- Initializing Overlay --- */}
       {isInitializing && (
         <div className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center p-8">
           <div className="relative mb-12">
@@ -389,7 +381,7 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.4.3</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.4.4</span>
              </div>
           </div>
         </div>
@@ -398,7 +390,7 @@ const App = () => {
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.4.3 | Optimized Connectivity</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.4.4 | Neural Restore</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
@@ -410,7 +402,6 @@ const App = () => {
       </nav>
 
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
-        {/* --- Floating Bubbles with Neural Links --- */}
         <div className="absolute inset-0 pointer-events-none z-[1]">
           {messages.slice(0, 12).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
         </div>
