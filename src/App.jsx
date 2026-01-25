@@ -5,57 +5,67 @@ import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, se
 import { 
   Cpu, 
   Layers, 
-  ArrowRight, 
   X, 
-  Share2, 
-  Mail,
   BrainCircuit, 
-  User, 
   MessageSquare, 
-  Send, 
   Activity, 
-  Fingerprint, 
-  Maximize2, 
   Camera, 
-  Image as ImageIcon, 
   Trash2, 
   Lock, 
-  Clock, 
   ShieldCheck,
   Cloud,
-  WifiOff,
-  ChevronLeft,
-  ChevronRight,
-  Zap,
   AlertCircle,
   Eye,
   Box,
-  ZapOff,
-  Globe,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R1.9.8 | Safe-Config Edition]
- * 1. 환경 변수 정제(Sanitization): __firebase_config의 앞뒤 공백 및 줄바꿈 자동 제거 로직 추가
- * 2. 진단 기능 유지: 클라우드 연결 상태 및 에러 메시지 실시간 시각화
- * 3. 이미지 압축 최적화: 1MB 제한 준수를 위한 Neural Compression 로직 유지
- * 4. Rule 1, 2, 3 준수: Firestore 경로 및 Auth 시퀀스 보호
+ * [Hyzen Labs. CTO Optimized - R1.9.9.1 | Compatibility Edition]
+ * 1. 빌드 환경 호환성: ES2015 타겟에서 import.meta 관련 경고를 방지하기 위한 안전한 접근 로직 도입
+ * 2. 다중 환경 변수 지원: Vite(import.meta), Node/Vercel(process.env), Global(__firebase_config) 동시 지원
+ * 3. 런타임 안정성 강화: 환경 변수가 누락되거나 파싱 실패 시에도 시스템이 중단되지 않도록 보호
  */
 
 const ADMIN_PASS = "5733906";
 const FALLBACK_APP_ID = 'hyzen-labs-production';
 
-// --- [Firebase Configuration Sanitize Logic] ---
+// --- [Cross-Environment Safe Config Logic] ---
 const getFirebaseConfig = () => {
-  if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+  let envConfig = null;
+
+  // 1. Vite 환경 변수 시도 (Safe Access)
+  try {
+    // @ts-ignore
+    envConfig = import.meta.env.VITE_FIREBASE_CONFIG;
+  } catch (e) {
+    // import.meta가 지원되지 않는 환경일 경우 무시
+  }
+
+  // 2. 만약 없다면 Node.js/Vercel 환경 변수 시도
+  if (!envConfig && typeof process !== 'undefined' && process.env) {
+    envConfig = process.env.VITE_FIREBASE_CONFIG || process.env.NEXT_PUBLIC_FIREBASE_CONFIG;
+  }
+
+  // 3. 마지막으로 전역 변수(__firebase_config) 확인 (Canvas 환경 호환성)
+  if (!envConfig && typeof __firebase_config !== 'undefined') {
+    envConfig = __firebase_config;
+  }
+  
+  if (envConfig) {
     try {
-      // 앞뒤 공백, 줄바꿈, 그리고 혹시 섞여 들어왔을지 모를 백틱(`)까지 모두 제거합니다.
-      const sanitizedConfig = __firebase_config.trim().replace(/^`+|`+$/g, '');
-      return JSON.parse(sanitizedConfig);
+      const sanitizedConfig = typeof envConfig === 'string' 
+        ? envConfig.trim().replace(/^`+|`+$/g, '') 
+        : envConfig;
+      
+      return typeof sanitizedConfig === 'string' 
+        ? JSON.parse(sanitizedConfig) 
+        : sanitizedConfig;
     } catch (e) {
-      console.error("JSON Parse Error:", e);
+      console.error("Firebase Config JSON Parse Error:", e);
       return null;
     }
   }
@@ -66,7 +76,17 @@ const fConfig = getFirebaseConfig();
 const firebaseApp = (fConfig && fConfig.apiKey) ? (getApps().length === 0 ? initializeApp(fConfig) : getApps()[0]) : null;
 const auth = firebaseApp ? getAuth(firebaseApp) : null;
 const db = firebaseApp ? getFirestore(firebaseApp) : null;
-const appId = typeof __app_id !== 'undefined' ? __app_id : FALLBACK_APP_ID;
+
+// App ID 역시 안전한 방식으로 추출
+const getAppId = () => {
+  try {
+    // @ts-ignore
+    return import.meta.env.VITE_APP_ID || (typeof process !== 'undefined' && process.env.VITE_APP_ID) || (typeof __app_id !== 'undefined' ? __app_id : FALLBACK_APP_ID);
+  } catch(e) {
+    return FALLBACK_APP_ID;
+  }
+};
+const appId = getAppId();
 
 const compressImage = (file) => {
   return new Promise((resolve) => {
@@ -168,19 +188,15 @@ const App = () => {
   const initAuthSequence = useCallback(async () => {
     if (!fConfig || !auth) {
       setCloudStatus('error');
-      setDiagInfo(!fConfig ? "Check Environment Variables" : "Firebase Init Failed");
+      setDiagInfo(!fConfig ? "Config Missing" : "Init Failed");
       return;
     }
     
     setCloudStatus('connecting');
-    setDiagInfo("Calibrating Neural Sync...");
+    setDiagInfo("Neural Link Syncing...");
     
     try {
-      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        await signInWithCustomToken(auth, __initial_auth_token);
-      } else { 
-        await signInAnonymously(auth); 
-      }
+      await signInAnonymously(auth); 
     } catch (err) { 
       setCloudStatus('error');
       setDiagInfo(`Auth Error: ${err.message.substring(0, 30)}...`);
@@ -193,7 +209,7 @@ const App = () => {
       setUser(u);
       if (u) {
         setCloudStatus('connected');
-        setDiagInfo("Cloud Core Synchronized.");
+        setDiagInfo("Cloud Core Ready.");
       }
     }) : () => {};
 
@@ -210,7 +226,7 @@ const App = () => {
       setMessages(msgs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)).slice(0, 15));
     }, (err) => {
       setCloudStatus('error');
-      setDiagInfo(`Snapshot Fail: ${err.code}`);
+      setDiagInfo(`DB Fail: ${err.code}`);
     });
     
     return () => unsubscribe();
@@ -247,24 +263,21 @@ const App = () => {
         .animate-scan { animation: scanline 4s linear infinite; }
         @keyframes bubbleFloat { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; } 50% { transform: translate(10px, -10px) scale(1.05); opacity: 0.5; } }
         .animate-bubble-float { animation: bubbleFloat 20s ease-in-out infinite; }
-        .tap-feedback:active { transform: scale(0.97); }
       `}</style>
 
       {isInitializing && (
         <div className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center p-8">
           <ShieldCheck size={40} className="text-cyan-400 animate-pulse mb-6" />
-          <div className="w-48 h-[1px] bg-white/10 overflow-hidden relative"><div className="absolute inset-0 bg-cyan-500 animate-[initProgress_2s_ease-in-out_forwards]" /></div>
+          <div className="w-48 h-[1px] bg-white/10 overflow-hidden relative">
+            <div className="absolute inset-0 bg-cyan-500 animate-[initProgress_2s_ease-in-out_forwards]" />
+          </div>
         </div>
       )}
-
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {messages.filter(m => m.image).slice(0, 5).map(msg => <FloatingBubble key={msg.id} msg={msg} />)}
-      </div>
 
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R1.9.8 | Safe-Config</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R1.9.9.1 | Compatibility</span>
         </div>
         
         <div className="flex items-center gap-3">
@@ -294,11 +307,12 @@ const App = () => {
         </div>
         
         <div className="mt-8 flex flex-col items-center gap-6">
-          <div onClick={() => setIsGuestbookOpen(true)} className="group relative cursor-pointer tap-feedback">
+          <div onClick={() => setIsGuestbookOpen(true)} className="group relative cursor-pointer active:scale-95 transition-transform">
             <div className="absolute -inset-8 border border-white/5 rounded-full animate-[spin_25s_linear_infinite]" />
             <div className="w-24 h-24 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent">
               <div className="w-full h-full rounded-full bg-zinc-900 flex items-center justify-center overflow-hidden border border-white/10">
-                <img src="YJ.PNG" className="w-full h-full object-cover grayscale brightness-90 group-hover:grayscale-0 transition-all duration-700" alt="Founder" />
+                <img src="YJ.PNG" className="w-full h-full object-cover grayscale brightness-90 group-hover:grayscale-0 transition-all duration-700" alt="Founder" 
+                     onError={(e) => { e.target.src = "https://via.placeholder.com/150/000000/FFFFFF?text=YJ"; }} />
               </div>
             </div>
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 glass-panel border border-cyan-500/40 rounded-full flex items-center gap-2">
@@ -341,13 +355,16 @@ const App = () => {
                   </div>
                 )} />
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center opacity-20 gap-2 border border-dashed border-white/10 rounded-[2rem]"><Activity size={24} /><span className="text-[9px] font-brand uppercase tracking-widest">Awaiting Neural Data</span></div>
+                <div className="flex-1 flex flex-col items-center justify-center opacity-20 gap-2 border border-dashed border-white/10 rounded-[2rem]">
+                  <Activity size={24} />
+                  <span className="text-[9px] font-brand uppercase tracking-widest">Awaiting Data</span>
+                </div>
               )}
             </div>
           ) : (
             <CoverFlow items={activeView === 'roadmap' ? roadmapSteps : projects} activeIndex={activeView === 'roadmap' ? activeIndices.roadmap : activeIndices.works} 
               setActiveIndex={(i) => setActiveIndices({...activeIndices, [activeView]: i})} renderItem={(item) => (
-              <div onClick={() => { setSelectedItem(item); setIsModalOpen(true); }} className={`w-full h-full glass-panel p-6 rounded-[2.5rem] border ${activeView === 'roadmap' ? 'border-cyan-500/30' : 'border-emerald-500/30'} flex flex-col justify-between text-left`}>
+              <div onClick={() => { setSelectedItem(item); setIsModalOpen(true); }} className={`w-full h-full glass-panel p-6 rounded-[2.5rem] border ${activeView === 'roadmap' ? 'border-cyan-500/30' : 'border-emerald-500/30'} flex flex-col justify-between text-left cursor-pointer`}>
                 <div className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-cyan-400">{item.icon}</div>
                 <div><span className="text-[7px] font-brand text-white/30 uppercase tracking-widest">{item.phase || item.tag}</span><h3 className="text-xs font-bold mt-1 uppercase">{item.title}</h3></div>
               </div>
@@ -363,7 +380,7 @@ const App = () => {
       {/* Guestbook Modal */}
       {isGuestbookOpen && (
         <div className="fixed inset-0 z-[5000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-md" onClick={closeModal}>
-          <div className="w-full sm:max-w-md glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-8 animate-[slideUp_0.4s_ease-out]" onClick={e => e.stopPropagation()}>
+          <div className="w-full sm:max-w-md glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-8" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-black uppercase tracking-tight">Sync Trace</h2>
               <button onClick={closeModal}><X size={20} className="opacity-40 hover:opacity-100" /></button>
@@ -372,12 +389,11 @@ const App = () => {
             <form onSubmit={async (e) => {
               e.preventDefault();
               if (!newMessage.name || !newMessage.text || isUploading) return;
-              
               setIsUploading(true);
               setErrorMsg(null);
               
               if (!db || !user) {
-                setErrorMsg(`Sync Failed: ${!db ? "Config Load Error" : "Auth Not Ready"}`);
+                setErrorMsg("Database Connection Missing.");
                 setIsUploading(false);
                 return;
               }
@@ -392,14 +408,14 @@ const App = () => {
                 setNewMessage({ name: '', text: '', image: null });
                 setIsGuestbookOpen(false);
               } catch (err) {
-                setErrorMsg(`Sync Error: ${err.code || "Network Timeout"}`);
+                setErrorMsg(`Sync Error: ${err.message}`);
               } finally {
                 setIsUploading(false);
               }
             }} className="space-y-4">
               <div className="flex gap-2">
                 <input type="text" placeholder="ID" className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-brand outline-none focus:border-cyan-500/50" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
-                <button type="button" onClick={() => fileInputRef.current?.click()} className={`px-4 rounded-xl border transition-all ${newMessage.image ? 'bg-cyan-500 border-cyan-500 text-black shadow-[0_0_15px_rgba(34,211,238,0.3)]' : 'bg-white/5 border-white/10 text-white/30'}`} disabled={isUploading}>
+                <button type="button" onClick={() => fileInputRef.current?.click()} className={`px-4 rounded-xl border transition-all ${newMessage.image ? 'bg-cyan-500 border-cyan-500 text-black' : 'bg-white/5 border-white/10 text-white/30'}`} disabled={isUploading}>
                   {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
                 </button>
                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={async (e) => {
@@ -409,7 +425,7 @@ const App = () => {
                     try {
                       const compressed = await compressImage(file);
                       setNewMessage(prev => ({ ...prev, image: compressed }));
-                    } catch (e) { setErrorMsg("Neural Compression Failed."); }
+                    } catch (e) { setErrorMsg("Compression Failed."); }
                     finally { setIsUploading(false); }
                   }
                 }} />
@@ -417,7 +433,7 @@ const App = () => {
               <textarea placeholder="Share your reality data..." className="w-full h-24 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-500/50 resize-none" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
               
               {errorMsg && (
-                <div className="flex flex-col gap-1 p-3 bg-red-500/10 border border-red-500/20 rounded-xl animate-pulse">
+                <div className="flex flex-col gap-1 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
                    <div className="flex items-center gap-2 text-red-400 text-[10px] font-brand uppercase">
                       <AlertCircle size={12} /> Sync Error
                    </div>
@@ -426,7 +442,7 @@ const App = () => {
               )}
               
               <button type="submit" className="w-full bg-cyan-500 py-4 rounded-2xl text-black font-brand font-black uppercase tracking-widest shadow-lg shadow-cyan-500/20 active:scale-95 transition-all disabled:opacity-50" disabled={isUploading || cloudStatus !== 'connected'}>
-                {isUploading ? "Processing..." : "Upload Neural Trace"}
+                {isUploading ? "Processing..." : "Upload Trace"}
               </button>
             </form>
           </div>
