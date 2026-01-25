@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   Cloud,
   AlertCircle,
-  Eye,
+  Eye, 
   Box,
   Loader2,
   RefreshCw,
@@ -28,11 +28,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.3.8 | Balanced Identity Edition]
- * 1. 버블 디자인 고도화: 작성자 이름을 원형 프레임 좌측 상단에 오버랩 배치하여 일체감 부여
- * 2. 시각적 조화: 이름 태그에 배경 블러 및 미세 테두리를 적용하여 사진과 조화롭게 융합
- * 3. 리사이징 안정화: fixed inset-0 및 동적 vh 변수 기반의 Viewport Integrity 로직 유지
- * 4. 지능형 상호작용: 터치 시 정지 및 3초 후 자율주행 자동 재개 시스템 완벽 가동
+ * [Hyzen Labs. CTO Optimized - R2.3.9 | Neural Link Edition]
+ * 1. 신경망 연결(Neural Link): 디지털 버블과 Founder 프로필을 유기적인 곡선으로 연결
+ * 2. 동적 테더링: 버블 유영 시 연결 선이 부드럽게 추적하며, 신규 버블 생성 시 실시간 연결 자동화
+ * 3. 버블 디자인 고도화: 이름 태그를 원형 좌측 상단에 배치하고 사진을 가득 채운 정원형 디자인 유지
+ * 4. 리사이징 안정화: fixed inset-0 및 동적 vh 변수 기반의 Viewport Integrity 로직 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -116,22 +116,57 @@ const compressImage = (file) => {
 
 const FloatingBubble = ({ msg }) => {
   const [coords] = useState(() => ({
-    top: `${Math.random() * 80 + 10}%`, 
-    left: `${Math.random() * 80 + 10}%`,
+    top: Math.random() * 60 + 15, // Percent
+    left: Math.random() * 80 + 10, // Percent
     duration: `${Math.random() * 15 + 20}s`, 
     delay: `${Math.random() * 10}s`,
-    twinkleDuration: `${Math.random() * 2 + 1}s`
+    twinkleDuration: `${Math.random() * 2 + 1}s`,
+    curveSeed: Math.random() * 40 - 20 // For organic line variation
   }));
   
+  // 프로필 위치 추정치 (중앙 하단 영역)
+  const profileAnchor = { top: 72, left: 50 };
+
+  // 신경망 연결 곡선 경로 계산 (Quadratic Bezier)
+  // 버블 중심으로부터 프로필 앵커까지의 상대 좌표 계산
+  const deltaX = (profileAnchor.left - coords.left);
+  const deltaY = (profileAnchor.top - coords.top);
+  
+  // 제어점 계산 (유기적 곡선을 위해 중간 지점에서 약간의 오프셋)
+  const cpX = deltaX / 2 + coords.curveSeed;
+  const cpY = deltaY / 1.5;
+
+  const pathData = `M 0 0 Q ${cpX}vw ${cpY}vh ${deltaX}vw ${deltaY}vh`;
+
   return (
-    <div className="absolute pointer-events-none select-none animate-bubble-float z-[2]" style={{ top: coords.top, left: coords.left, animationDuration: coords.duration, animationDelay: coords.delay }}>
-      <div className="relative group">
-        {/* --- Identity Tag: Positioned Top-Left for Style --- */}
+    <div className="absolute pointer-events-none select-none z-[2]" style={{ top: `${coords.top}%`, left: `${coords.left}%` }}>
+      {/* --- Neural Connection Line (Static Anchor, Follows parent absolute pos) --- */}
+      <svg className="absolute top-1/2 left-1/2 overflow-visible pointer-events-none opacity-20" style={{ width: 1, height: 1 }}>
+        <path 
+          d={pathData} 
+          fill="none" 
+          stroke="url(#lineGradient)" 
+          strokeWidth="0.5" 
+          strokeDasharray="4 4"
+          className="animate-pulse"
+          style={{ animationDuration: '4s' }}
+        />
+        <defs>
+          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="rgba(34, 211, 238, 0.4)" />
+            <stop offset="100%" stopColor="rgba(255, 255, 255, 0.05)" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      {/* --- Animated Bubble Content --- */}
+      <div className="relative group animate-bubble-float" style={{ animationDuration: coords.duration, animationDelay: coords.delay }}>
+        {/* Identity Tag: Top-Left Position */}
         <span className="absolute -top-1 -left-2 z-30 text-[7px] sm:text-[8px] font-brand text-white font-black uppercase tracking-tighter bg-black/60 px-2 py-0.5 rounded-sm backdrop-blur-md border border-white/10 shadow-lg whitespace-nowrap opacity-90 transition-transform group-hover:scale-110">
           {msg?.name || 'ANON'}
         </span>
 
-        {/* --- Circular Frame with Full Image --- */}
+        {/* Circular Image Frame */}
         <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full glass-panel border border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.15)] overflow-hidden transition-transform active:scale-110">
           <Mail size={8} className="text-cyan-400 absolute top-1.5 right-1.5 z-20 animate-pulse drop-shadow-lg" style={{ animationDuration: coords.twinkleDuration }} />
           {msg.image ? (
@@ -141,7 +176,6 @@ const FloatingBubble = ({ msg }) => {
               <User size={20} className="text-white" />
             </div>
           )}
-          {/* Depth Overlay */}
           <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 to-transparent pointer-events-none" />
         </div>
       </div>
@@ -203,7 +237,6 @@ const App = () => {
   const fileInputRef = useRef(null);
   const autoPlayResumeTimerRef = useRef(null);
 
-  // --- [Dynamic Viewport Correction] ---
   useEffect(() => {
     const handleResize = () => {
       const vh = window.innerHeight * 0.01;
@@ -215,7 +248,6 @@ const App = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
 
-  // --- [Autonomous Auto-Play Logic] ---
   useEffect(() => {
     if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || isInitializing || isAutoPlayPaused) return;
     const timer = setInterval(() => {
@@ -228,7 +260,6 @@ const App = () => {
     return () => clearInterval(timer);
   }, [activeView, isModalOpen, isGuestbookOpen, isDeleteModalOpen, messages, isInitializing, isAutoPlayPaused]);
 
-  // 상호작용 감지 및 3초 뒤 재개 로직
   const handleUserInteraction = useCallback(() => {
     setIsAutoPlayPaused(true);
     if (autoPlayResumeTimerRef.current) clearTimeout(autoPlayResumeTimerRef.current);
@@ -268,8 +299,7 @@ const App = () => {
 
   const closeModal = () => { 
     setIsModalOpen(false); setIsGuestbookOpen(false); setIsDeleteModalOpen(false); 
-    setSelectedItem(null); 
-    setIsAutoPlayPaused(false);
+    setSelectedItem(null); setIsAutoPlayPaused(false);
     if (autoPlayResumeTimerRef.current) clearTimeout(autoPlayResumeTimerRef.current);
     setTimeout(() => { 
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -341,7 +371,7 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.8</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.9</span>
              </div>
           </div>
         </div>
@@ -350,7 +380,7 @@ const App = () => {
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.8 | Identity Balanced</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.9 | Neural Link</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
