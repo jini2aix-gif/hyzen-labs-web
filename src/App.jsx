@@ -28,11 +28,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.3.7 | Circular Data Edition]
- * 1. 버블 디자인 개편: 타원형 캡슐에서 정원형(Circular)으로 변경 및 사진 풀-필(Full-fill) 적용
- * 2. 정보 간소화: 메세지 미리보기를 제거하고 작성자 이름(Identity)만 명확하게 표기
- * 3. 지능형 자율주행: 터치 시 정지 및 마지막 상호작용 3초 후 자동 재개 시스템 유지
- * 4. 리사이징 무결성: fixed inset-0 레이아웃 및 동적 vh 변수 기반 핏(Fit) 보장
+ * [Hyzen Labs. CTO Optimized - R2.3.8 | Balanced Identity Edition]
+ * 1. 버블 디자인 고도화: 작성자 이름을 원형 프레임 좌측 상단에 오버랩 배치하여 일체감 부여
+ * 2. 시각적 조화: 이름 태그에 배경 블러 및 미세 테두리를 적용하여 사진과 조화롭게 융합
+ * 3. 리사이징 안정화: fixed inset-0 및 동적 vh 변수 기반의 Viewport Integrity 로직 유지
+ * 4. 지능형 상호작용: 터치 시 정지 및 3초 후 자율주행 자동 재개 시스템 완벽 가동
  */
 
 const ADMIN_PASS = "5733906";
@@ -125,7 +125,12 @@ const FloatingBubble = ({ msg }) => {
   
   return (
     <div className="absolute pointer-events-none select-none animate-bubble-float z-[2]" style={{ top: coords.top, left: coords.left, animationDuration: coords.duration, animationDelay: coords.delay }}>
-      <div className="flex flex-col items-center gap-1.5">
+      <div className="relative group">
+        {/* --- Identity Tag: Positioned Top-Left for Style --- */}
+        <span className="absolute -top-1 -left-2 z-30 text-[7px] sm:text-[8px] font-brand text-white font-black uppercase tracking-tighter bg-black/60 px-2 py-0.5 rounded-sm backdrop-blur-md border border-white/10 shadow-lg whitespace-nowrap opacity-90 transition-transform group-hover:scale-110">
+          {msg?.name || 'ANON'}
+        </span>
+
         {/* --- Circular Frame with Full Image --- */}
         <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full glass-panel border border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.15)] overflow-hidden transition-transform active:scale-110">
           <Mail size={8} className="text-cyan-400 absolute top-1.5 right-1.5 z-20 animate-pulse drop-shadow-lg" style={{ animationDuration: coords.twinkleDuration }} />
@@ -136,14 +141,9 @@ const FloatingBubble = ({ msg }) => {
               <User size={20} className="text-white" />
             </div>
           )}
-          {/* Overlay for depth */}
+          {/* Depth Overlay */}
           <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 to-transparent pointer-events-none" />
         </div>
-        
-        {/* --- Style-Consistent Identity Name --- */}
-        <span className="text-[7px] sm:text-[8px] font-brand text-white/90 font-black uppercase tracking-tighter bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-md border border-white/5">
-          {msg?.name || 'ANON'}
-        </span>
       </div>
     </div>
   );
@@ -228,6 +228,7 @@ const App = () => {
     return () => clearInterval(timer);
   }, [activeView, isModalOpen, isGuestbookOpen, isDeleteModalOpen, messages, isInitializing, isAutoPlayPaused]);
 
+  // 상호작용 감지 및 3초 뒤 재개 로직
   const handleUserInteraction = useCallback(() => {
     setIsAutoPlayPaused(true);
     if (autoPlayResumeTimerRef.current) clearTimeout(autoPlayResumeTimerRef.current);
@@ -267,7 +268,8 @@ const App = () => {
 
   const closeModal = () => { 
     setIsModalOpen(false); setIsGuestbookOpen(false); setIsDeleteModalOpen(false); 
-    setSelectedItem(null); setIsAutoPlayPaused(false);
+    setSelectedItem(null); 
+    setIsAutoPlayPaused(false);
     if (autoPlayResumeTimerRef.current) clearTimeout(autoPlayResumeTimerRef.current);
     setTimeout(() => { 
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -339,7 +341,7 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.7</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.8</span>
              </div>
           </div>
         </div>
@@ -348,7 +350,7 @@ const App = () => {
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.7 | Circular Data</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.8 | Identity Balanced</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
@@ -360,7 +362,6 @@ const App = () => {
       </nav>
 
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
-        {/* --- Floating Circular Bubbles with Identity Tag --- */}
         <div className="absolute inset-0 pointer-events-none z-[1]">
           {messages.slice(0, 12).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
         </div>
