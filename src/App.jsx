@@ -27,11 +27,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.3.5 | Inactivity Resume Edition]
- * 1. 지능형 자율주행 복귀: 터치 시 일시정지 후, 마지막 상호작용으로부터 3초 뒤 자율주행 자동 재개
- * 2. 이미지 상호작용: Traces 카드를 터치하거나 호버 시 배경 이미지가 부드럽게 확대 및 이동하는 효과 유지
- * 3. 구조적 리사이징: fixed inset-0 및 동적 vh 변수를 통해 팝업 종료 후 레이아웃 무결성 보장
- * 4. 통합 아이덴티티: 지문 인식 브리딩, SYNC TRACE 버튼 동기화, Founder 직함 유지
+ * [Hyzen Labs. CTO Optimized - R2.3.6 | Stylish Identity Edition]
+ * 1. 작성자 스타일 업그레이드: 방명록 카드의 성함 폰트 크기 확대 및 이탈릭/글로우 효과로 스타일리시하게 변경
+ * 2. 지능형 자율주행 복귀: 터치 시 일시정지 후 3초 뒤 자동 재개 로직 유지
+ * 3. 구조적 리사이징: fixed inset-0 및 동적 vh 변수를 통해 레이아웃 무결성 보장
+ * 4. 통합 UX: 지문 인식 브리딩, SYNC TRACE 버튼 동기화, Founder 직함 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -219,8 +219,6 @@ const App = () => {
   const handleUserInteraction = useCallback(() => {
     setIsAutoPlayPaused(true);
     if (autoPlayResumeTimerRef.current) clearTimeout(autoPlayResumeTimerRef.current);
-    
-    // 3초 뒤에 다시 자율주행 모드로 변경
     autoPlayResumeTimerRef.current = setTimeout(() => {
       if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen) {
         setIsAutoPlayPaused(false);
@@ -258,9 +256,8 @@ const App = () => {
   const closeModal = () => { 
     setIsModalOpen(false); setIsGuestbookOpen(false); setIsDeleteModalOpen(false); 
     setSelectedItem(null); 
-    setIsAutoPlayPaused(false); // 팝업 종료 즉시 자율주행 재개
+    setIsAutoPlayPaused(false);
     if (autoPlayResumeTimerRef.current) clearTimeout(autoPlayResumeTimerRef.current);
-
     setTimeout(() => { 
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
       const vh = window.innerHeight * 0.01;
@@ -331,7 +328,7 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.5</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.6</span>
              </div>
           </div>
         </div>
@@ -340,7 +337,7 @@ const App = () => {
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.5 | Smart Resume</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.6 | Stylish Identity</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
@@ -419,7 +416,10 @@ const App = () => {
                       </div>
                     )}
                     <div className="relative z-10 text-left">
-                      <span className="text-[9px] font-brand text-violet-400 font-black uppercase tracking-widest">{msg.name}</span>
+                      {/* --- Stylish Author Name --- */}
+                      <span className="text-[12px] sm:text-[14px] font-brand text-violet-400 font-black uppercase tracking-[0.25em] italic drop-shadow-[0_0_8px_rgba(167,139,250,0.4)]">
+                        {msg.name}
+                      </span>
                       <p className="text-[11px] font-light mt-2 line-clamp-2 italic opacity-80 leading-relaxed">"{msg.text}"</p>
                     </div>
                     <div className="relative z-10 flex justify-between items-end">
