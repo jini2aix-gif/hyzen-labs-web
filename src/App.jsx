@@ -28,12 +28,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.4.0 | Neural Link Restored]
- * 1. 신경망 선(Neural Link) 복구: SVG 좌표 계산 로직을 픽셀 기반으로 수정하여 선이 명확히 보이도록 해결
- * 2. 유기적 테더링: 버블의 CSS 애니메이션 움직임에 맞춰 연결 선이 실시간으로 추적
- * 3. 버블 디자인: 정원형 프레임, 사진 가득 채우기, 좌측 상단 이름 태그 배치 완료
- * 4. 지능형 자율주행: 상호작용 시 일시정지 후 3초 뒤 자동 재개 시스템 유지
- * 5. 리사이징 안정화: fixed inset-0 및 동적 vh 변수 기반의 Viewport Integrity 로직 유지
+ * [Hyzen Labs. CTO Optimized - R2.4.1 | Deletion Logic Fix]
+ * 1. 삭제 기능 수정: 패스코드 입력 시 event 객체가 아닌 value 값을 상태에 저장하도록 수정하여 삭제 오류 해결
+ * 2. 신경망 선(Neural Link): 버블과 Founder 프로필 간의 유기적 시각적 연결 및 추적 로직 유지
+ * 3. 버블 디자인: 정원형 프레임, 사진 풀-필, 좌측 상단 이름 태그 배치 유지
+ * 4. 자율주행 & 리사이징: 상호작용 후 3초 뒤 재개 및 fixed 레이아웃 기반의 Viewport Integrity 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -115,8 +114,6 @@ const compressImage = (file) => {
   });
 };
 
-// --- [Neural Connection Component] ---
-// 각 버블에서 프로필로 이어지는 유기적인 선을 렌더링합니다.
 const NeuralLinkLine = ({ bubbleCoords }) => {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   
@@ -126,16 +123,11 @@ const NeuralLinkLine = ({ bubbleCoords }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 프로필(Founder)의 화면상 위치 (Percent 기반)
   const profilePos = { top: 72, left: 50 };
-  
-  // 픽셀 단위로 변환
-  const startX = 0; // 버블의 중심
+  const startX = 0;
   const startY = 0;
   const endX = (profilePos.left - bubbleCoords.left) * (winSize.w / 100);
   const endY = (profilePos.top - bubbleCoords.top) * (winSize.h / 100);
-
-  // 유기적인 곡선을 위한 제어점 (중간 지점에서 약간 비틀기)
   const cpX = endX / 2 + bubbleCoords.curveSeed;
   const cpY = endY / 1.5;
 
@@ -161,22 +153,16 @@ const FloatingBubble = ({ msg }) => {
     duration: `${Math.random() * 15 + 20}s`, 
     delay: `${Math.random() * 10}s`,
     twinkleDuration: `${Math.random() * 2 + 1}s`,
-    curveSeed: Math.random() * 100 - 50 // 곡선 변화를 위한 시드
+    curveSeed: Math.random() * 100 - 50
   }));
   
   return (
     <div className="absolute pointer-events-none select-none z-[2]" style={{ top: `${coords.top}%`, left: `${coords.left}%` }}>
-      {/* 신경망 선: 버블의 좌표계 안에서 프로필 방향으로 그림 */}
       <NeuralLinkLine bubbleCoords={coords} />
-
-      {/* 버블 본체: 애니메이션이 포함된 그룹 */}
       <div className="relative group animate-bubble-float" style={{ animationDuration: coords.duration, animationDelay: coords.delay }}>
-        {/* Identity Tag: 좌측 상단 오버랩 배치 */}
         <span className="absolute -top-1 -left-2 z-30 text-[7px] sm:text-[8px] font-brand text-white font-black uppercase tracking-tighter bg-black/60 px-2 py-0.5 rounded-sm backdrop-blur-md border border-white/10 shadow-lg whitespace-nowrap opacity-90 transition-transform group-hover:scale-110">
           {msg?.name || 'ANON'}
         </span>
-
-        {/* Circular Image Frame */}
         <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full glass-panel border border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.15)] overflow-hidden transition-transform active:scale-110">
           <Mail size={8} className="text-cyan-400 absolute top-1.5 right-1.5 z-20 animate-pulse drop-shadow-lg" style={{ animationDuration: coords.twinkleDuration }} />
           {msg.image ? (
@@ -247,7 +233,6 @@ const App = () => {
   const fileInputRef = useRef(null);
   const autoPlayResumeTimerRef = useRef(null);
 
-  // --- [Viewport Fix] ---
   useEffect(() => {
     const handleResize = () => {
       const vh = window.innerHeight * 0.01;
@@ -259,7 +244,6 @@ const App = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
 
-  // --- [Auto-Play Timer] ---
   useEffect(() => {
     if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || isInitializing || isAutoPlayPaused) return;
     const timer = setInterval(() => {
@@ -312,6 +296,7 @@ const App = () => {
   const closeModal = () => { 
     setIsModalOpen(false); setIsGuestbookOpen(false); setIsDeleteModalOpen(false); 
     setSelectedItem(null); setIsAutoPlayPaused(false);
+    setDeletePass(""); // 모달 닫을 때 입력값 초기화
     if (autoPlayResumeTimerRef.current) clearTimeout(autoPlayResumeTimerRef.current);
     setTimeout(() => { 
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -383,7 +368,7 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.4.0</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.4.1</span>
              </div>
           </div>
         </div>
@@ -392,7 +377,7 @@ const App = () => {
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.4.0 | Neural Restored</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.4.1 | Deletion Fix</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
@@ -538,16 +523,28 @@ const App = () => {
         </div>
       )}
 
+      {/* --- Delete Modal (FIXED) --- */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[6000] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm overflow-hidden touch-auto" onClick={closeModal}>
           <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 text-center" onClick={e => e.stopPropagation()}>
             <Lock size={32} className="text-red-500 mx-auto mb-4" />
             <h2 className="text-lg font-black uppercase mb-6">Erase Trace?</h2>
-            <input type="password" style={{fontSize: '16px'}} placeholder="PASSCODE" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center mb-6 outline-none focus:border-red-500" value={deletePass} onChange={setDeletePass} />
+            {/* onChange 핸들러 수정: (e) => setDeletePass(e.target.value) */}
+            <input 
+              type="password" 
+              style={{fontSize: '16px'}} 
+              placeholder="PASSCODE" 
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center mb-6 outline-none focus:border-red-500" 
+              value={deletePass} 
+              onChange={(e) => setDeletePass(e.target.value)} 
+            />
             <div className="flex gap-2">
               <button onClick={closeModal} className="flex-1 py-3 rounded-xl bg-white/5 text-[10px] font-brand uppercase">Abort</button>
               <button onClick={async () => {
-                if (deletePass === ADMIN_PASS && targetDeleteId && db) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', targetDeleteId)); closeModal(); setDeletePass(""); }
+                if (deletePass === ADMIN_PASS && targetDeleteId && db) { 
+                  await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', targetDeleteId)); 
+                  closeModal(); 
+                }
               }} className="flex-1 py-3 rounded-xl bg-red-500 text-black font-brand font-black text-[10px] uppercase">Confirm</button>
             </div>
           </div>
