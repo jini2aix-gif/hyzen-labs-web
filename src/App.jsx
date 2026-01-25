@@ -27,11 +27,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.3.1 | Spatial Balance & Rescale Edition]
- * 1. 버블 랜덤화: 디지털 버블이 화면 특정 영역에 치우치지 않고 전역(Random spread)에 걸쳐 생성되도록 좌표 로직 수정
- * 2. 강제 리스케일(Force Rescale): 팝업 종료 시 브라우저 줌 및 뷰포트를 강제로 초기화하여 레이아웃 무결성 보장
- * 3. 상호작용 지능: 사용자가 터치 시 슬라이드 일시정지 및 복귀 후 자율주행 재개 로직 최적화
- * 4. 시각적 동기화: 지문 인식 및 SYNC TRACE 버튼의 통합 브리딩 효과 유지
+ * [Hyzen Labs. CTO Optimized - R2.3.2 | Structural Rescale Fix]
+ * 1. 동적 높이 보정(--vh): 모바일 브라우저 주소창/툴바 대응을 위해 실제 뷰포트 높이를 계산하여 적용
+ * 2. 리사이징 안정화: 팝업 종료 시 앱 전체 재마운트(key 변경) 없이 브라우저 레이아웃만 강제 초기화
+ * 3. 뷰포트 동기화: closeModal 시점에 window.scrollTo 및 resize 이벤트 강제 발생으로 핏(Fit) 보장
+ * 4. 기존 UX 보존: 인트로, 지문 스캔, 버블 시스템, Founder 직함 등 기존 요소 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -114,7 +114,6 @@ const compressImage = (file) => {
 };
 
 const FloatingBubble = ({ msg }) => {
-  // 버블 위치를 화면 전역에 랜덤으로 분산 배치 (기존의 특정 영역 쏠림 해결)
   const [coords] = useState(() => ({
     top: `${Math.random() * 80 + 10}%`, 
     left: `${Math.random() * 80 + 10}%`,
@@ -184,12 +183,24 @@ const App = () => {
   const [cloudStatus, setCloudStatus] = useState('disconnected');
   const [diagInfo, setDiagInfo] = useState("");
   const [isAutoPlayPaused, setIsAutoPlayPaused] = useState(false);
-  const [rescaleCounter, setRescaleCounter] = useState(0); // 강제 리렌더링을 위한 카운터
   
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState({ name: '', text: '', image: null });
   const fileInputRef = useRef(null);
+
+  // --- [Dynamic Viewport Rescale System] ---
+  useEffect(() => {
+    const setVh = () => {
+      // 실제 브라우저 가시영역 높이를 기반으로 1vh 단위를 계산
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
+    setVh();
+    window.addEventListener('resize', setVh);
+    return () => window.removeEventListener('resize', setVh);
+  }, []);
 
   useEffect(() => {
     if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || isInitializing || isAutoPlayPaused) return;
@@ -237,15 +248,17 @@ const App = () => {
     setIsDeleteModalOpen(false); 
     setSelectedItem(null); 
     setIsAutoPlayPaused(false);
-    setRescaleCounter(prev => prev + 1); // 리플로우 유도
     
-    // 모바일 브라우저의 뷰포트 버그 수정을 위한 강제 명령
+    // 모바일 브라우저의 뷰포트 정합성을 위한 강제 초기화 명령
     setTimeout(() => { 
-      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-      document.body.style.zoom = "1.0";
-      // 브라우저가 화면 사이즈를 재계산하도록 강제 트리거
+      // 1. 스크롤 강제 상단 고정
+      window.scrollTo(0, 0);
+      // 2. 뷰포트 메타 데이터 강제 싱크
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => { document.body.style.overflow = ''; }, 10);
+      // 3. 리사이징 이벤트 강제 트리거
       window.dispatchEvent(new Event('resize'));
-    }, 100);
+    }, 50);
   };
 
   const roadmapSteps = [
@@ -261,7 +274,7 @@ const App = () => {
   ];
 
   return (
-    <div key={`app-root-${rescaleCounter}`} className="h-screen w-screen bg-[#010101] text-white selection:bg-cyan-500/30 overflow-x-hidden overflow-y-hidden font-sans flex flex-col relative max-w-full">
+    <div className="h-screen w-screen bg-[#010101] text-white selection:bg-cyan-500/30 overflow-x-hidden overflow-y-hidden font-sans flex flex-col relative max-w-full" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] pointer-events-none z-[1] mix-blend-overlay" />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Michroma&family=Orbitron:wght@400;700;900&family=JetBrains+Mono&display=swap');
@@ -310,7 +323,7 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.1</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.3.2</span>
              </div>
           </div>
         </div>
@@ -319,7 +332,7 @@ const App = () => {
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.1 | Spatial Edition</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.3.2 | Rescale Fix</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
@@ -331,7 +344,6 @@ const App = () => {
       </nav>
 
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
-        {/* --- Floating Bubbles Spread Across Screen --- */}
         <div className="absolute inset-0 pointer-events-none z-[1]">
           {messages.slice(0, 12).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
         </div>
