@@ -30,16 +30,16 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.6.0 | Biometric Fusion]
- * 1. 프로필 진화: 실물 사진(HL.jpg)을 제거하고 지문(Fingerprint) 바이오메트릭 인터페이스를 메인으로 승격
- * 2. 시각적 하이라이트: 지문 인식 스캔 애니메이션 및 사이언 글로우 효과 강화
- * 3. 모바일 최적화: 상단 Safe-area(pt-10) 및 카드 높이(h-[150px]) 최적화 레이아웃 유지
- * 4. 히어로 하이라이트: "FUSED" 키워드 동적 쉬머 및 축소된 정교한 폰트 사이즈 고수
+ * [Hyzen Labs. CTO Optimized - R2.6.1 | Link Integrity]
+ * 1. 링크 무결성 수정: 유튜브 핸들 오류 수정 (@HyzenLabs_ -> @HyzenLabs)
+ * 2. 바이오메트릭 인터페이스: 지문(Fingerprint) 중앙 배치 및 스캔 애니메이션 유지
+ * 3. 모바일 최적화: 상단 Safe-area 및 컴팩트한 카드 레이아웃 고수
+ * 4. 푸터 정제: "All Rights Reserved by HYZEN LABS." 단일 문구 유지
  */
 
 const ADMIN_PASS = "5733906";
 const FALLBACK_APP_ID = 'hyzen-labs-production';
-const YOUTUBE_URL = "https://www.youtube.com/@HyzenLabs_";
+const YOUTUBE_URL = "https://www.youtube.com/@HyzenLabs"; // 정확한 핸들로 수정 완료
 const EMAIL_ADDRESS = "jini2aix@gmail.com";
 
 const getFirebaseConfig = () => {
@@ -359,7 +359,7 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.6.0</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.6.1</span>
              </div>
           </div>
         </div>
@@ -369,7 +369,7 @@ const App = () => {
       <nav className="z-[100] px-6 pt-10 sm:pt-6 pb-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.6.0 | Neural Fusion</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.6.1 | Neural Fusion</span>
         </div>
         <div className="flex items-center gap-3">
            <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 transition-all group" title="Contact Email">
@@ -415,16 +415,13 @@ const App = () => {
                </div>
             </div>
             
-            {/* 사진 제거 후 지문(Biometric) 아이콘을 메인으로 배치 */}
             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent relative z-10 overflow-hidden shadow-[0_0_30px_rgba(34,211,238,0.25)]">
               <div className="w-full h-full rounded-full bg-zinc-900/90 flex items-center justify-center overflow-hidden border border-white/15 relative">
-                {/* 배경 스캔 효과 */}
                 <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent animate-pulse" />
                 <Fingerprint 
                   size={42} 
                   className="text-cyan-400/80 group-hover:text-cyan-400 group-hover:scale-110 transition-all duration-500 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]" 
                 />
-                {/* 지문 스캔 중임을 나타내는 수평 라인 */}
                 <div className="absolute w-full h-[2px] bg-cyan-400/40 blur-[2px] animate-f-scan opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
