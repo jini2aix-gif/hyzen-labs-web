@@ -30,11 +30,12 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.7.1 | Neural Link Refined]
- * 1. 신경망 선(Neural Link) 가시성 복구: SVG 렌더링 박스 확장 및 Opacity 최적화
- * 2. 동적 흐름 애니메이션: 선을 따라 데이터가 흐르는 듯한 Dash-offset 효과 적용
- * 3. 유기적 연결성: 버블의 Floating 애니메이션과 좌표계의 정밀 동기화
- * 4. 기존 디자인 고수: Biometric Interface 및 Hero 섹션 레이아웃 무결성 유지
+ * [Hyzen Labs. CTO Optimized - R2.7.3 | Runtime Integrity Fix]
+ * 1. 오류 수정: ReferenceError: playSystemSound 가 정의되지 않은 문제 해결
+ * 2. 시스템 사운드 엔진 복구: Web Audio API 기반의 하이테크 효과음 재활성화
+ * 3. 클라우드 연동 유지: Firebase Auth -> Firestore 순차적 로드 엔진 고수
+ * 4. 신경망 선(Neural Link): 버블과 지문 간의 동적 베지어 곡선 가시성 최적화
+ * 5. 디자인 고수: FUSED REALITY SYNC AI 워딩 및 모바일 최적화 레이아웃 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -42,46 +43,55 @@ const FALLBACK_APP_ID = 'hyzen-labs-production';
 const YOUTUBE_URL = "https://www.youtube.com/@HyzenLabs";
 const EMAIL_ADDRESS = "jini2aix@gmail.com";
 
+// --- [Firebase Configuration Engine] ---
 const getFirebaseConfig = () => {
   try {
+    if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+      return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
+    }
     const viteEnv = import.meta.env.VITE_FIREBASE_CONFIG;
     if (viteEnv) return typeof viteEnv === 'string' ? JSON.parse(viteEnv) : viteEnv;
   } catch (e) {}
-  if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-    try {
-      return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
-    } catch (e) {}
-  }
   return null;
 };
 
 const firebaseConfig = getFirebaseConfig();
 const appId = typeof __app_id !== 'undefined' ? __app_id : FALLBACK_APP_ID;
-const firebaseApp = firebaseConfig ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]) : null;
-const auth = firebaseApp ? getAuth(firebaseApp) : null;
-const db = firebaseApp ? getFirestore(firebaseApp) : null;
+const app = firebaseConfig ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]) : null;
+const auth = app ? getAuth(app) : null;
+const db = app ? getFirestore(app) : null;
 
+// --- [System Sound Engine - FIXED] ---
 const playSystemSound = (type) => {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain); gain.connect(audioCtx.destination);
+    
     if (type === 'start') {
-      osc.type = 'sine'; osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, audioCtx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.5);
     } else if (type === 'popup') {
-      osc.type = 'triangle'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.1);
     }
-  } catch (e) {}
+  } catch (e) {
+    // Audio context might be blocked by browser policy until interaction
+  }
 };
 
-// --- [Neural Link Component - Refined for Visibility] ---
+// --- [Neural Link Component] ---
 const NeuralLinkLine = ({ bubbleCoords }) => {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   
@@ -91,30 +101,25 @@ const NeuralLinkLine = ({ bubbleCoords }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 중앙 지문 아이콘의 위치 최적화 (Hero 섹션 중앙 하단부 고려)
   const profilePos = { top: 68, left: 50 };
-
-  // 상대 좌표를 픽셀 오프셋으로 변환
   const endX = (profilePos.left - bubbleCoords.left) * (winSize.w / 100);
   const endY = (profilePos.top - bubbleCoords.top) * (winSize.h / 100);
-
-  // 유기적인 곡선을 위한 제어점
-  const cpX = endX / 2 + bubbleCoords.curveSeed;
-  const cpY = endY / 1.5;
+  const cpX = endX * 0.5 + bubbleCoords.curveSeed;
+  const cpY = endY * 0.5;
 
   return (
     <svg 
       className="absolute top-1/2 left-1/2 overflow-visible pointer-events-none z-[-1]"
-      style={{ width: '100px', height: '100px', transform: 'translate(-50%, -50%)' }}
+      style={{ width: '1px', height: '1px' }}
     >
       <path 
         d={`M 0 0 Q ${cpX} ${cpY} ${endX} ${endY}`} 
         fill="none" 
         stroke="rgba(34, 211, 238, 0.4)" 
-        strokeWidth="1" 
-        strokeDasharray="4 8" 
+        strokeWidth="1.2" 
+        strokeDasharray="5 10" 
         className="animate-neural-flow"
-        style={{ opacity: 0.25 }}
+        style={{ opacity: 0.35 }}
       />
     </svg>
   );
@@ -122,25 +127,23 @@ const NeuralLinkLine = ({ bubbleCoords }) => {
 
 const FloatingBubble = ({ msg }) => {
   const [coords] = useState(() => ({
-    top: Math.random() * 60 + 15,
-    left: Math.random() * 80 + 10,
-    duration: `${Math.random() * 15 + 20}s`, 
-    delay: `${Math.random() * 10}s`,
+    top: Math.random() * 55 + 15,
+    left: Math.random() * 70 + 15,
+    duration: `${Math.random() * 15 + 25}s`, 
+    delay: `${Math.random() * 5}s`,
     twinkleDuration: `${Math.random() * 2 + 1}s`,
-    curveSeed: Math.random() * 120 - 60 
+    curveSeed: Math.random() * 150 - 75 
   }));
   
   return (
     <div className="absolute pointer-events-none select-none z-[2]" style={{ top: `${coords.top}%`, left: `${coords.left}%` }}>
-      {/* 신경망 선은 버블의 부유 애니메이션 외부에 배치하여 앵커 포인트 유지 */}
       <NeuralLinkLine bubbleCoords={coords} />
-      
       <div className="relative group animate-bubble-float" style={{ animationDuration: coords.duration, animationDelay: coords.delay }}>
-        <span className="absolute -top-1 -left-2 z-30 text-[7px] sm:text-[8px] font-brand text-white font-black uppercase tracking-tighter bg-black/60 px-2 py-0.5 rounded-sm backdrop-blur-md border border-white/10 shadow-lg whitespace-nowrap opacity-90 transition-transform group-hover:scale-110">
+        <span className="absolute -top-1 -left-2 z-30 text-[7px] sm:text-[8px] font-brand text-white font-black uppercase bg-black/60 px-2 py-0.5 rounded-sm backdrop-blur-md border border-white/10 shadow-lg whitespace-nowrap opacity-90 transition-transform group-hover:scale-110">
           {msg?.name || 'ANON'}
         </span>
         <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full glass-panel border border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.15)] overflow-hidden transition-transform active:scale-110 flex items-center justify-center">
-          <Mail size={8} className="text-cyan-400 absolute top-1.5 right-1.5 z-20 animate-pulse drop-shadow-lg" style={{ animationDuration: coords.twinkleDuration }} />
+          <Mail size={8} className="text-cyan-400 absolute top-1.5 right-1.5 z-20 animate-pulse drop-shadow-lg" />
           {msg.image ? (
             <img src={msg.image} className="absolute inset-0 w-full h-full object-cover grayscale brightness-110" alt="" />
           ) : (
@@ -198,7 +201,7 @@ const App = () => {
   const [deletePass, setDeletePass] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [cloudStatus, setCloudStatus] = useState('disconnected');
-  const [diagInfo, setDiagInfo] = useState("");
+  const [diagInfo, setDiagInfo] = useState("Initializing Cloud Link...");
   const [isAutoPlayPaused, setIsAutoPlayPaused] = useState(false);
   
   const [user, setUser] = useState(null);
@@ -216,6 +219,58 @@ const App = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // --- [Firebase Authentication Logic] ---
+  useEffect(() => {
+    const initAuth = async () => {
+      if (!auth) { 
+        setCloudStatus('error'); 
+        setDiagInfo("Auth System Missing"); 
+        return; 
+      }
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) { 
+        setCloudStatus('error'); 
+        setDiagInfo("Authentication Failed"); 
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, u => {
+      setUser(u);
+      if (u) { 
+        setCloudStatus('connected'); 
+        setDiagInfo("Sync Established"); 
+      }
+    });
+    const timer = setTimeout(() => {
+      setIsInitializing(false);
+      playSystemSound('start');
+      setTimeout(() => { 
+        setShowMainTitle(true); 
+        playSystemSound('popup'); 
+      }, 500);
+    }, 3000);
+    return () => { unsubscribe(); clearTimeout(timer); };
+  }, []);
+
+  // --- [Cloud Firestore Data Sync] ---
+  useEffect(() => {
+    if (!user || !db) return;
+    const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+    const unsubscribe = onSnapshot(q, s => {
+      const msgs = s.docs.map(d => ({ id: d.id, ...d.data() }));
+      setMessages(msgs.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
+    }, (err) => { 
+      setCloudStatus('error'); 
+      setDiagInfo("Access Restricted"); 
+    });
+    return () => unsubscribe();
+  }, [user]);
 
   useEffect(() => {
     if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || isInitializing || isAutoPlayPaused) return;
@@ -238,40 +293,6 @@ const App = () => {
       }
     }, 3000);
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
-
-  useEffect(() => {
-    const initAuth = async () => {
-      if (!auth) { setCloudStatus('error'); setDiagInfo("Auth System Not Found"); return; }
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (err) { setCloudStatus('error'); setDiagInfo("Auth Failed"); }
-    };
-    initAuth();
-    const unsubscribe = auth ? onAuthStateChanged(auth, u => {
-      setUser(u);
-      if (u) { setCloudStatus('connected'); setDiagInfo("Cloud Link Secure"); }
-    }) : () => {};
-    const timer = setTimeout(() => {
-      setIsInitializing(false);
-      playSystemSound('start');
-      setTimeout(() => { setShowMainTitle(true); playSystemSound('popup'); }, 500);
-    }, 3000);
-    return () => { unsubscribe(); clearTimeout(timer); };
-  }, []);
-
-  useEffect(() => {
-    if (!user || !db) return;
-    const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-    const unsubscribe = onSnapshot(q, s => {
-      const msgs = s.docs.map(d => ({ id: d.id, ...d.data() }));
-      setMessages(msgs.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
-    }, (err) => { setCloudStatus('error'); setDiagInfo("Permission Denied"); });
-    return () => unsubscribe();
-  }, [user]);
 
   const closeModal = () => { 
     setIsModalOpen(false); setIsGuestbookOpen(false); setIsDeleteModalOpen(false); 
@@ -320,12 +341,10 @@ const App = () => {
         @keyframes subtleGlow { 0%, 100% { text-shadow: 0 0 10px rgba(255,255,255,0.4); } 50% { text-shadow: 0 0 20px rgba(255,255,255,0.7); } }
         .animate-text-glow { animation: subtleGlow 3s ease-in-out infinite; }
         @keyframes bootProgress {
-          0% { width: 0%; filter: brightness(1); }
-          20% { width: 10%; }
-          40% { width: 45%; }
-          60% { width: 70%; }
-          80% { width: 95%; filter: brightness(1.5); }
-          100% { width: 100%; filter: brightness(2); }
+          0% { width: 0%; }
+          30% { width: 45%; }
+          70% { width: 92%; }
+          100% { width: 100%; }
         }
         .animate-boot-load { animation: bootProgress 3s cubic-bezier(0.65, 0, 0.35, 1) forwards; }
         @keyframes fusedShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
@@ -344,14 +363,11 @@ const App = () => {
           background: linear-gradient(90deg, transparent, #22d3ee, transparent);
           box-shadow: 0 0 10px #22d3ee;
         }
-        /* Neural Link Flow Animation */
         @keyframes neuralFlow {
-          0% { stroke-dashoffset: 100; }
+          0% { stroke-dashoffset: 120; }
           100% { stroke-dashoffset: 0; }
         }
-        .animate-neural-flow {
-          animation: neuralFlow 10s linear infinite;
-        }
+        .animate-neural-flow { animation: neuralFlow 15s linear infinite; }
       `}</style>
 
       {isInitializing && (
@@ -362,11 +378,11 @@ const App = () => {
           </div>
           <div className="flex flex-col items-center gap-4 w-64 sm:w-80">
              <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/10 relative p-[2px]">
-                <div className="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-white rounded-full shadow-[0_0_15px_rgba(34,211,238,0.8)] animate-boot-load relative" />
+                <div className="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-white rounded-full animate-boot-load" />
              </div>
              <div className="flex justify-between w-full">
-                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.7.1</span>
+                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Establishing Link...</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.7.3</span>
              </div>
           </div>
         </div>
@@ -376,7 +392,7 @@ const App = () => {
       <nav className="z-[100] px-6 pt-10 sm:pt-6 pb-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.7.1 | Neural Fusion</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.7.3 | Neural Sync</span>
         </div>
         <div className="flex items-center gap-3">
            <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 transition-all group" title="Contact Email">
