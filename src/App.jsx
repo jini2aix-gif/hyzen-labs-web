@@ -30,11 +30,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.7.0 | Neural Link Sync]
- * 1. 유기적 신경망(Neural Link): 버블과 중앙 지문 사이를 잇는 베지어 곡선 구현
- * 2. 동적 추적: 버블의 부유 애니메이션에 맞춰 선의 형태가 실시간으로 변형
- * 3. 은은한 미학: Opacity 0.1~0.15 및 대시 라인(Dashed) 적용으로 시각적 밸런스 확보
- * 4. 링크 무결성: 유튜브(@HyzenLabs) 및 이메일 링크 최신 상태 유지
+ * [Hyzen Labs. CTO Optimized - R2.7.1 | Neural Link Refined]
+ * 1. 신경망 선(Neural Link) 가시성 복구: SVG 렌더링 박스 확장 및 Opacity 최적화
+ * 2. 동적 흐름 애니메이션: 선을 따라 데이터가 흐르는 듯한 Dash-offset 효과 적용
+ * 3. 유기적 연결성: 버블의 Floating 애니메이션과 좌표계의 정밀 동기화
+ * 4. 기존 디자인 고수: Biometric Interface 및 Hero 섹션 레이아웃 무결성 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -81,7 +81,7 @@ const playSystemSound = (type) => {
   } catch (e) {}
 };
 
-// --- [Neural Link Component] ---
+// --- [Neural Link Component - Refined for Visibility] ---
 const NeuralLinkLine = ({ bubbleCoords }) => {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   
@@ -91,32 +91,30 @@ const NeuralLinkLine = ({ bubbleCoords }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 중앙 지문 아이콘의 대략적인 중심점 좌표 (%)
-  // 히어로 섹션 내에서의 위치를 고려한 상대 좌표값
-  const profilePos = { top: 72, left: 50 };
+  // 중앙 지문 아이콘의 위치 최적화 (Hero 섹션 중앙 하단부 고려)
+  const profilePos = { top: 68, left: 50 };
 
-  // 버블 중심으로부터 중앙 프로필까지의 벡터 계산 (픽셀 기반)
+  // 상대 좌표를 픽셀 오프셋으로 변환
   const endX = (profilePos.left - bubbleCoords.left) * (winSize.w / 100);
   const endY = (profilePos.top - bubbleCoords.top) * (winSize.h / 100);
 
-  // 유기적인 느낌을 위한 베지어 곡선의 제어점(Control Point) 설정
-  // curveSeed를 통해 각 선마다 고유한 굴곡 부여
+  // 유기적인 곡선을 위한 제어점
   const cpX = endX / 2 + bubbleCoords.curveSeed;
   const cpY = endY / 1.5;
 
   return (
     <svg 
-      className="absolute top-1/2 left-1/2 overflow-visible pointer-events-none z-0 transition-opacity duration-1000"
-      style={{ width: 1, height: 1, opacity: 0.15 }}
+      className="absolute top-1/2 left-1/2 overflow-visible pointer-events-none z-[-1]"
+      style={{ width: '100px', height: '100px', transform: 'translate(-50%, -50%)' }}
     >
       <path 
         d={`M 0 0 Q ${cpX} ${cpY} ${endX} ${endY}`} 
         fill="none" 
-        stroke="rgba(34, 211, 238, 0.6)" 
-        strokeWidth="0.8" 
+        stroke="rgba(34, 211, 238, 0.4)" 
+        strokeWidth="1" 
         strokeDasharray="4 8" 
-        className="animate-pulse" 
-        style={{ animationDuration: '4s' }} 
+        className="animate-neural-flow"
+        style={{ opacity: 0.25 }}
       />
     </svg>
   );
@@ -129,12 +127,12 @@ const FloatingBubble = ({ msg }) => {
     duration: `${Math.random() * 15 + 20}s`, 
     delay: `${Math.random() * 10}s`,
     twinkleDuration: `${Math.random() * 2 + 1}s`,
-    curveSeed: Math.random() * 100 - 50 // 유기적 곡선을 위한 고유 시드값
+    curveSeed: Math.random() * 120 - 60 
   }));
   
   return (
     <div className="absolute pointer-events-none select-none z-[2]" style={{ top: `${coords.top}%`, left: `${coords.left}%` }}>
-      {/* 버블과 중앙을 잇는 신경망 선 */}
+      {/* 신경망 선은 버블의 부유 애니메이션 외부에 배치하여 앵커 포인트 유지 */}
       <NeuralLinkLine bubbleCoords={coords} />
       
       <div className="relative group animate-bubble-float" style={{ animationDuration: coords.duration, animationDelay: coords.delay }}>
@@ -346,6 +344,14 @@ const App = () => {
           background: linear-gradient(90deg, transparent, #22d3ee, transparent);
           box-shadow: 0 0 10px #22d3ee;
         }
+        /* Neural Link Flow Animation */
+        @keyframes neuralFlow {
+          0% { stroke-dashoffset: 100; }
+          100% { stroke-dashoffset: 0; }
+        }
+        .animate-neural-flow {
+          animation: neuralFlow 10s linear infinite;
+        }
       `}</style>
 
       {isInitializing && (
@@ -360,7 +366,7 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.7.0</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.7.1</span>
              </div>
           </div>
         </div>
@@ -370,7 +376,7 @@ const App = () => {
       <nav className="z-[100] px-6 pt-10 sm:pt-6 pb-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.7.0 | Neural Fusion</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.7.1 | Neural Fusion</span>
         </div>
         <div className="flex items-center gap-3">
            <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 transition-all group" title="Contact Email">
