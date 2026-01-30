@@ -30,12 +30,12 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.9.1 | Bio-Neural Mesh]
- * 1. 경로 최적화: 버블과 신경망이 하단 콘텐츠 영역(Roadmap, Works, Traces) 내에서만 발현되도록 공간 제한
- * 2. 뇌 신경망 미학: 단순 사이언 색상에서 '화이트 코어 + 네온 글로우'가 결합된 전기 회로 스타일로 진화
- * 3. 동적 메시 네트워크: 버블 간 유기적 연결을 유지하며 지능의 밀도감 향상
- * 4. 클라우드 무결성: Rule 3 (Auth 세션 기반 Firestore 리스너) 로직 고수
- * 5. 디자인 시스템: FUSED REALITY SYNC AI 워딩 및 모바일 최적화 레이아웃 유지
+ * [Hyzen Labs. CTO Optimized - R2.9.2 | Hero Neural Hub]
+ * 1. 활동 영역 최적화: 버블과 신경망을 상단 히어로 영역(FUSED REALITY 섹션)으로 이동 및 한정
+ * 2. 뇌 회로 미학: 화이트 일렉트릭 코어 + 다층적 네온 글로우로 '뉴럴 펄스' 시각화
+ * 3. 지능형 동기화: 버블 간 메시 구조를 유지하며 중앙 지문 시스템으로의 데이터 흐름 강화
+ * 4. 클라우드 무결성: Rule 3 기반의 Auth-First 동기화 엔진 고수
+ * 5. 시스템 사운드: Web Audio API 기반의 하이테크 피드백 시스템 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -43,7 +43,7 @@ const FALLBACK_APP_ID = 'hyzen-labs-production';
 const YOUTUBE_URL = "https://www.youtube.com/@HyzenLabs";
 const EMAIL_ADDRESS = "jini2aix@gmail.com";
 
-// --- [Firebase Core - Enterprise Initialization] ---
+// --- [Firebase Core - Global Initialization] ---
 const getFirebaseConfig = () => {
   try {
     if (typeof __firebase_config !== 'undefined' && __firebase_config) {
@@ -103,51 +103,45 @@ const compressImage = (file) => {
   });
 };
 
-// --- [Neural Mesh Link Component - Circuit Glow Style] ---
-const NeuralMeshLink = ({ fromCoords, toCoords, isHubLink = false }) => {
-  const containerRef = useRef(null);
-  const [dimensions, setDimensions] = useState({ w: 0, h: 0 });
-
+// --- [Neural Mesh Link Component - Electric Circuit Style] ---
+const NeuralMeshLink = ({ fromCoords, toCoords }) => {
+  const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   useEffect(() => {
-    if (containerRef.current) {
-      setDimensions({
-        w: containerRef.current.parentElement.clientWidth,
-        h: containerRef.current.parentElement.clientHeight
-      });
-    }
+    const handleResize = () => setWinSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const dx = (toCoords.left - fromCoords.left) * (dimensions.w / 100);
-  const dy = (toCoords.top - fromCoords.top) * (dimensions.h / 100);
+  const dx = (toCoords.left - fromCoords.left) * (winSize.w / 100);
+  const dy = (toCoords.top - fromCoords.top) * (winSize.h / 100);
 
   const cpX = dx * 0.5 + fromCoords.curveSeed;
   const cpY = dy * 0.5;
 
   return (
     <svg 
-      ref={containerRef}
       className="absolute top-1/2 left-1/2 overflow-visible pointer-events-none z-[-1]"
       style={{ width: '1px', height: '1px' }}
     >
-      {/* Glow Effect Layer */}
+      {/* Bio-Neural Glow Layer */}
       <path 
         d={`M 0 0 Q ${cpX} ${cpY} ${dx} ${dy}`} 
         fill="none" 
-        stroke="rgba(34, 211, 238, 0.4)" 
-        strokeWidth={isHubLink ? "2.5" : "1.5"} 
+        stroke="rgba(34, 211, 238, 0.3)" 
+        strokeWidth="2.5" 
         className="animate-pulse"
-        style={{ filter: 'blur(3px)', opacity: 0.6 }}
+        style={{ filter: 'blur(4px)', opacity: 0.4 }}
       />
-      {/* High-Brightness Core Layer (Brain Circuit Style) */}
+      {/* Electric Core Layer (Pure White Glow) */}
       <path 
         d={`M 0 0 Q ${cpX} ${cpY} ${dx} ${dy}`} 
         fill="none" 
-        stroke="rgba(255, 255, 255, 0.9)" 
+        stroke="rgba(255, 255, 255, 0.95)" 
         strokeWidth="0.8" 
-        strokeDasharray="6 12" 
+        strokeDasharray="8 16" 
         className="animate-neural-flow"
         style={{ 
-          filter: 'drop-shadow(0 0 5px rgba(34, 211, 238, 0.8))',
+          filter: 'drop-shadow(0 0 4px rgba(255, 255, 255, 0.8))',
           strokeLinecap: 'round'
         }}
       />
@@ -155,39 +149,46 @@ const NeuralMeshLink = ({ fromCoords, toCoords, isHubLink = false }) => {
   );
 };
 
-// --- [Neural Network Section - Restricted to Content Area] ---
+// --- [Neural Network Section - Hero Area Restricted] ---
 const NeuralNetwork = ({ messages }) => {
   const nodes = useMemo(() => {
-    return messages.slice(0, 8).map((msg, i) => ({
+    return messages.slice(0, 10).map((msg, i) => ({
       id: msg.id,
-      top: 10 + (Math.random() * 80), // 콘텐츠 영역 내 상대 좌표
-      left: 5 + (Math.random() * 90),
-      curveSeed: Math.random() * 80 - 40,
-      duration: `${12 + Math.random() * 10}s`,
-      delay: `${Math.random() * 3}s`,
-      targetIndex: (i + 1) % Math.min(messages.length, 8),
+      // 히어로 영역 상단 10% ~ 65% 사이로 위치 한정
+      top: 10 + (Math.random() * 55), 
+      left: 10 + (Math.random() * 80),
+      curveSeed: Math.random() * 120 - 60,
+      duration: `${18 + Math.random() * 12}s`,
+      delay: `${Math.random() * 5}s`,
+      targetIndex: (i + 1) % Math.min(messages.length, 10),
       msg
     }));
   }, [messages]);
 
-  // 콘텐츠 영역에서는 중앙 허브 연결 대신 망 구조(Mesh)에 집중
+  // 중앙 허브(지문) 좌표 - 히어로 섹션 내 상대 위치
+  const hubCoords = { top: 72, left: 50, curveSeed: 0 };
+
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-visible">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
       {nodes.map((node, i) => (
-        <div key={`mesh-node-${node.id}`} className="absolute" style={{ top: `${node.top}%`, left: `${node.left}%` }}>
+        <div key={`hero-node-${node.id}`} className="absolute" style={{ top: `${node.top}%`, left: `${node.left}%` }}>
+          {/* 노드 간 연결 (메시 구조) */}
           <NeuralMeshLink fromCoords={node} toCoords={nodes[node.targetIndex]} />
           
+          {/* 지문 허브로의 시냅스 연결 */}
+          {i % 2 === 0 && <NeuralMeshLink fromCoords={node} toCoords={hubCoords} />}
+
           <div className="relative group animate-bubble-float" style={{ animationDuration: node.duration, animationDelay: node.delay }}>
-            <span className="absolute -top-1 -left-2 z-30 text-[6px] sm:text-[7px] font-brand text-white font-black uppercase bg-black/60 px-1.5 py-0.5 rounded-sm border border-cyan-500/30 shadow-[0_0_10px_rgba(34,211,238,0.3)] whitespace-nowrap opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all">
-              {node.msg?.name || 'NODE'}
+            <span className="absolute -top-1 -left-2 z-30 text-[7px] sm:text-[8px] font-brand text-white font-black uppercase bg-black/70 px-2 py-0.5 rounded-sm border border-white/10 shadow-xl whitespace-nowrap opacity-90 transition-transform group-hover:scale-110">
+              {node.msg?.name || 'ANON'}
             </span>
-            <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full glass-panel border border-white/20 shadow-[0_0_15px_rgba(34,211,238,0.1)] flex items-center justify-center pointer-events-auto">
-               <div className="absolute inset-0 bg-cyan-400/5 animate-pulse rounded-full" />
-               {node.msg.image ? (
-                <img src={node.msg.image} className="absolute inset-0 w-full h-full object-cover grayscale brightness-125 rounded-full" alt="" />
+            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full glass-panel border border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.1)] overflow-hidden transition-transform active:scale-110 flex items-center justify-center pointer-events-auto">
+              {node.msg.image ? (
+                <img src={node.msg.image} className="absolute inset-0 w-full h-full object-cover grayscale brightness-110" alt="" />
               ) : (
-                <User size={14} className="text-white opacity-10" />
+                <User size={20} className="text-white opacity-20" />
               )}
+              <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/15 to-transparent" />
             </div>
           </div>
         </div>
@@ -265,7 +266,7 @@ const App = () => {
     const initAuth = async () => {
       if (!auth) { 
         setCloudStatus('error'); 
-        setDiagInfo("Auth Missing"); 
+        setDiagInfo("Auth System Missing"); 
         return; 
       }
       try {
@@ -276,7 +277,7 @@ const App = () => {
         }
       } catch (err) { 
         setCloudStatus('error'); 
-        setDiagInfo("Auth Error"); 
+        setDiagInfo("Auth Engine Error"); 
       }
     };
 
@@ -285,7 +286,7 @@ const App = () => {
       setUser(u);
       if (u) { 
         setCloudStatus('connected'); 
-        setDiagInfo("Neural Mesh Ready"); 
+        setDiagInfo("Cloud Link Active"); 
       }
     });
 
@@ -309,7 +310,7 @@ const App = () => {
       }, 
       (error) => { 
         setCloudStatus('error'); 
-        setDiagInfo(`Link Error: ${error.code}`); 
+        setDiagInfo(`Sync Link Error`); 
       }
     );
     return () => unsubscribe();
@@ -410,7 +411,7 @@ const App = () => {
           0% { stroke-dashoffset: 120; }
           100% { stroke-dashoffset: 0; }
         }
-        .animate-neural-flow { animation: neuralFlow 15s linear infinite; }
+        .animate-neural-flow { animation: neuralFlow 12s linear infinite; }
       `}</style>
 
       {isInitializing && (
@@ -424,8 +425,8 @@ const App = () => {
                 <div className="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-white rounded-full animate-boot-load" />
              </div>
              <div className="flex justify-between w-full">
-                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Bio-Neural Sync...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.9.1</span>
+                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Establishing Hub...</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.9.2</span>
              </div>
           </div>
         </div>
@@ -435,7 +436,7 @@ const App = () => {
       <nav className="z-[100] px-6 pt-10 sm:pt-6 pb-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.9.1 | Bio-Neural Mesh</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.9.2 | Hero Neural hub</span>
         </div>
         <div className="flex items-center gap-3">
            <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 transition-all group" title="Contact Email">
@@ -450,8 +451,11 @@ const App = () => {
         </div>
       </nav>
 
-      {/* --- Hero Section --- */}
+      {/* --- Hero Section - Updated with Neural Mesh Overlay --- */}
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
+        {/* Neural Network Layer: Restricted to Hero Area */}
+        {messages.length > 0 && <NeuralNetwork messages={messages} />}
+        
         <div className={`relative inline-block mb-4 pt-2 z-10 ${showMainTitle ? 'animate-hero-pop' : 'opacity-0'}`}>
           <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10" />
           <h1 className="text-[8vw] sm:text-7xl font-title tracking-[-0.07em] leading-none uppercase">
@@ -500,7 +504,7 @@ const App = () => {
         </div>
       </section>
 
-      {/* --- Content Area - Neural Mesh Hub --- */}
+      {/* --- Content Area --- */}
       <div className="z-10 pb-2 px-6 max-lg mx-auto w-full shrink-0 transition-all duration-1000 delay-[1.2s] relative" style={{ opacity: showMainTitle ? 1 : 0 }}>
         <div className="glass-panel p-1 rounded-2xl flex gap-1 mb-4 border border-white/10 max-w-lg mx-auto relative z-20">
           {['roadmap', 'works', 'traces'].map((view) => (
@@ -511,10 +515,7 @@ const App = () => {
           ))}
         </div>
 
-        {/* Neural Network Layer: Restricted to this specific container */}
         <div className="h-[150px] sm:h-[180px] relative max-w-lg mx-auto overflow-visible">
-          {messages.length > 0 && <NeuralNetwork messages={messages} />}
-          
           <div className="relative z-10 h-full">
             {activeView === 'traces' ? (
               <div className="h-full flex flex-col">
@@ -581,7 +582,7 @@ const App = () => {
             }} className="space-y-4">
               <input type="text" style={{fontSize: '16px'}} placeholder="IDENTITY ID" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-brand outline-none focus:border-cyan-500/50" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
               <textarea style={{fontSize: '16px'}} placeholder="LOG DATA..." className="w-full h-24 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-500/50 resize-none" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
-              <button type="submit" className="w-full bg-cyan-500 py-4 rounded-2xl text-black font-brand font-black uppercase tracking-widest transition-all disabled:opacity-50" disabled={isUploading}>{isUploading ? "PROCESS..." : "INITIATE Bio SYNC"}</button>
+              <button type="submit" className="w-full bg-cyan-500 py-4 rounded-2xl text-black font-brand font-black uppercase tracking-widest transition-all disabled:opacity-50" disabled={isUploading}>{isUploading ? "PROCESS..." : "INITIATE Neural SYNC"}</button>
             </form>
           </div>
         </div>
