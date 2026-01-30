@@ -30,11 +30,12 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.8.1 | High-Visibility Neural Sync]
- * 1. 신경망 가시성 강화: 선의 두께(1.5px), 투명도(0.6), 네온 글로우(drop-shadow) 효과 적용
- * 2. 렌더링 무결성: SVG 컨테이너 가시 영역 최적화 및 버블-지문 간 정밀 벡터 연산
- * 3. 클라우드 안정성 유지: Rule 3 준수. Auth 세션 확립 후 Firestore 동기화 엔진 고수
- * 4. 기존 디자인 고수: FUSED REALITY SYNC AI 워딩, 모바일 최적화 레이아웃(pt-10, h-150px) 보존
+ * [Hyzen Labs. CTO Optimized - R2.8.2 | Neural Hub Sync]
+ * 1. 구심점 아키텍처: 중앙 지문(Fingerprint)을 허브로 하여 모든 버블과 선이 이어지는 구조
+ * 2. 고가시성 신경망: 선의 두께(1.5px), 투명도(0.6), 사이언 네온 글로우 효과 적용
+ * 3. 동적 수렴 애니메이션: 데이터가 버블에서 중앙 허브로 흐르는듯한 Dash-offset 최적화
+ * 4. 클라우드 무결성 유지: Auth 세션 확립 후 Firestore 동기화 엔진 (Rule 3 준수)
+ * 5. 브랜드 고수: FUSED REALITY SYNC AI 워딩 및 모바일 최적화 레이아웃 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -102,7 +103,7 @@ const compressImage = (file) => {
   });
 };
 
-// --- [Neural Link Component - High Visibility Optimization] ---
+// --- [Neural Link Component - Hub Architecture Fix] ---
 const NeuralLinkLine = ({ bubbleCoords }) => {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   useEffect(() => {
@@ -111,32 +112,33 @@ const NeuralLinkLine = ({ bubbleCoords }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 중앙 지문 아이콘의 절대 앵커 (%) - Hero 섹션 중앙부
-  const profilePos = { top: 68, left: 50 };
+  // 중앙 지문 아이콘의 위치 (구심점)
+  // Hero 섹션 내에서의 프로필 상대 위치 (%)
+  const profileHubPos = { top: 68, left: 50 };
 
-  // 버블 중심으로부터 앵커 포인트까지의 상대적 픽셀 거리 계산
-  const endX = (profilePos.left - bubbleCoords.left) * (winSize.w / 100);
-  const endY = (profilePos.top - bubbleCoords.top) * (winSize.h / 100);
+  // 버블(0,0) 위치에서 중앙 허브(endX, endY)까지의 상대적 거리 계산
+  const endX = (profileHubPos.left - bubbleCoords.left) * (winSize.w / 100);
+  const endY = (profileHubPos.top - bubbleCoords.top) * (winSize.h / 100);
 
-  // 유기적인 곡률 형성을 위한 제어점 (Bezier Curve Control Point)
-  const cpX = endX * 0.5 + bubbleCoords.curveSeed;
-  const cpY = endY * 0.5;
+  // 유기적인 곡선을 위한 제어점 (Hub를 향해 휘어지는 곡선)
+  const cpX = endX * 0.4 + bubbleCoords.curveSeed;
+  const cpY = endY * 0.4;
 
   return (
     <svg 
       className="absolute top-1/2 left-1/2 overflow-visible pointer-events-none z-[-1]"
-      style={{ width: '2px', height: '2px' }}
+      style={{ width: '1px', height: '1px' }}
     >
       <path 
         d={`M 0 0 Q ${cpX} ${cpY} ${endX} ${endY}`} 
         fill="none" 
         stroke="rgba(34, 211, 238, 0.6)" 
         strokeWidth="1.5" 
-        strokeDasharray="4 6" 
+        strokeDasharray="4 8" 
         className="animate-neural-flow"
         style={{ 
-          opacity: 0.6, // 가시성 대폭 상향
-          filter: 'drop-shadow(0 0 3px rgba(34, 211, 238, 0.4))' // 네온 글로우 추가
+          opacity: 0.6, 
+          filter: 'drop-shadow(0 0 5px rgba(34, 211, 238, 0.5))' 
         }}
       />
     </svg>
@@ -150,7 +152,7 @@ const FloatingBubble = ({ msg }) => {
     duration: `${Math.random() * 15 + 25}s`, 
     delay: `${Math.random() * 5}s`,
     twinkleDuration: `${Math.random() * 2 + 1}s`,
-    curveSeed: Math.random() * 120 - 60 
+    curveSeed: Math.random() * 180 - 90 
   }));
   
   return (
@@ -238,12 +240,12 @@ const App = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // --- [Firebase Authentication Module - Enterprise Grade] ---
+  // --- [Firebase Authentication Module] ---
   useEffect(() => {
     const initAuth = async () => {
       if (!auth) { 
         setCloudStatus('error'); 
-        setDiagInfo("Auth System Missing"); 
+        setDiagInfo("Auth Missing"); 
         return; 
       }
       try {
@@ -254,7 +256,7 @@ const App = () => {
         }
       } catch (err) { 
         setCloudStatus('error'); 
-        setDiagInfo("Auth Engine Error"); 
+        setDiagInfo("Auth Error"); 
       }
     };
 
@@ -263,7 +265,7 @@ const App = () => {
       setUser(u);
       if (u) { 
         setCloudStatus('connected'); 
-        setDiagInfo("Cloud Sync Active"); 
+        setDiagInfo("Neural Hub Active"); 
       }
     });
 
@@ -279,9 +281,7 @@ const App = () => {
   // --- [Cloud Data Sync Module - Rule 3 Compliance] ---
   useEffect(() => {
     if (!user || !db) return;
-
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-    
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
         const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -289,10 +289,9 @@ const App = () => {
       }, 
       (error) => { 
         setCloudStatus('error'); 
-        setDiagInfo(`Link Error: ${error.code}`); 
+        setDiagInfo(`Sync Lost: ${error.code}`); 
       }
     );
-    
     return () => unsubscribe();
   }, [user, appId]);
 
@@ -405,8 +404,8 @@ const App = () => {
                 <div className="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-white rounded-full animate-boot-load" />
              </div>
              <div className="flex justify-between w-full">
-                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Synchronizing Links...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.8.1</span>
+                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Synchronizing Hub...</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.8.2</span>
              </div>
           </div>
         </div>
@@ -416,7 +415,7 @@ const App = () => {
       <nav className="z-[100] px-6 pt-10 sm:pt-6 pb-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.8.1 | High Visibility</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.8.2 | Neural Fusion</span>
         </div>
         <div className="flex items-center gap-3">
            <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 transition-all group" title="Contact Email">
@@ -433,7 +432,7 @@ const App = () => {
 
       {/* --- Hero Section --- */}
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
-        {/* Floating Messages with Optimized High-Visibility Neural Link */}
+        {/* Floating Messages - All gathering at the profile hub */}
         <div className="absolute inset-0 pointer-events-none z-[1]">
           {messages.slice(0, 12).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
         </div>
@@ -487,8 +486,8 @@ const App = () => {
       </section>
 
       {/* --- Content Area --- */}
-      <div className="z-10 pb-2 px-6 max-w-lg mx-auto w-full shrink-0 transition-all duration-1000 delay-[1.2s]" style={{ opacity: showMainTitle ? 1 : 0 }}>
-        <div className="glass-panel p-1 rounded-2xl flex gap-1 mb-4 border border-white/10">
+      <div className="z-10 pb-2 px-6 max-lg mx-auto w-full shrink-0 transition-all duration-1000 delay-[1.2s]" style={{ opacity: showMainTitle ? 1 : 0 }}>
+        <div className="glass-panel p-1 rounded-2xl flex gap-1 mb-4 border border-white/10 max-w-lg mx-auto">
           {['roadmap', 'works', 'traces'].map((view) => (
             <button key={view} onClick={() => { setActiveView(view); setIsAutoPlayPaused(false); }} 
               className={`flex-1 py-3 rounded-xl text-[8px] font-brand tracking-widest uppercase transition-all ${activeView === view ? 'bg-white text-black font-black shadow-xl scale-105' : 'text-white/30 hover:text-white/60'}`}>
@@ -497,7 +496,7 @@ const App = () => {
           ))}
         </div>
 
-        <div className="h-[150px] sm:h-[180px] relative">
+        <div className="h-[150px] sm:h-[180px] relative max-w-lg mx-auto overflow-visible">
           {activeView === 'traces' ? (
             <div className="h-full flex flex-col">
               {messages.length > 0 ? (
@@ -539,7 +538,7 @@ const App = () => {
       <footer className="z-10 py-6 sm:py-10 flex flex-col items-center shrink-0">
         <span className="font-brand text-[8px] sm:text-[10px] tracking-[0.8em] font-black uppercase animate-breathe text-cyan-400/80">HYZEN LABS. 2026</span>
         <div className="mt-2 sm:mt-3">
-          <span className="text-[6px] sm:text-[7px] font-mono opacity-20 uppercase tracking-[0.3em] font-light">All Rights Reserved by HYZEN LABS.</span>
+          <span className="text-[6px] sm:text-[7px] font-mono opacity-20 uppercase tracking-[0.3em] font-light italic">All Rights Reserved by HYZEN LABS.</span>
         </div>
       </footer>
 
@@ -562,7 +561,7 @@ const App = () => {
             }} className="space-y-4">
               <input type="text" style={{fontSize: '16px'}} placeholder="IDENTITY ID" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-brand outline-none focus:border-cyan-500/50" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
               <textarea style={{fontSize: '16px'}} placeholder="LOG DATA..." className="w-full h-24 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-500/50 resize-none" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
-              <button type="submit" className="w-full bg-cyan-500 py-4 rounded-2xl text-black font-brand font-black uppercase tracking-widest transition-all disabled:opacity-50" disabled={isUploading}>{isUploading ? "PROCESS..." : "INITIATE SYNC"}</button>
+              <button type="submit" className="w-full bg-cyan-500 py-4 rounded-2xl text-black font-brand font-black uppercase tracking-widest transition-all disabled:opacity-50" disabled={isUploading}>{isUploading ? "PROCESS..." : "INITIATE Hub SYNC"}</button>
             </form>
           </div>
         </div>
