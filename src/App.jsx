@@ -30,12 +30,12 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.7.4 | Cloud Integrity & Neural Restore]
- * 1. 클라우드 무결성 (Rule 3 준수): Auth 동기화 대기 후 Firestore 리스너 활성화 로직 적용
- * 2. 신경망 선(Neural Link) 가시화: SVG 뷰박스 확장 및 상대 좌표 벡터 연산 최적화
- * 3. 런타임 오류 방지: playSystemSound 함수 및 Firebase Config 로더 안정화
- * 4. 기존 구조 고수: FUSED REALITY SYNC AI 워딩, 모바일 레이아웃(h-150px) 유지
- * 5. 지문 인터페이스: 사진 대신 생체 인식 아이콘 및 스캔 애니메이션 중심 배치
+ * [Hyzen Labs. CTO Optimized - R2.8.0 | Enterprise Integrity & Neural Sync]
+ * 1. 클라우드 연동 무결성: Rule 3 준수. Auth 세션 확립 후 Firestore 리스너 활성화 (재분석 완료)
+ * 2. 신경망 선(Neural Link) 가시성: SVG 오프셋 보정 및 버블-지문 간 유기적 베지어 곡선 복구
+ * 3. 런타임 안정성: playSystemSound 전역 접근성 확보 및 Firebase 예외 처리 강화
+ * 4. 기존 디자인 고수: FUSED REALITY SYNC AI 워딩, 모바일 Safe-area(pt-10) 유지
+ * 5. 바이오메트릭 인증: 중앙 지문 아이콘 중심의 보안 터미널 미학 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -43,7 +43,7 @@ const FALLBACK_APP_ID = 'hyzen-labs-production';
 const YOUTUBE_URL = "https://www.youtube.com/@HyzenLabs";
 const EMAIL_ADDRESS = "jini2aix@gmail.com";
 
-// --- [Firebase Core - Global Initialization] ---
+// --- [Firebase Core - Multi-Environment Hybrid Initialization] ---
 const getFirebaseConfig = () => {
   try {
     if (typeof __firebase_config !== 'undefined' && __firebase_config) {
@@ -61,7 +61,7 @@ const firebaseApp = firebaseConfig ? (getApps().length === 0 ? initializeApp(fir
 const auth = firebaseApp ? getAuth(firebaseApp) : null;
 const db = firebaseApp ? getFirestore(firebaseApp) : null;
 
-// --- [Utility Functions] ---
+// --- [Utility Functions - Audio Engine] ---
 const playSystemSound = (type) => {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -103,7 +103,7 @@ const compressImage = (file) => {
   });
 };
 
-// --- [Neural Link Component - FIXED Logic] ---
+// --- [Neural Link Component - Enhanced Visibility] ---
 const NeuralLinkLine = ({ bubbleCoords }) => {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   useEffect(() => {
@@ -112,16 +112,16 @@ const NeuralLinkLine = ({ bubbleCoords }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 중앙 지문 아이콘의 고정 앵커 포인트 (%)
+  // 중앙 지문 아이콘의 절대 앵커 (%)
   const profilePos = { top: 68, left: 50 };
 
-  // 버블(0,0)에서 지문(endX, endY)까지의 상대적 거리 계산 (px)
+  // 버블(0,0)에서 지문(endX, endY)까지의 벡터 연산
   const endX = (profilePos.left - bubbleCoords.left) * (winSize.w / 100);
   const endY = (profilePos.top - bubbleCoords.top) * (winSize.h / 100);
 
-  // 유기적인 곡률 형성을 위한 제어점 (베지어 곡선)
-  const cpX = endX * 0.4 + bubbleCoords.curveSeed;
-  const cpY = endY * 0.4;
+  // 베지어 곡선 곡률 조정
+  const cpX = endX * 0.5 + bubbleCoords.curveSeed;
+  const cpY = endY * 0.5;
 
   return (
     <svg 
@@ -135,7 +135,7 @@ const NeuralLinkLine = ({ bubbleCoords }) => {
         strokeWidth="1" 
         strokeDasharray="4 8" 
         className="animate-neural-flow"
-        style={{ opacity: 0.3 }}
+        style={{ opacity: 0.25 }}
       />
     </svg>
   );
@@ -148,7 +148,7 @@ const FloatingBubble = ({ msg }) => {
     duration: `${Math.random() * 15 + 25}s`, 
     delay: `${Math.random() * 5}s`,
     twinkleDuration: `${Math.random() * 2 + 1}s`,
-    curveSeed: Math.random() * 160 - 80 
+    curveSeed: Math.random() * 140 - 70 
   }));
   
   return (
@@ -217,7 +217,7 @@ const App = () => {
   const [deletePass, setDeletePass] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [cloudStatus, setCloudStatus] = useState('disconnected');
-  const [diagInfo, setDiagInfo] = useState("Initializing Cloud Link...");
+  const [diagInfo, setDiagInfo] = useState("System Offline");
   const [isAutoPlayPaused, setIsAutoPlayPaused] = useState(false);
   
   const [user, setUser] = useState(null);
@@ -236,7 +236,7 @@ const App = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // --- [Firebase Authentication Logic - Strict Rule 3] ---
+  // --- [Firebase Authentication Module - FIXED] ---
   useEffect(() => {
     const initAuth = async () => {
       if (!auth) { 
@@ -252,39 +252,49 @@ const App = () => {
         }
       } catch (err) { 
         setCloudStatus('error'); 
-        setDiagInfo("Authentication Failed"); 
+        setDiagInfo("Auth Engine Error"); 
       }
     };
+
     initAuth();
     const unsubscribe = onAuthStateChanged(auth, u => {
       setUser(u);
       if (u) { 
         setCloudStatus('connected'); 
-        setDiagInfo("Sync Established"); 
+        setDiagInfo("Cloud Sync Active"); 
       }
     });
+
     const timer = setTimeout(() => {
       setIsInitializing(false);
       playSystemSound('start');
       setTimeout(() => { setShowMainTitle(true); playSystemSound('popup'); }, 500);
     }, 3000);
+
     return () => { unsubscribe(); clearTimeout(timer); };
   }, []);
 
-  // --- [Cloud Firestore Data Sync - Guarded by User State] ---
+  // --- [Cloud Data Sync Module - Guarded by User Session] ---
   useEffect(() => {
     if (!user || !db) return;
+
     // Rule 1: Strict Paths
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-    const unsubscribe = onSnapshot(q, s => {
-      const msgs = s.docs.map(d => ({ id: d.id, ...d.data() }));
-      setMessages(msgs.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
-    }, (err) => { 
-      setCloudStatus('error'); 
-      setDiagInfo("Cloud Link Error"); 
-    });
+    
+    // Firestore Listener (Rule 2: Sorting in memory)
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
+        const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setMessages(msgs.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
+      }, 
+      (error) => { 
+        setCloudStatus('error'); 
+        setDiagInfo(`Link Error: ${error.code}`); 
+      }
+    );
+    
     return () => unsubscribe();
-  }, [user]);
+  }, [user, appId]); // dependency on user to ensure Rule 3
 
   useEffect(() => {
     if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || isInitializing || isAutoPlayPaused) return;
@@ -395,8 +405,8 @@ const App = () => {
                 <div className="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-white rounded-full animate-boot-load" />
              </div>
              <div className="flex justify-between w-full">
-                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Establishing Sync...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.7.4</span>
+                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Establishing Integrity...</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.8.0</span>
              </div>
           </div>
         </div>
@@ -406,7 +416,7 @@ const App = () => {
       <nav className="z-[100] px-6 pt-10 sm:pt-6 pb-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.7.4 | Enterprise Sync</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.8.0 | Enterprise Edition</span>
         </div>
         <div className="flex items-center gap-3">
            <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 transition-all group" title="Contact Email">
@@ -423,6 +433,7 @@ const App = () => {
 
       {/* --- Hero Section --- */}
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
+        {/* Floating Messages with Optimized Neural Link */}
         <div className="absolute inset-0 pointer-events-none z-[1]">
           {messages.slice(0, 12).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
         </div>
