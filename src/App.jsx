@@ -460,7 +460,7 @@ const App = () => {
             </div>
           </div>
           <div className="text-center pb-4">
-            <h3 className="text-sm font-title font-bold tracking-tight">Youngji.Park</h3>
+            <h3 className="text-sm font-title font-bold tracking-tight">Gene</h3>
             <span className="text-[8px] font-brand text-white/40 uppercase tracking-[0.4em] block mt-1.5">Founder</span>
           </div>
         </div>
