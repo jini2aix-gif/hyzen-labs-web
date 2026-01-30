@@ -30,12 +30,12 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.9.2 | Hero Neural Hub]
- * 1. 활동 영역 최적화: 버블과 신경망을 상단 히어로 영역(FUSED REALITY 섹션)으로 이동 및 한정
- * 2. 뇌 회로 미학: 화이트 일렉트릭 코어 + 다층적 네온 글로우로 '뉴럴 펄스' 시각화
- * 3. 지능형 동기화: 버블 간 메시 구조를 유지하며 중앙 지문 시스템으로의 데이터 흐름 강화
- * 4. 클라우드 무결성: Rule 3 기반의 Auth-First 동기화 엔진 고수
- * 5. 시스템 사운드: Web Audio API 기반의 하이테크 피드백 시스템 유지
+ * [Hyzen Labs. CTO Optimized - R2.9.3 | Pure Neural Mesh]
+ * 1. 신경망 아키텍처 정화: 하단 지문 허브와의 연결을 제거하고 오로지 버블 간 상호 연결(Mesh)만 구현
+ * 2. 시각적 가시성: 화이트 코어 & 일렉트릭 블루 글로우가 결합된 뇌 회로 스타일의 선명도 유지
+ * 3. 렌더링 최적화: 중복 버블 레이어를 제거하고 NeuralNetwork 컴포넌트 하나로 통합 관리
+ * 4. 활동 영역 고수: 모든 신경망 상호작용은 상단 히어로 영역(Hero Area) 내에서만 발현
+ * 5. 클라우드 무결성: Rule 3 (Auth-First) 기반 안정적 데이터 동기화 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -103,7 +103,7 @@ const compressImage = (file) => {
   });
 };
 
-// --- [Neural Mesh Link Component - Electric Circuit Style] ---
+// --- [Neural Mesh Link Component - Circuit Style] ---
 const NeuralMeshLink = ({ fromCoords, toCoords }) => {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   useEffect(() => {
@@ -128,7 +128,7 @@ const NeuralMeshLink = ({ fromCoords, toCoords }) => {
         d={`M 0 0 Q ${cpX} ${cpY} ${dx} ${dy}`} 
         fill="none" 
         stroke="rgba(34, 211, 238, 0.3)" 
-        strokeWidth="2.5" 
+        strokeWidth="2.2" 
         className="animate-pulse"
         style={{ filter: 'blur(4px)', opacity: 0.4 }}
       />
@@ -149,34 +149,29 @@ const NeuralMeshLink = ({ fromCoords, toCoords }) => {
   );
 };
 
-// --- [Neural Network Section - Hero Area Restricted] ---
+// --- [Neural Network Section - Only Bubble Connections] ---
 const NeuralNetwork = ({ messages }) => {
   const nodes = useMemo(() => {
-    return messages.slice(0, 10).map((msg, i) => ({
+    // 하단 지문과 연결되는 코드를 제거하고 오로지 버블 간 상호 연결 구조만 생성
+    return messages.slice(0, 12).map((msg, i) => ({
       id: msg.id,
-      // 히어로 영역 상단 10% ~ 65% 사이로 위치 한정
-      top: 10 + (Math.random() * 55), 
+      top: 15 + (Math.random() * 50), // 히어로 영역 내 부유
       left: 10 + (Math.random() * 80),
-      curveSeed: Math.random() * 120 - 60,
-      duration: `${18 + Math.random() * 12}s`,
+      curveSeed: Math.random() * 140 - 70,
+      duration: `${18 + Math.random() * 15}s`,
       delay: `${Math.random() * 5}s`,
-      targetIndex: (i + 1) % Math.min(messages.length, 10),
+      // 순환 구조 또는 무작위 구조를 위한 타겟 노드 지정
+      targetIndex: (i + 1) % Math.min(messages.length, 12),
       msg
     }));
   }, [messages]);
 
-  // 중앙 허브(지문) 좌표 - 히어로 섹션 내 상대 위치
-  const hubCoords = { top: 72, left: 50, curveSeed: 0 };
-
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-      {nodes.map((node, i) => (
+      {nodes.map((node) => (
         <div key={`hero-node-${node.id}`} className="absolute" style={{ top: `${node.top}%`, left: `${node.left}%` }}>
-          {/* 노드 간 연결 (메시 구조) */}
+          {/* 노드 간 연결 (오로지 버블끼리만 연결됨) */}
           <NeuralMeshLink fromCoords={node} toCoords={nodes[node.targetIndex]} />
-          
-          {/* 지문 허브로의 시냅스 연결 */}
-          {i % 2 === 0 && <NeuralMeshLink fromCoords={node} toCoords={hubCoords} />}
 
           <div className="relative group animate-bubble-float" style={{ animationDuration: node.duration, animationDelay: node.delay }}>
             <span className="absolute -top-1 -left-2 z-30 text-[7px] sm:text-[8px] font-brand text-white font-black uppercase bg-black/70 px-2 py-0.5 rounded-sm border border-white/10 shadow-xl whitespace-nowrap opacity-90 transition-transform group-hover:scale-110">
@@ -425,8 +420,8 @@ const App = () => {
                 <div className="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-white rounded-full animate-boot-load" />
              </div>
              <div className="flex justify-between w-full">
-                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Establishing Hub...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.9.2</span>
+                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Refining Neural Mesh...</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.9.3</span>
              </div>
           </div>
         </div>
@@ -436,7 +431,7 @@ const App = () => {
       <nav className="z-[100] px-6 pt-10 sm:pt-6 pb-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.9.2 | Hero Neural hub</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.9.3 | Pure Neural Mesh</span>
         </div>
         <div className="flex items-center gap-3">
            <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 transition-all group" title="Contact Email">
@@ -451,9 +446,9 @@ const App = () => {
         </div>
       </nav>
 
-      {/* --- Hero Section - Updated with Neural Mesh Overlay --- */}
+      {/* --- Hero Section - Pure Neural Network Area --- */}
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
-        {/* Neural Network Layer: Restricted to Hero Area */}
+        {/* Neural Network Layer: Restricted to Hero Area, No Hub Connection */}
         {messages.length > 0 && <NeuralNetwork messages={messages} />}
         
         <div className={`relative inline-block mb-4 pt-2 z-10 ${showMainTitle ? 'animate-hero-pop' : 'opacity-0'}`}>
