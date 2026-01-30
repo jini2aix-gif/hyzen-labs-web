@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, serverTimestamp } from 'firebase/firestore';
@@ -30,12 +30,12 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.8.2 | Neural Hub Sync]
- * 1. 구심점 아키텍처: 중앙 지문(Fingerprint)을 허브로 하여 모든 버블과 선이 이어지는 구조
- * 2. 고가시성 신경망: 선의 두께(1.5px), 투명도(0.6), 사이언 네온 글로우 효과 적용
- * 3. 동적 수렴 애니메이션: 데이터가 버블에서 중앙 허브로 흐르는듯한 Dash-offset 최적화
- * 4. 클라우드 무결성 유지: Auth 세션 확립 후 Firestore 동기화 엔진 (Rule 3 준수)
- * 5. 브랜드 고수: FUSED REALITY SYNC AI 워딩 및 모바일 최적화 레이아웃 유지
+ * [Hyzen Labs. CTO Optimized - R2.9.0 | Neural Mesh Network]
+ * 1. 신경망 메시(Neural Mesh): 중앙 집중형 구조에서 버블 간 상호 연결 구조로 전환 (뇌 회로 미학)
+ * 2. 동적 시냅스: 버블이 부유하면 선들이 유기적으로 추적하며 '지능의 그물망' 형성
+ * 3. 시각적 무결성: 가시성 높은 1.2px 점선 및 0.3 투명도 유지, 네온 글로우 효과 적용
+ * 4. 클라우드 안정성: Rule 3 (Auth 전용 세션) 및 Rule 1 (경로 엄격화) 준수
+ * 5. 기존 디자인 고수: FUSED REALITY SYNC AI 워딩 및 모바일 Safe-area 최적화 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -43,7 +43,7 @@ const FALLBACK_APP_ID = 'hyzen-labs-production';
 const YOUTUBE_URL = "https://www.youtube.com/@HyzenLabs";
 const EMAIL_ADDRESS = "jini2aix@gmail.com";
 
-// --- [Firebase Core - Global Initialization] ---
+// --- [Firebase Core - Enterprise Initialization] ---
 const getFirebaseConfig = () => {
   try {
     if (typeof __firebase_config !== 'undefined' && __firebase_config) {
@@ -103,8 +103,8 @@ const compressImage = (file) => {
   });
 };
 
-// --- [Neural Link Component - Hub Architecture Fix] ---
-const NeuralLinkLine = ({ bubbleCoords }) => {
+// --- [Neural Mesh Link Component] ---
+const NeuralMeshLink = ({ fromCoords, toCoords }) => {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   useEffect(() => {
     const handleResize = () => setWinSize({ w: window.innerWidth, h: window.innerHeight });
@@ -112,17 +112,13 @@ const NeuralLinkLine = ({ bubbleCoords }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 중앙 지문 아이콘의 위치 (구심점)
-  // Hero 섹션 내에서의 프로필 상대 위치 (%)
-  const profileHubPos = { top: 68, left: 50 };
+  // 두 노드(버블) 사이의 거리 계산
+  const dx = (toCoords.left - fromCoords.left) * (winSize.w / 100);
+  const dy = (toCoords.top - fromCoords.top) * (winSize.h / 100);
 
-  // 버블(0,0) 위치에서 중앙 허브(endX, endY)까지의 상대적 거리 계산
-  const endX = (profileHubPos.left - bubbleCoords.left) * (winSize.w / 100);
-  const endY = (profileHubPos.top - bubbleCoords.top) * (winSize.h / 100);
-
-  // 유기적인 곡선을 위한 제어점 (Hub를 향해 휘어지는 곡선)
-  const cpX = endX * 0.4 + bubbleCoords.curveSeed;
-  const cpY = endY * 0.4;
+  // 뇌 신경망 같은 유기적인 곡선을 위한 제어점
+  const cpX = dx * 0.5 + fromCoords.curveSeed;
+  const cpY = dy * 0.5;
 
   return (
     <svg 
@@ -130,48 +126,66 @@ const NeuralLinkLine = ({ bubbleCoords }) => {
       style={{ width: '1px', height: '1px' }}
     >
       <path 
-        d={`M 0 0 Q ${cpX} ${cpY} ${endX} ${endY}`} 
+        d={`M 0 0 Q ${cpX} ${cpY} ${dx} ${dy}`} 
         fill="none" 
-        stroke="rgba(34, 211, 238, 0.6)" 
-        strokeWidth="1.5" 
+        stroke="rgba(34, 211, 238, 0.5)" 
+        strokeWidth="1.2" 
         strokeDasharray="4 8" 
         className="animate-neural-flow"
         style={{ 
-          opacity: 0.6, 
-          filter: 'drop-shadow(0 0 5px rgba(34, 211, 238, 0.5))' 
+          opacity: 0.3,
+          filter: 'drop-shadow(0 0 3px rgba(34, 211, 238, 0.3))'
         }}
       />
     </svg>
   );
 };
 
-const FloatingBubble = ({ msg }) => {
-  const [coords] = useState(() => ({
-    top: Math.random() * 55 + 15,
-    left: Math.random() * 70 + 15,
-    duration: `${Math.random() * 15 + 25}s`, 
-    delay: `${Math.random() * 5}s`,
-    twinkleDuration: `${Math.random() * 2 + 1}s`,
-    curveSeed: Math.random() * 180 - 90 
-  }));
-  
+// --- [Neural Network Section] ---
+const NeuralNetwork = ({ messages }) => {
+  // 메시지 데이터를 기반으로 노드(버블)의 고정된 초기 랜덤 위치 생성
+  const nodes = useMemo(() => {
+    return messages.slice(0, 10).map((msg, i) => ({
+      id: msg.id,
+      top: 15 + (Math.random() * 50),
+      left: 10 + (Math.random() * 80),
+      curveSeed: Math.random() * 100 - 50,
+      duration: `${15 + Math.random() * 15}s`,
+      delay: `${Math.random() * 5}s`,
+      // 다음 노드와 연결 (마지막 노드는 중앙 지문 허브로 연결하거나 순환)
+      targetIndex: (i + 1) % Math.min(messages.length, 10),
+      msg
+    }));
+  }, [messages]);
+
+  // 중앙 허브 좌표 (지문 아이콘)
+  const hubCoords = { top: 68, left: 50, curveSeed: 0 };
+
   return (
-    <div className="absolute pointer-events-none select-none z-[2]" style={{ top: `${coords.top}%`, left: `${coords.left}%` }}>
-      <NeuralLinkLine bubbleCoords={coords} />
-      <div className="relative group animate-bubble-float" style={{ animationDuration: coords.duration, animationDelay: coords.delay }}>
-        <span className="absolute -top-1 -left-2 z-30 text-[7px] sm:text-[8px] font-brand text-white font-black uppercase bg-black/60 px-2 py-0.5 rounded-sm backdrop-blur-md border border-white/10 shadow-lg whitespace-nowrap opacity-90 transition-transform group-hover:scale-110">
-          {msg?.name || 'ANON'}
-        </span>
-        <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full glass-panel border border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.15)] overflow-hidden transition-transform active:scale-110 flex items-center justify-center">
-          <Mail size={8} className="text-cyan-400 absolute top-1.5 right-1.5 z-20 animate-pulse drop-shadow-lg" />
-          {msg.image ? (
-            <img src={msg.image} className="absolute inset-0 w-full h-full object-cover grayscale brightness-110" alt="" />
-          ) : (
-            <User size={20} className="text-white opacity-20" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 to-transparent pointer-events-none" />
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {nodes.map((node, i) => (
+        <div key={`node-${node.id}`} className="absolute" style={{ top: `${node.top}%`, left: `${node.left}%` }}>
+          {/* 버블 간 연결 (신경망 그물 구조) */}
+          <NeuralMeshLink fromCoords={node} toCoords={nodes[node.targetIndex]} />
+          
+          {/* 일부 노드는 중앙 허브와도 연결하여 계층 구조 형성 */}
+          {i % 3 === 0 && <NeuralMeshLink fromCoords={node} toCoords={hubCoords} />}
+
+          <div className="relative group animate-bubble-float" style={{ animationDuration: node.duration, animationDelay: node.delay }}>
+            <span className="absolute -top-1 -left-2 z-30 text-[7px] sm:text-[8px] font-brand text-white font-black uppercase bg-black/60 px-2 py-0.5 rounded-sm backdrop-blur-md border border-white/10 shadow-lg whitespace-nowrap opacity-90 transition-transform group-hover:scale-110">
+              {node.msg?.name || 'ANON'}
+            </span>
+            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full glass-panel border border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.15)] overflow-hidden transition-transform active:scale-110 flex items-center justify-center pointer-events-auto">
+              {node.msg.image ? (
+                <img src={node.msg.image} className="absolute inset-0 w-full h-full object-cover grayscale brightness-110" alt="" />
+              ) : (
+                <User size={20} className="text-white opacity-20" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 to-transparent" />
+            </div>
+          </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 };
@@ -265,7 +279,7 @@ const App = () => {
       setUser(u);
       if (u) { 
         setCloudStatus('connected'); 
-        setDiagInfo("Neural Hub Active"); 
+        setDiagInfo("Cloud Link Active"); 
       }
     });
 
@@ -289,7 +303,7 @@ const App = () => {
       }, 
       (error) => { 
         setCloudStatus('error'); 
-        setDiagInfo(`Sync Lost: ${error.code}`); 
+        setDiagInfo(`Link Error: ${error.code}`); 
       }
     );
     return () => unsubscribe();
@@ -404,8 +418,8 @@ const App = () => {
                 <div className="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-white rounded-full animate-boot-load" />
              </div>
              <div className="flex justify-between w-full">
-                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Synchronizing Hub...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.8.2</span>
+                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing Network...</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.9.0</span>
              </div>
           </div>
         </div>
@@ -415,7 +429,7 @@ const App = () => {
       <nav className="z-[100] px-6 pt-10 sm:pt-6 pb-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.8.2 | Neural Fusion</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.9.0 | Neural Mesh</span>
         </div>
         <div className="flex items-center gap-3">
            <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 transition-all group" title="Contact Email">
@@ -432,10 +446,8 @@ const App = () => {
 
       {/* --- Hero Section --- */}
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
-        {/* Floating Messages - All gathering at the profile hub */}
-        <div className="absolute inset-0 pointer-events-none z-[1]">
-          {messages.slice(0, 12).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
-        </div>
+        {/* Neural Network Mesh Layer */}
+        {messages.length > 0 && <NeuralNetwork messages={messages} />}
         
         <div className={`relative inline-block mb-4 pt-2 z-10 ${showMainTitle ? 'animate-hero-pop' : 'opacity-0'}`}>
           <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10" />
