@@ -30,11 +30,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.5.2 | Neural Fusion Refined]
- * 1. 히어로 사이즈 최적화: 텍스트 크기를 축소하여 시각적 여백 및 가독성 밸런스 확보
- * 2. 히어로 하이라이트 유지: "FUSED" 키워드의 동적 쉬머 및 네온 글로우 효과 계승
- * 3. 푸터 무결성: "All Rights Reserved by HYZEN LABS." 단일 문구 고수
- * 4. 신경망 시스템: 실시간 픽셀 좌표 추적 및 유기적 곡선 로직 유지
+ * [Hyzen Labs. CTO Optimized - R2.6.0 | Biometric Fusion]
+ * 1. 프로필 진화: 실물 사진(HL.jpg)을 제거하고 지문(Fingerprint) 바이오메트릭 인터페이스를 메인으로 승격
+ * 2. 시각적 하이라이트: 지문 인식 스캔 애니메이션 및 사이언 글로우 효과 강화
+ * 3. 모바일 최적화: 상단 Safe-area(pt-10) 및 카드 높이(h-[150px]) 최적화 레이아웃 유지
+ * 4. 히어로 하이라이트: "FUSED" 키워드 동적 쉬머 및 축소된 정교한 폰트 사이즈 고수
  */
 
 const ADMIN_PASS = "5733906";
@@ -42,13 +42,11 @@ const FALLBACK_APP_ID = 'hyzen-labs-production';
 const YOUTUBE_URL = "https://www.youtube.com/@HyzenLabs_";
 const EMAIL_ADDRESS = "jini2aix@gmail.com";
 
-// --- [Firebase Core - Multi-Environment Hybrid Initialization] ---
 const getFirebaseConfig = () => {
   try {
     const viteEnv = import.meta.env.VITE_FIREBASE_CONFIG;
     if (viteEnv) return typeof viteEnv === 'string' ? JSON.parse(viteEnv) : viteEnv;
   } catch (e) {}
-
   if (typeof __firebase_config !== 'undefined' && __firebase_config) {
     try {
       return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
@@ -58,15 +56,7 @@ const getFirebaseConfig = () => {
 };
 
 const firebaseConfig = getFirebaseConfig();
-
-const getAppId = () => {
-  if (typeof __app_id !== 'undefined' && __app_id) return __app_id;
-  try {
-    return import.meta.env.VITE_APP_ID || FALLBACK_APP_ID;
-  } catch(e) { return FALLBACK_APP_ID; }
-};
-const appId = getAppId();
-
+const appId = typeof __app_id !== 'undefined' ? __app_id : FALLBACK_APP_ID;
 const firebaseApp = firebaseConfig ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]) : null;
 const auth = firebaseApp ? getAuth(firebaseApp) : null;
 const db = firebaseApp ? getFirestore(firebaseApp) : null;
@@ -150,14 +140,12 @@ const FloatingBubble = ({ msg }) => {
         <span className="absolute -top-1 -left-2 z-30 text-[7px] sm:text-[8px] font-brand text-white font-black uppercase tracking-tighter bg-black/60 px-2 py-0.5 rounded-sm backdrop-blur-md border border-white/10 shadow-lg whitespace-nowrap opacity-90 transition-transform group-hover:scale-110">
           {msg?.name || 'ANON'}
         </span>
-        <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full glass-panel border border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.15)] overflow-hidden transition-transform active:scale-110">
+        <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full glass-panel border border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.15)] overflow-hidden transition-transform active:scale-110 flex items-center justify-center">
           <Mail size={8} className="text-cyan-400 absolute top-1.5 right-1.5 z-20 animate-pulse drop-shadow-lg" style={{ animationDuration: coords.twinkleDuration }} />
           {msg.image ? (
             <img src={msg.image} className="absolute inset-0 w-full h-full object-cover grayscale brightness-110" alt="" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-white/5 opacity-30">
-              <User size={20} className="text-white" />
-            </div>
+            <User size={20} className="text-white opacity-30" />
           )}
           <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 to-transparent pointer-events-none" />
         </div>
@@ -186,9 +174,9 @@ const CoverFlow = ({ items, renderItem, activeIndex, setActiveIndex, onUserInter
         {items.map((item, idx) => {
           const offset = idx - activeIndex;
           const isCenter = offset === 0;
-          const transform = isCenter ? `translateZ(200px) scale(1.15)` : `translateX(${offset * 90}%) translateZ(${Math.abs(offset) * -450}px) rotateY(${offset * -70}deg)`;
+          const transform = isCenter ? `translateZ(180px) scale(1.1)` : `translateX(${offset * 85}%) translateZ(${Math.abs(offset) * -400}px) rotateY(${offset * -65}deg)`;
           return (
-            <div key={item.id || idx} className="absolute w-[240px] sm:w-[320px] h-[160px] preserve-3d transition-all duration-[800ms]" style={{ transform, zIndex: 20 - Math.abs(offset), opacity: isCenter ? 1 : Math.max(0.1, 0.3 - Math.abs(offset) * 0.1), pointerEvents: isCenter ? 'auto' : 'none' }}>
+            <div key={item.id || idx} className="absolute w-[220px] sm:w-[320px] h-[140px] sm:h-[160px] preserve-3d transition-all duration-[800ms]" style={{ transform, zIndex: 20 - Math.abs(offset), opacity: isCenter ? 1 : Math.max(0.1, 0.3 - Math.abs(offset) * 0.1), pointerEvents: isCenter ? 'auto' : 'none' }}>
               <div className="relative w-full h-full preserve-3d shadow-2xl">{renderItem(item, isCenter)}</div>
             </div>
           );
@@ -263,19 +251,16 @@ const App = () => {
         }
       } catch (err) { setCloudStatus('error'); setDiagInfo("Auth Failed"); }
     };
-
     initAuth();
     const unsubscribe = auth ? onAuthStateChanged(auth, u => {
       setUser(u);
       if (u) { setCloudStatus('connected'); setDiagInfo("Cloud Link Secure"); }
     }) : () => {};
-
     const timer = setTimeout(() => {
       setIsInitializing(false);
       playSystemSound('start');
       setTimeout(() => { setShowMainTitle(true); playSystemSound('popup'); }, 500);
     }, 3000);
-
     return () => { unsubscribe(); clearTimeout(timer); };
   }, []);
 
@@ -344,12 +329,7 @@ const App = () => {
           100% { width: 100%; filter: brightness(2); }
         }
         .animate-boot-load { animation: bootProgress 3s cubic-bezier(0.65, 0, 0.35, 1) forwards; }
-        
-        /* Shimmer Highlight for FUSED */
-        @keyframes fusedShimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
+        @keyframes fusedShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         .fused-highlight {
           background: linear-gradient(90deg, #22d3ee 0%, #ffffff 50%, #22d3ee 100%);
           background-size: 200% auto;
@@ -361,10 +341,7 @@ const App = () => {
         .fused-highlight::after {
           content: '';
           position: absolute;
-          bottom: -2px;
-          left: 0;
-          width: 100%;
-          height: 1px;
+          bottom: -2px; left: 0; width: 100%; height: 1px;
           background: linear-gradient(90deg, transparent, #22d3ee, transparent);
           box-shadow: 0 0 10px #22d3ee;
         }
@@ -382,49 +359,32 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.5.2</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.6.0</span>
              </div>
           </div>
         </div>
       )}
 
       {/* --- Navigation --- */}
-      <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
+      <nav className="z-[100] px-6 pt-10 sm:pt-6 pb-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.5.2 | Neural Fusion</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.6.0 | Neural Fusion</span>
         </div>
         <div className="flex items-center gap-3">
-           <div className="flex flex-col items-end mr-1">
-              <span className={`text-[8px] font-brand uppercase tracking-widest ${cloudStatus === 'connected' ? 'text-cyan-400' : 'text-amber-500'}`}>{cloudStatus.toUpperCase()}</span>
-              <span className="text-[6px] font-mono opacity-30 uppercase">{diagInfo}</span>
-           </div>
-           
-           <a 
-              href={`mailto:${EMAIL_ADDRESS}`}
-              className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 hover:border-cyan-500/50 hover:bg-cyan-500/10 transition-all group"
-              title="Contact via Email"
-           >
+           <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 transition-all group" title="Contact Email">
               <Mail size={14} className="group-hover:scale-110 transition-transform" />
            </a>
-
-           <a 
-              href={YOUTUBE_URL} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-red-500 hover:border-red-500/50 hover:bg-red-500/10 transition-all group"
-              title="Hyzen Labs YouTube Channel"
-           >
+           <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-red-500 transition-all group" title="YouTube Channel">
               <Youtube size={14} className="group-hover:scale-110 transition-transform" />
            </a>
-
-           <div className={`w-8 h-8 rounded-lg glass-panel flex items-center justify-center transition-all ${cloudStatus === 'connected' ? 'text-cyan-400 border-cyan-500/30' : 'text-amber-500 border-amber-500/30 animate-pulse'}`}>
+           <div className={`w-8 h-8 rounded-lg glass-panel flex items-center justify-center transition-all ${cloudStatus === 'connected' ? 'text-cyan-400 border-cyan-500/30' : 'text-amber-500'}`}>
               <Cloud size={14} />
            </div>
         </div>
       </nav>
 
-      {/* --- Hero Section - Refined Sizing --- */}
+      {/* --- Hero Section --- */}
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none z-[1]">
           {messages.slice(0, 12).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
@@ -432,9 +392,8 @@ const App = () => {
         
         <div className={`relative inline-block mb-4 pt-2 z-10 ${showMainTitle ? 'animate-hero-pop' : 'opacity-0'}`}>
           <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10" />
-          {/* 히어로 텍스트 사이즈 축소: text-[8vw] sm:text-7xl 로 조정 */}
           <h1 className="text-[8vw] sm:text-7xl font-title tracking-[-0.07em] leading-none uppercase">
-            <span className="block fused-highlight drop-shadow-[0_0_15px_rgba(34,211,238,0.4)]">FUSED</span>
+            <span className="block fused-highlight">FUSED</span>
             <span className="block my-1" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.2)', color: 'transparent' }}>REALITY</span>
             <span className="block mt-1">
               <span className="text-[0.35em] sm:text-[0.45em] text-white animate-text-glow align-middle mr-2 sm:mr-4 inline-block transform -translate-y-[0.15em] font-black tracking-widest opacity-90">SYNC</span>
@@ -443,7 +402,7 @@ const App = () => {
           </h1>
         </div>
 
-        <div className={`mt-4 sm:mt-6 mb-2 flex flex-col items-center gap-6 z-10 transition-all duration-1000 delay-700 ${showMainTitle ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`mt-2 sm:mt-6 mb-2 flex flex-col items-center gap-6 z-10 transition-all duration-1000 delay-700 ${showMainTitle ? 'opacity-100' : 'opacity-0'}`}>
           <div onClick={() => setIsGuestbookOpen(true)} className="group relative cursor-pointer active:scale-95 transition-all">
             <div className="absolute -inset-8 border border-white/5 rounded-full animate-[spin_25s_linear_infinite]" />
             <div className="absolute inset-0 z-20 rounded-full flex items-center justify-center pointer-events-none overflow-hidden">
@@ -455,25 +414,36 @@ const App = () => {
                   <div className="flex items-center justify-center h-full"><Fingerprint className="text-cyan-400" size={40} /></div>
                </div>
             </div>
-            <div className="w-24 h-24 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent relative z-10 overflow-hidden">
-              <div className="w-full h-full rounded-full bg-zinc-900 flex items-center justify-center overflow-hidden border border-white/10">
-                <img src="HL.JPG" className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700" alt="Founder" onError={(e) => { e.target.src = "https://via.placeholder.com/150/000000/FFFFFF?text=YJ"; }} />
+            
+            {/* 사진 제거 후 지문(Biometric) 아이콘을 메인으로 배치 */}
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent relative z-10 overflow-hidden shadow-[0_0_30px_rgba(34,211,238,0.25)]">
+              <div className="w-full h-full rounded-full bg-zinc-900/90 flex items-center justify-center overflow-hidden border border-white/15 relative">
+                {/* 배경 스캔 효과 */}
+                <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent animate-pulse" />
+                <Fingerprint 
+                  size={42} 
+                  className="text-cyan-400/80 group-hover:text-cyan-400 group-hover:scale-110 transition-all duration-500 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]" 
+                />
+                {/* 지문 스캔 중임을 나타내는 수평 라인 */}
+                <div className="absolute w-full h-[2px] bg-cyan-400/40 blur-[2px] animate-f-scan opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 glass-panel border animate-f-breath rounded-full flex items-center gap-2 z-30 transition-all">
+
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 glass-panel border animate-f-breath rounded-full flex items-center gap-2 z-30">
               <MessageSquare size={10} className="text-cyan-400" />
               <span className="text-[8px] font-brand font-black uppercase tracking-widest text-white/90">Sync Trace</span>
             </div>
           </div>
-          <div className="text-center pb-4">
+          <div className="text-center pb-2 sm:pb-4">
             <h3 className="text-sm font-title font-bold tracking-tight">Gene</h3>
             <span className="text-[8px] font-brand text-white/40 uppercase tracking-[0.4em] block mt-1.5">Founder</span>
           </div>
         </div>
       </section>
 
-      <div className="z-10 pb-4 px-6 max-w-lg mx-auto w-full shrink-0 transition-all duration-1000 delay-[1.2s]" style={{ opacity: showMainTitle ? 1 : 0 }}>
-        <div className="glass-panel p-1 rounded-2xl flex gap-1 mb-6 border border-white/10">
+      {/* --- Content Area --- */}
+      <div className="z-10 pb-2 px-6 max-w-lg mx-auto w-full shrink-0 transition-all duration-1000 delay-[1.2s]" style={{ opacity: showMainTitle ? 1 : 0 }}>
+        <div className="glass-panel p-1 rounded-2xl flex gap-1 mb-4 border border-white/10">
           {['roadmap', 'works', 'traces'].map((view) => (
             <button key={view} onClick={() => { setActiveView(view); setIsAutoPlayPaused(false); }} 
               className={`flex-1 py-3 rounded-xl text-[8px] font-brand tracking-widest uppercase transition-all ${activeView === view ? 'bg-white text-black font-black shadow-xl scale-105' : 'text-white/30 hover:text-white/60'}`}>
@@ -482,62 +452,59 @@ const App = () => {
           ))}
         </div>
 
-        <div className="h-[180px] relative">
+        <div className="h-[150px] sm:h-[180px] relative">
           {activeView === 'traces' ? (
             <div className="h-full flex flex-col">
               {messages.length > 0 ? (
                 <CoverFlow items={messages.slice(0, 15)} activeIndex={activeIndices.traces} setActiveIndex={(i) => setActiveIndices({...activeIndices, traces: i})} onUserInteraction={handleUserInteraction} renderItem={(msg) => (
-                  <div className="group w-full h-full glass-panel rounded-[2.5rem] relative overflow-hidden border border-violet-500/30 p-6 flex flex-col justify-between cursor-pointer active:scale-[0.98] transition-all">
-                    {msg.image && (
-                      <div className="absolute inset-0 overflow-hidden z-0">
-                        <img src={msg.image} className="w-full h-full object-cover opacity-20 grayscale transition-all duration-[1500ms] ease-out group-hover:scale-125 group-hover:rotate-2 group-active:scale-150 group-active:-translate-y-4" alt="" />
-                      </div>
-                    )}
+                  <div className="group w-full h-full glass-panel rounded-[2rem] relative overflow-hidden border border-violet-500/30 p-5 flex flex-col justify-between cursor-pointer transition-all">
+                    {msg.image && <img src={msg.image} className="absolute inset-0 w-full h-full object-cover opacity-20 grayscale" alt="" />}
                     <div className="relative z-10 text-left">
-                      <span className="text-[12px] sm:text-[14px] font-brand text-violet-400 font-black uppercase tracking-[0.25em] italic drop-shadow-[0_0_8px_rgba(167,139,250,0.4)]">
-                        {msg.name}
-                      </span>
-                      <p className="text-[11px] font-light mt-2 line-clamp-2 italic opacity-80 leading-relaxed">"{msg.text}"</p>
+                      <span className="text-[10px] sm:text-[14px] font-brand text-violet-400 font-black uppercase italic tracking-widest">{msg.name}</span>
+                      <p className="text-[9px] sm:text-[11px] font-light mt-1 line-clamp-2 opacity-80 leading-snug">"{msg.text}"</p>
                     </div>
                     <div className="relative z-10 flex justify-between items-end">
-                      <span className="text-[7px] font-mono opacity-30">{msg.date}</span>
-                      <button onClick={(e) => { e.stopPropagation(); setTargetDeleteId(msg.id); setIsDeleteModalOpen(true); }} className="p-2 text-white/10 hover:text-red-500 transition-all"><Trash2 size={14} /></button>
+                      <span className="text-[6px] font-mono opacity-30">{msg.date}</span>
+                      <button onClick={(e) => { e.stopPropagation(); setTargetDeleteId(msg.id); setIsDeleteModalOpen(true); }} className="p-1 text-white/10 hover:text-red-500"><Trash2 size={12} /></button>
                     </div>
                   </div>
                 )} />
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center opacity-20 gap-2 border border-dashed border-white/10 rounded-[2rem]">
-                  <Activity size={24} /><span className="text-[9px] font-brand uppercase tracking-widest">Awaiting Data</span>
+                  <Activity size={20} /><span className="text-[8px] font-brand uppercase tracking-widest">Awaiting Data</span>
                 </div>
               )}
             </div>
           ) : (
             <CoverFlow items={activeView === 'roadmap' ? roadmapSteps : projects} activeIndex={activeView === 'roadmap' ? activeIndices.roadmap : activeIndices.works} setActiveIndex={(i) => setActiveIndices({...activeIndices, [activeView]: i})} onUserInteraction={handleUserInteraction} renderItem={(item) => (
-              <div onClick={() => { setSelectedItem(item); setIsModalOpen(true); }} className={`w-full h-full glass-panel p-6 rounded-[2.5rem] border ${activeView === 'roadmap' ? 'border-cyan-500/30 shadow-[0_0_30px_-10px_rgba(34,211,238,0.3)]' : 'border-emerald-500/30 shadow-[0_0_30px_-10px_rgba(16,185,129,0.3)]'} flex flex-col justify-between text-left cursor-pointer hover:bg-white/5 transition-colors`}>
-                <div className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-cyan-400">{item.icon}</div>
-                <div><span className="text-[7px] font-brand text-white/30 uppercase tracking-widest">{item.phase || item.tag}</span><h3 className="text-xs font-bold mt-1 uppercase">{item.title}</h3></div>
+              <div onClick={() => { setSelectedItem(item); setIsModalOpen(true); }} className={`w-full h-full glass-panel p-5 rounded-[2rem] border ${activeView === 'roadmap' ? 'border-cyan-500/30' : 'border-emerald-500/30'} flex flex-col justify-between text-left cursor-pointer transition-colors`}>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white/5 rounded-xl text-cyan-400">
+                  {React.cloneElement(item.icon, { size: 16 })}
+                </div>
+                <div>
+                  <span className="text-[6px] font-brand text-white/30 uppercase tracking-widest">{item.phase || item.tag}</span>
+                  <h3 className="text-[10px] sm:text-xs font-bold mt-0.5 uppercase">{item.title}</h3>
+                </div>
               </div>
             )} />
           )}
         </div>
       </div>
 
-      <footer className="z-10 py-10 flex flex-col items-center shrink-0">
-        <div className="flex flex-col items-center">
-          <span className="font-brand text-[10px] tracking-[0.8em] font-black uppercase animate-breathe text-cyan-400/80">HYZEN LABS. 2026</span>
-          <div className="mt-3">
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.3em] font-light">All Rights Reserved by HYZEN LABS.</span>
-          </div>
+      <footer className="z-10 py-6 sm:py-10 flex flex-col items-center shrink-0">
+        <span className="font-brand text-[8px] sm:text-[10px] tracking-[0.8em] font-black uppercase animate-breathe text-cyan-400/80">HYZEN LABS. 2026</span>
+        <div className="mt-2 sm:mt-3">
+          <span className="text-[6px] sm:text-[7px] font-mono opacity-20 uppercase tracking-[0.3em] font-light">All Rights Reserved by HYZEN LABS.</span>
         </div>
       </footer>
 
       {/* --- Modals --- */}
       {isGuestbookOpen && (
-        <div className="fixed inset-0 z-[5000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-md overflow-hidden touch-auto" onClick={closeModal}>
-          <div className="w-full sm:max-w-md glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-8 max-w-full" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[5000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-md overflow-hidden" onClick={closeModal}>
+          <div className="w-full sm:max-w-md glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-8" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-black font-brand uppercase tracking-tight">Sync Trace</h2>
-              <button onClick={closeModal}><X size={20} className="opacity-40 hover:opacity-100" /></button>
+              <h2 className="text-xl font-black font-brand uppercase">Sync Trace</h2>
+              <button onClick={closeModal}><X size={20} className="opacity-40" /></button>
             </div>
             <form onSubmit={async (e) => {
               e.preventDefault(); if (!newMessage.name || !newMessage.text || isUploading) return;
@@ -548,23 +515,16 @@ const App = () => {
                 setNewMessage({ name: '', text: '', image: null }); closeModal(); playSystemSound('popup');
               } catch (err) { console.error(err); } finally { setIsUploading(false); }
             }} className="space-y-4">
-              <div className="flex gap-2">
-                <input type="text" style={{fontSize: '16px'}} placeholder="IDENTITY ID" className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-brand outline-none focus:border-cyan-500/50" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
-                <button type="button" onClick={() => fileInputRef.current?.click()} className={`px-4 rounded-xl border transition-all ${newMessage.image ? 'bg-cyan-500 border-cyan-500 text-black' : 'bg-white/5 border-white/10 text-white/30'}`} disabled={isUploading}>{isUploading ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}</button>
-                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={async (e) => {
-                  const file = e.target.files[0];
-                  if (file) { setIsUploading(true); try { const compressed = await compressImage(file); setNewMessage(prev => ({ ...prev, image: compressed })); } catch (e) { } finally { setIsUploading(false); } }
-                }} />
-              </div>
+              <input type="text" style={{fontSize: '16px'}} placeholder="IDENTITY ID" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-brand outline-none focus:border-cyan-500/50" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
               <textarea style={{fontSize: '16px'}} placeholder="LOG DATA..." className="w-full h-24 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-500/50 resize-none" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
-              <button type="submit" className="w-full bg-cyan-500 py-4 rounded-2xl text-black font-brand font-black uppercase tracking-widest shadow-lg shadow-cyan-500/20 active:scale-95 transition-all disabled:opacity-50" disabled={isUploading}>{isUploading ? "PROCESS..." : "INITIATE SYNC"}</button>
+              <button type="submit" className="w-full bg-cyan-500 py-4 rounded-2xl text-black font-brand font-black uppercase tracking-widest transition-all disabled:opacity-50" disabled={isUploading}>{isUploading ? "PROCESS..." : "INITIATE SYNC"}</button>
             </form>
           </div>
         </div>
       )}
 
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-[6000] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm overflow-hidden touch-auto" onClick={closeModal}>
+        <div className="fixed inset-0 z-[6000] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm" onClick={closeModal}>
           <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 text-center" onClick={e => e.stopPropagation()}>
             <Lock size={32} className="text-red-500 mx-auto mb-4" />
             <h2 className="text-lg font-black uppercase mb-6">Erase Trace?</h2>
@@ -583,15 +543,15 @@ const App = () => {
       )}
 
       {isModalOpen && selectedItem && (
-        <div className="fixed inset-0 z-[4000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md overflow-hidden touch-auto" onClick={closeModal}>
-          <div className="w-full h-[70vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-10 relative overflow-y-auto shadow-2xl max-w-full" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[4000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md" onClick={closeModal}>
+          <div className="w-full h-[70vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-10 relative overflow-y-auto" onClick={e => e.stopPropagation()}>
             <button onClick={closeModal} className="absolute top-8 right-8 text-white/20 hover:text-white"><X size={24} /></button>
             <span className="text-cyan-400 font-brand text-[10px] font-bold uppercase tracking-[0.4em]">{selectedItem.phase || selectedItem.tag}</span>
-            <h2 className="text-3xl font-black mt-2 mb-8 uppercase tracking-tighter leading-tight font-title">{selectedItem.title}</h2>
+            <h2 className="text-2xl font-black mt-2 mb-8 uppercase font-title leading-tight">{selectedItem.title}</h2>
             <div className="space-y-6 mb-10 text-left">
-              <div><h4 className="text-[10px] font-brand text-white/30 uppercase mb-2 border-l-2 border-cyan-500 pl-3">Goal</h4><p className="text-sm font-light opacity-80 leading-relaxed">{selectedItem.goal}</p></div>
-              <div><h4 className="text-[10px] font-brand text-white/30 uppercase mb-2 border-l-2 border-cyan-500 pl-3">Process</h4><p className="text-sm font-light opacity-80 leading-relaxed">{selectedItem.process}</p></div>
-              <div><h4 className="text-[10px] font-brand text-white/30 uppercase mb-2 border-l-2 border-cyan-500 pl-3">Result</h4><p className="text-sm font-light opacity-80 leading-relaxed">{selectedItem.result}</p></div>
+              <div><h4 className="text-[10px] font-brand text-white/30 uppercase mb-1 border-l-2 border-cyan-500 pl-3">Goal</h4><p className="text-sm font-light opacity-80 leading-relaxed">{selectedItem.goal}</p></div>
+              <div><h4 className="text-[10px] font-brand text-white/30 uppercase mb-1 border-l-2 border-cyan-500 pl-3">Process</h4><p className="text-sm font-light opacity-80 leading-relaxed">{selectedItem.process}</p></div>
+              <div><h4 className="text-[10px] font-brand text-white/30 uppercase mb-1 border-l-2 border-cyan-500 pl-3">Result</h4><p className="text-sm font-light opacity-80 leading-relaxed">{selectedItem.result}</p></div>
             </div>
             <button onClick={closeModal} className="w-full bg-white text-black py-4 rounded-2xl font-brand text-[11px] font-black uppercase tracking-widest shadow-xl">Close Link</button>
           </div>
