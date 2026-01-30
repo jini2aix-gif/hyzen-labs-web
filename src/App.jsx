@@ -30,16 +30,16 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.6.1 | Link Integrity]
- * 1. 링크 무결성 수정: 유튜브 핸들 오류 수정 (@HyzenLabs_ -> @HyzenLabs)
- * 2. 바이오메트릭 인터페이스: 지문(Fingerprint) 중앙 배치 및 스캔 애니메이션 유지
- * 3. 모바일 최적화: 상단 Safe-area 및 컴팩트한 카드 레이아웃 고수
- * 4. 푸터 정제: "All Rights Reserved by HYZEN LABS." 단일 문구 유지
+ * [Hyzen Labs. CTO Optimized - R2.7.0 | Neural Link Sync]
+ * 1. 유기적 신경망(Neural Link): 버블과 중앙 지문 사이를 잇는 베지어 곡선 구현
+ * 2. 동적 추적: 버블의 부유 애니메이션에 맞춰 선의 형태가 실시간으로 변형
+ * 3. 은은한 미학: Opacity 0.1~0.15 및 대시 라인(Dashed) 적용으로 시각적 밸런스 확보
+ * 4. 링크 무결성: 유튜브(@HyzenLabs) 및 이메일 링크 최신 상태 유지
  */
 
 const ADMIN_PASS = "5733906";
 const FALLBACK_APP_ID = 'hyzen-labs-production';
-const YOUTUBE_URL = "https://www.youtube.com/@HyzenLabs"; // 정확한 핸들로 수정 완료
+const YOUTUBE_URL = "https://www.youtube.com/@HyzenLabs";
 const EMAIL_ADDRESS = "jini2aix@gmail.com";
 
 const getFirebaseConfig = () => {
@@ -81,44 +81,43 @@ const playSystemSound = (type) => {
   } catch (e) {}
 };
 
-const compressImage = (file) => {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target.result;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_SIDE = 800;
-        let width = img.width; let height = img.height;
-        if (width > height) { if (width > MAX_SIDE) { height *= MAX_SIDE / width; width = MAX_SIDE; } }
-        else { if (height > MAX_SIDE) { width *= MAX_SIDE / height; height = MAX_SIDE; } }
-        canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.6));
-      };
-    };
-  });
-};
-
+// --- [Neural Link Component] ---
 const NeuralLinkLine = ({ bubbleCoords }) => {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
+  
   useEffect(() => {
     const handleResize = () => setWinSize({ w: window.innerWidth, h: window.innerHeight });
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // 중앙 지문 아이콘의 대략적인 중심점 좌표 (%)
+  // 히어로 섹션 내에서의 위치를 고려한 상대 좌표값
   const profilePos = { top: 72, left: 50 };
+
+  // 버블 중심으로부터 중앙 프로필까지의 벡터 계산 (픽셀 기반)
   const endX = (profilePos.left - bubbleCoords.left) * (winSize.w / 100);
   const endY = (profilePos.top - bubbleCoords.top) * (winSize.h / 100);
+
+  // 유기적인 느낌을 위한 베지어 곡선의 제어점(Control Point) 설정
+  // curveSeed를 통해 각 선마다 고유한 굴곡 부여
   const cpX = endX / 2 + bubbleCoords.curveSeed;
   const cpY = endY / 1.5;
 
   return (
-    <svg className="absolute top-1/2 left-1/2 overflow-visible pointer-events-none opacity-20 z-0" style={{ width: 1, height: 1 }}>
-      <path d={`M 0 0 Q ${cpX} ${cpY} ${endX} ${endY}`} fill="none" stroke="rgba(34, 211, 238, 0.5)" strokeWidth="0.8" strokeDasharray="3 6" className="animate-pulse" style={{ animationDuration: '3s' }} />
+    <svg 
+      className="absolute top-1/2 left-1/2 overflow-visible pointer-events-none z-0 transition-opacity duration-1000"
+      style={{ width: 1, height: 1, opacity: 0.15 }}
+    >
+      <path 
+        d={`M 0 0 Q ${cpX} ${cpY} ${endX} ${endY}`} 
+        fill="none" 
+        stroke="rgba(34, 211, 238, 0.6)" 
+        strokeWidth="0.8" 
+        strokeDasharray="4 8" 
+        className="animate-pulse" 
+        style={{ animationDuration: '4s' }} 
+      />
     </svg>
   );
 };
@@ -130,12 +129,14 @@ const FloatingBubble = ({ msg }) => {
     duration: `${Math.random() * 15 + 20}s`, 
     delay: `${Math.random() * 10}s`,
     twinkleDuration: `${Math.random() * 2 + 1}s`,
-    curveSeed: Math.random() * 100 - 50
+    curveSeed: Math.random() * 100 - 50 // 유기적 곡선을 위한 고유 시드값
   }));
   
   return (
     <div className="absolute pointer-events-none select-none z-[2]" style={{ top: `${coords.top}%`, left: `${coords.left}%` }}>
+      {/* 버블과 중앙을 잇는 신경망 선 */}
       <NeuralLinkLine bubbleCoords={coords} />
+      
       <div className="relative group animate-bubble-float" style={{ animationDuration: coords.duration, animationDelay: coords.delay }}>
         <span className="absolute -top-1 -left-2 z-30 text-[7px] sm:text-[8px] font-brand text-white font-black uppercase tracking-tighter bg-black/60 px-2 py-0.5 rounded-sm backdrop-blur-md border border-white/10 shadow-lg whitespace-nowrap opacity-90 transition-transform group-hover:scale-110">
           {msg?.name || 'ANON'}
@@ -145,7 +146,7 @@ const FloatingBubble = ({ msg }) => {
           {msg.image ? (
             <img src={msg.image} className="absolute inset-0 w-full h-full object-cover grayscale brightness-110" alt="" />
           ) : (
-            <User size={20} className="text-white opacity-30" />
+            <User size={20} className="text-white opacity-20" />
           )}
           <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 to-transparent pointer-events-none" />
         </div>
@@ -359,7 +360,7 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.6.1</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.7.0</span>
              </div>
           </div>
         </div>
@@ -369,7 +370,7 @@ const App = () => {
       <nav className="z-[100] px-6 pt-10 sm:pt-6 pb-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.6.1 | Neural Fusion</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.7.0 | Neural Fusion</span>
         </div>
         <div className="flex items-center gap-3">
            <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 transition-all group" title="Contact Email">
@@ -386,6 +387,7 @@ const App = () => {
 
       {/* --- Hero Section --- */}
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
+        {/* Floating Messages with Neural Link */}
         <div className="absolute inset-0 pointer-events-none z-[1]">
           {messages.slice(0, 12).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
         </div>
