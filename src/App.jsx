@@ -30,12 +30,12 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.7.3 | Runtime Integrity Fix]
- * 1. 오류 수정: ReferenceError: playSystemSound 가 정의되지 않은 문제 해결
- * 2. 시스템 사운드 엔진 복구: Web Audio API 기반의 하이테크 효과음 재활성화
- * 3. 클라우드 연동 유지: Firebase Auth -> Firestore 순차적 로드 엔진 고수
- * 4. 신경망 선(Neural Link): 버블과 지문 간의 동적 베지어 곡선 가시성 최적화
- * 5. 디자인 고수: FUSED REALITY SYNC AI 워딩 및 모바일 최적화 레이아웃 유지
+ * [Hyzen Labs. CTO Optimized - R2.7.4 | Cloud Integrity & Neural Restore]
+ * 1. 클라우드 무결성 (Rule 3 준수): Auth 동기화 대기 후 Firestore 리스너 활성화 로직 적용
+ * 2. 신경망 선(Neural Link) 가시화: SVG 뷰박스 확장 및 상대 좌표 벡터 연산 최적화
+ * 3. 런타임 오류 방지: playSystemSound 함수 및 Firebase Config 로더 안정화
+ * 4. 기존 구조 고수: FUSED REALITY SYNC AI 워딩, 모바일 레이아웃(h-150px) 유지
+ * 5. 지문 인터페이스: 사진 대신 생체 인식 아이콘 및 스캔 애니메이션 중심 배치
  */
 
 const ADMIN_PASS = "5733906";
@@ -43,13 +43,13 @@ const FALLBACK_APP_ID = 'hyzen-labs-production';
 const YOUTUBE_URL = "https://www.youtube.com/@HyzenLabs";
 const EMAIL_ADDRESS = "jini2aix@gmail.com";
 
-// --- [Firebase Configuration Engine] ---
+// --- [Firebase Core - Global Initialization] ---
 const getFirebaseConfig = () => {
   try {
     if (typeof __firebase_config !== 'undefined' && __firebase_config) {
       return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
     }
-    const viteEnv = import.meta.env.VITE_FIREBASE_CONFIG;
+    const viteEnv = import.meta.env?.VITE_FIREBASE_CONFIG;
     if (viteEnv) return typeof viteEnv === 'string' ? JSON.parse(viteEnv) : viteEnv;
   } catch (e) {}
   return null;
@@ -57,55 +57,71 @@ const getFirebaseConfig = () => {
 
 const firebaseConfig = getFirebaseConfig();
 const appId = typeof __app_id !== 'undefined' ? __app_id : FALLBACK_APP_ID;
-const app = firebaseConfig ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]) : null;
-const auth = app ? getAuth(app) : null;
-const db = app ? getFirestore(app) : null;
+const firebaseApp = firebaseConfig ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]) : null;
+const auth = firebaseApp ? getAuth(firebaseApp) : null;
+const db = firebaseApp ? getFirestore(firebaseApp) : null;
 
-// --- [System Sound Engine - FIXED] ---
+// --- [Utility Functions] ---
 const playSystemSound = (type) => {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain); gain.connect(audioCtx.destination);
-    
     if (type === 'start') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+      osc.type = 'sine'; osc.frequency.setValueAtTime(440, audioCtx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.5);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.5);
     } else if (type === 'popup') {
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      osc.type = 'triangle'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.1);
     }
-  } catch (e) {
-    // Audio context might be blocked by browser policy until interaction
-  }
+  } catch (e) {}
 };
 
-// --- [Neural Link Component] ---
+const compressImage = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIDE = 800;
+        let width = img.width; let height = img.height;
+        if (width > height) { if (width > MAX_SIDE) { height *= MAX_SIDE / width; width = MAX_SIDE; } }
+        else { if (height > MAX_SIDE) { width *= MAX_SIDE / height; height = MAX_SIDE; } }
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.6));
+      };
+    };
+  });
+};
+
+// --- [Neural Link Component - FIXED Logic] ---
 const NeuralLinkLine = ({ bubbleCoords }) => {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
-  
   useEffect(() => {
     const handleResize = () => setWinSize({ w: window.innerWidth, h: window.innerHeight });
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // 중앙 지문 아이콘의 고정 앵커 포인트 (%)
   const profilePos = { top: 68, left: 50 };
+
+  // 버블(0,0)에서 지문(endX, endY)까지의 상대적 거리 계산 (px)
   const endX = (profilePos.left - bubbleCoords.left) * (winSize.w / 100);
   const endY = (profilePos.top - bubbleCoords.top) * (winSize.h / 100);
-  const cpX = endX * 0.5 + bubbleCoords.curveSeed;
-  const cpY = endY * 0.5;
+
+  // 유기적인 곡률 형성을 위한 제어점 (베지어 곡선)
+  const cpX = endX * 0.4 + bubbleCoords.curveSeed;
+  const cpY = endY * 0.4;
 
   return (
     <svg 
@@ -116,10 +132,10 @@ const NeuralLinkLine = ({ bubbleCoords }) => {
         d={`M 0 0 Q ${cpX} ${cpY} ${endX} ${endY}`} 
         fill="none" 
         stroke="rgba(34, 211, 238, 0.4)" 
-        strokeWidth="1.2" 
-        strokeDasharray="5 10" 
+        strokeWidth="1" 
+        strokeDasharray="4 8" 
         className="animate-neural-flow"
-        style={{ opacity: 0.35 }}
+        style={{ opacity: 0.3 }}
       />
     </svg>
   );
@@ -132,7 +148,7 @@ const FloatingBubble = ({ msg }) => {
     duration: `${Math.random() * 15 + 25}s`, 
     delay: `${Math.random() * 5}s`,
     twinkleDuration: `${Math.random() * 2 + 1}s`,
-    curveSeed: Math.random() * 150 - 75 
+    curveSeed: Math.random() * 160 - 80 
   }));
   
   return (
@@ -220,7 +236,7 @@ const App = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // --- [Firebase Authentication Logic] ---
+  // --- [Firebase Authentication Logic - Strict Rule 3] ---
   useEffect(() => {
     const initAuth = async () => {
       if (!auth) { 
@@ -250,24 +266,22 @@ const App = () => {
     const timer = setTimeout(() => {
       setIsInitializing(false);
       playSystemSound('start');
-      setTimeout(() => { 
-        setShowMainTitle(true); 
-        playSystemSound('popup'); 
-      }, 500);
+      setTimeout(() => { setShowMainTitle(true); playSystemSound('popup'); }, 500);
     }, 3000);
     return () => { unsubscribe(); clearTimeout(timer); };
   }, []);
 
-  // --- [Cloud Firestore Data Sync] ---
+  // --- [Cloud Firestore Data Sync - Guarded by User State] ---
   useEffect(() => {
     if (!user || !db) return;
+    // Rule 1: Strict Paths
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
     const unsubscribe = onSnapshot(q, s => {
       const msgs = s.docs.map(d => ({ id: d.id, ...d.data() }));
       setMessages(msgs.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
     }, (err) => { 
       setCloudStatus('error'); 
-      setDiagInfo("Access Restricted"); 
+      setDiagInfo("Cloud Link Error"); 
     });
     return () => unsubscribe();
   }, [user]);
@@ -381,8 +395,8 @@ const App = () => {
                 <div className="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-white rounded-full animate-boot-load" />
              </div>
              <div className="flex justify-between w-full">
-                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Establishing Link...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.7.3</span>
+                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Establishing Sync...</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.7.4</span>
              </div>
           </div>
         </div>
@@ -392,7 +406,7 @@ const App = () => {
       <nav className="z-[100] px-6 pt-10 sm:pt-6 pb-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.7.3 | Neural Sync</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.7.4 | Enterprise Sync</span>
         </div>
         <div className="flex items-center gap-3">
            <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 transition-all group" title="Contact Email">
@@ -401,7 +415,7 @@ const App = () => {
            <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-red-500 transition-all group" title="YouTube Channel">
               <Youtube size={14} className="group-hover:scale-110 transition-transform" />
            </a>
-           <div className={`w-8 h-8 rounded-lg glass-panel flex items-center justify-center transition-all ${cloudStatus === 'connected' ? 'text-cyan-400 border-cyan-500/30' : 'text-amber-500'}`}>
+           <div className={`w-8 h-8 rounded-lg glass-panel flex items-center justify-center transition-all ${cloudStatus === 'connected' ? 'text-cyan-400 border-cyan-500/30' : 'text-amber-500 animate-pulse'}`}>
               <Cloud size={14} />
            </div>
         </div>
@@ -409,7 +423,6 @@ const App = () => {
 
       {/* --- Hero Section --- */}
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
-        {/* Floating Messages with Neural Link */}
         <div className="absolute inset-0 pointer-events-none z-[1]">
           {messages.slice(0, 12).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
         </div>
