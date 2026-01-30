@@ -24,37 +24,36 @@ import {
   Fingerprint,
   Mail,
   Sparkles,
-  User
+  User,
+  Youtube,
+  Zap
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.5.0 | Ultimate Sync & Neural Restoration]
- * 1. 클라우드 연동 최적화: Vercel(Vite)과 Canvas 환경을 모두 지원하는 하이브리드 Config 로더 적용
- * 2. 신경망 선(Neural Link) 완벽 복구: 픽셀 좌표 기반의 유기적 곡선 및 실시간 추적 시스템 재활성화
- * 3. 스타일리시 ID & 버블: 정원형 프레임, 좌측 상단 이름 태그(글로우/이탈릭) 디자인 유지
- * 4. 지능형 자율주행: 상호작용 감지 후 3초 뒤 자동 재개 및 팝업 종료 후 즉시 재개 로직 고수
- * 5. 리사이징 무결성: fixed inset-0 및 동적 vh 변수 시스템으로 모바일 뷰포트 오류 원천 차단
+ * [Hyzen Labs. CTO Optimized - R2.5.2 | Neural Fusion Refined]
+ * 1. 히어로 사이즈 최적화: 텍스트 크기를 축소하여 시각적 여백 및 가독성 밸런스 확보
+ * 2. 히어로 하이라이트 유지: "FUSED" 키워드의 동적 쉬머 및 네온 글로우 효과 계승
+ * 3. 푸터 무결성: "All Rights Reserved by HYZEN LABS." 단일 문구 고수
+ * 4. 신경망 시스템: 실시간 픽셀 좌표 추적 및 유기적 곡선 로직 유지
  */
 
 const ADMIN_PASS = "5733906";
 const FALLBACK_APP_ID = 'hyzen-labs-production';
+const YOUTUBE_URL = "https://www.youtube.com/@HyzenLabs_";
+const EMAIL_ADDRESS = "jini2aix@gmail.com";
 
 // --- [Firebase Core - Multi-Environment Hybrid Initialization] ---
 const getFirebaseConfig = () => {
-  // 1. Vercel/Vite 환경 변수 우선 확인
   try {
-    // @ts-ignore
     const viteEnv = import.meta.env.VITE_FIREBASE_CONFIG;
     if (viteEnv) return typeof viteEnv === 'string' ? JSON.parse(viteEnv) : viteEnv;
   } catch (e) {}
 
-  // 2. Canvas 전역 변수 확인
   if (typeof __firebase_config !== 'undefined' && __firebase_config) {
     try {
       return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
     } catch (e) {}
   }
-  
   return null;
 };
 
@@ -63,7 +62,6 @@ const firebaseConfig = getFirebaseConfig();
 const getAppId = () => {
   if (typeof __app_id !== 'undefined' && __app_id) return __app_id;
   try {
-    // @ts-ignore
     return import.meta.env.VITE_APP_ID || FALLBACK_APP_ID;
   } catch(e) { return FALLBACK_APP_ID; }
 };
@@ -114,10 +112,8 @@ const compressImage = (file) => {
   });
 };
 
-// --- [Neural Link Component - Restored Logic] ---
 const NeuralLinkLine = ({ bubbleCoords }) => {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
-  
   useEffect(() => {
     const handleResize = () => setWinSize({ w: window.innerWidth, h: window.innerHeight });
     window.addEventListener('resize', handleResize);
@@ -125,8 +121,6 @@ const NeuralLinkLine = ({ bubbleCoords }) => {
   }, []);
 
   const profilePos = { top: 72, left: 50 };
-  const startX = 0;
-  const startY = 0;
   const endX = (profilePos.left - bubbleCoords.left) * (winSize.w / 100);
   const endY = (profilePos.top - bubbleCoords.top) * (winSize.h / 100);
   const cpX = endX / 2 + bubbleCoords.curveSeed;
@@ -134,15 +128,7 @@ const NeuralLinkLine = ({ bubbleCoords }) => {
 
   return (
     <svg className="absolute top-1/2 left-1/2 overflow-visible pointer-events-none opacity-20 z-0" style={{ width: 1, height: 1 }}>
-      <path 
-        d={`M ${startX} ${startY} Q ${cpX} ${cpY} ${endX} ${endY}`} 
-        fill="none" 
-        stroke="rgba(34, 211, 238, 0.5)" 
-        strokeWidth="0.8" 
-        strokeDasharray="3 6"
-        className="animate-pulse"
-        style={{ animationDuration: '3s' }}
-      />
+      <path d={`M 0 0 Q ${cpX} ${cpY} ${endX} ${endY}`} fill="none" stroke="rgba(34, 211, 238, 0.5)" strokeWidth="0.8" strokeDasharray="3 6" className="animate-pulse" style={{ animationDuration: '3s' }} />
     </svg>
   );
 };
@@ -238,12 +224,11 @@ const App = () => {
     const handleResize = () => {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
-      if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen) { window.scrollTo(0, 0); }
     };
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
+  }, []);
 
   useEffect(() => {
     if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || isInitializing || isAutoPlayPaused) return;
@@ -267,33 +252,22 @@ const App = () => {
     }, 3000);
   }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
 
-  // --- [Mandatory Rule 3: Auth Init] ---
   useEffect(() => {
     const initAuth = async () => {
-      if (!auth) { 
-        setCloudStatus('error'); 
-        setDiagInfo("Auth System Not Found");
-        return; 
-      }
+      if (!auth) { setCloudStatus('error'); setDiagInfo("Auth System Not Found"); return; }
       try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
         } else {
           await signInAnonymously(auth);
         }
-      } catch (err) { 
-        setCloudStatus('error'); 
-        setDiagInfo("Auth Failed");
-      }
+      } catch (err) { setCloudStatus('error'); setDiagInfo("Auth Failed"); }
     };
 
     initAuth();
     const unsubscribe = auth ? onAuthStateChanged(auth, u => {
       setUser(u);
-      if (u) {
-        setCloudStatus('connected');
-        setDiagInfo("Cloud Link Secure");
-      }
+      if (u) { setCloudStatus('connected'); setDiagInfo("Cloud Link Secure"); }
     }) : () => {};
 
     const timer = setTimeout(() => {
@@ -305,23 +279,13 @@ const App = () => {
     return () => { unsubscribe(); clearTimeout(timer); };
   }, []);
 
-  // --- [Mandatory Rule 1 & 2: Data Stream] ---
   useEffect(() => {
     if (!user || !db) return;
-    
-    // Path Rule: /artifacts/{appId}/public/data/{collectionName}
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-    
     const unsubscribe = onSnapshot(q, s => {
       const msgs = s.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Rule 2: Memory sorting to avoid missing indexes
       setMessages(msgs.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
-    }, (err) => { 
-      console.error("Firestore Permission Denied:", err);
-      setCloudStatus('error'); 
-      setDiagInfo("Permission Denied");
-    });
-
+    }, (err) => { setCloudStatus('error'); setDiagInfo("Permission Denied"); });
     return () => unsubscribe();
   }, [user]);
 
@@ -330,12 +294,6 @@ const App = () => {
     setSelectedItem(null); setIsAutoPlayPaused(false);
     setDeletePass("");
     if (autoPlayResumeTimerRef.current) clearTimeout(autoPlayResumeTimerRef.current);
-    setTimeout(() => { 
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-      const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-      window.dispatchEvent(new Event('resize'));
-    }, 60);
   };
 
   const roadmapSteps = [
@@ -386,6 +344,30 @@ const App = () => {
           100% { width: 100%; filter: brightness(2); }
         }
         .animate-boot-load { animation: bootProgress 3s cubic-bezier(0.65, 0, 0.35, 1) forwards; }
+        
+        /* Shimmer Highlight for FUSED */
+        @keyframes fusedShimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .fused-highlight {
+          background: linear-gradient(90deg, #22d3ee 0%, #ffffff 50%, #22d3ee 100%);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: fusedShimmer 4s linear infinite;
+          position: relative;
+        }
+        .fused-highlight::after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          left: 0;
+          width: 100%;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, #22d3ee, transparent);
+          box-shadow: 0 0 10px #22d3ee;
+        }
       `}</style>
 
       {isInitializing && (
@@ -400,26 +382,49 @@ const App = () => {
              </div>
              <div className="flex justify-between w-full">
                 <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Initializing...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.5.0</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.5.2</span>
              </div>
           </div>
         </div>
       )}
 
+      {/* --- Navigation --- */}
       <nav className="z-[100] px-6 py-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.5.0 | Total Sync</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.5.2 | Neural Fusion</span>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex flex-col items-end mr-1">
               <span className={`text-[8px] font-brand uppercase tracking-widest ${cloudStatus === 'connected' ? 'text-cyan-400' : 'text-amber-500'}`}>{cloudStatus.toUpperCase()}</span>
               <span className="text-[6px] font-mono opacity-30 uppercase">{diagInfo}</span>
            </div>
-           <div className={`w-8 h-8 rounded-lg glass-panel flex items-center justify-center transition-all ${cloudStatus === 'connected' ? 'text-cyan-400 border-cyan-500/30' : 'text-amber-500 border-amber-500/30 animate-pulse'}`}><Cloud size={14} /></div>
+           
+           <a 
+              href={`mailto:${EMAIL_ADDRESS}`}
+              className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 hover:border-cyan-500/50 hover:bg-cyan-500/10 transition-all group"
+              title="Contact via Email"
+           >
+              <Mail size={14} className="group-hover:scale-110 transition-transform" />
+           </a>
+
+           <a 
+              href={YOUTUBE_URL} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-red-500 hover:border-red-500/50 hover:bg-red-500/10 transition-all group"
+              title="Hyzen Labs YouTube Channel"
+           >
+              <Youtube size={14} className="group-hover:scale-110 transition-transform" />
+           </a>
+
+           <div className={`w-8 h-8 rounded-lg glass-panel flex items-center justify-center transition-all ${cloudStatus === 'connected' ? 'text-cyan-400 border-cyan-500/30' : 'text-amber-500 border-amber-500/30 animate-pulse'}`}>
+              <Cloud size={14} />
+           </div>
         </div>
       </nav>
 
+      {/* --- Hero Section - Refined Sizing --- */}
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none z-[1]">
           {messages.slice(0, 12).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
@@ -427,11 +432,12 @@ const App = () => {
         
         <div className={`relative inline-block mb-4 pt-2 z-10 ${showMainTitle ? 'animate-hero-pop' : 'opacity-0'}`}>
           <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10" />
-          <h1 className="text-[10vw] sm:text-8xl font-title tracking-[-0.07em] leading-none uppercase">
-            <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent block">ME,</span>
+          {/* 히어로 텍스트 사이즈 축소: text-[8vw] sm:text-7xl 로 조정 */}
+          <h1 className="text-[8vw] sm:text-7xl font-title tracking-[-0.07em] leading-none uppercase">
+            <span className="block fused-highlight drop-shadow-[0_0_15px_rgba(34,211,238,0.4)]">FUSED</span>
             <span className="block my-1" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.2)', color: 'transparent' }}>REALITY</span>
             <span className="block mt-1">
-              <span className="text-[0.35em] sm:text-[0.45em] text-white animate-text-glow align-middle mr-2 sm:mr-4 inline-block transform -translate-y-[0.15em] font-black tracking-widest opacity-90">AND</span>
+              <span className="text-[0.35em] sm:text-[0.45em] text-white animate-text-glow align-middle mr-2 sm:mr-4 inline-block transform -translate-y-[0.15em] font-black tracking-widest opacity-90">SYNC</span>
               <span className="bg-gradient-to-b from-cyan-400 to-cyan-700 bg-clip-text text-transparent inline-block">AI</span>
             </span>
           </h1>
@@ -516,10 +522,12 @@ const App = () => {
         </div>
       </div>
 
-      <footer className="z-10 py-8 flex flex-col items-center gap-2 shrink-0">
+      <footer className="z-10 py-10 flex flex-col items-center shrink-0">
         <div className="flex flex-col items-center">
           <span className="font-brand text-[10px] tracking-[0.8em] font-black uppercase animate-breathe text-cyan-400/80">HYZEN LABS. 2026</span>
-          <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.2em] mt-1">All right reserved by Hyzen Labs.</span>
+          <div className="mt-3">
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.3em] font-light">All Rights Reserved by HYZEN LABS.</span>
+          </div>
         </div>
       </footer>
 
@@ -538,7 +546,7 @@ const App = () => {
                 const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
                 await addDoc(q, { ...newMessage, createdAt: serverTimestamp(), date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) });
                 setNewMessage({ name: '', text: '', image: null }); closeModal(); playSystemSound('popup');
-              } catch (err) { setErrorMsg("Sync Error"); } finally { setIsUploading(false); }
+              } catch (err) { console.error(err); } finally { setIsUploading(false); }
             }} className="space-y-4">
               <div className="flex gap-2">
                 <input type="text" style={{fontSize: '16px'}} placeholder="IDENTITY ID" className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-brand outline-none focus:border-cyan-500/50" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
@@ -560,14 +568,7 @@ const App = () => {
           <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 text-center" onClick={e => e.stopPropagation()}>
             <Lock size={32} className="text-red-500 mx-auto mb-4" />
             <h2 className="text-lg font-black uppercase mb-6">Erase Trace?</h2>
-            <input 
-              type="password" 
-              style={{fontSize: '16px'}} 
-              placeholder="PASSCODE" 
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center mb-6 outline-none focus:border-red-500" 
-              value={deletePass} 
-              onChange={(e) => setDeletePass(e.target.value)} 
-            />
+            <input type="password" style={{fontSize: '16px'}} placeholder="PASSCODE" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center mb-6 outline-none focus:border-red-500" value={deletePass} onChange={(e) => setDeletePass(e.target.value)} />
             <div className="flex gap-2">
               <button onClick={closeModal} className="flex-1 py-3 rounded-xl bg-white/5 text-[10px] font-brand uppercase">Abort</button>
               <button onClick={async () => {
