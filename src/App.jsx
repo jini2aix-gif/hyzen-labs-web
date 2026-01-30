@@ -30,12 +30,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R2.8.0 | Enterprise Integrity & Neural Sync]
- * 1. 클라우드 연동 무결성: Rule 3 준수. Auth 세션 확립 후 Firestore 리스너 활성화 (재분석 완료)
- * 2. 신경망 선(Neural Link) 가시성: SVG 오프셋 보정 및 버블-지문 간 유기적 베지어 곡선 복구
- * 3. 런타임 안정성: playSystemSound 전역 접근성 확보 및 Firebase 예외 처리 강화
- * 4. 기존 디자인 고수: FUSED REALITY SYNC AI 워딩, 모바일 Safe-area(pt-10) 유지
- * 5. 바이오메트릭 인증: 중앙 지문 아이콘 중심의 보안 터미널 미학 유지
+ * [Hyzen Labs. CTO Optimized - R2.8.1 | High-Visibility Neural Sync]
+ * 1. 신경망 가시성 강화: 선의 두께(1.5px), 투명도(0.6), 네온 글로우(drop-shadow) 효과 적용
+ * 2. 렌더링 무결성: SVG 컨테이너 가시 영역 최적화 및 버블-지문 간 정밀 벡터 연산
+ * 3. 클라우드 안정성 유지: Rule 3 준수. Auth 세션 확립 후 Firestore 동기화 엔진 고수
+ * 4. 기존 디자인 고수: FUSED REALITY SYNC AI 워딩, 모바일 최적화 레이아웃(pt-10, h-150px) 보존
  */
 
 const ADMIN_PASS = "5733906";
@@ -43,7 +42,7 @@ const FALLBACK_APP_ID = 'hyzen-labs-production';
 const YOUTUBE_URL = "https://www.youtube.com/@HyzenLabs";
 const EMAIL_ADDRESS = "jini2aix@gmail.com";
 
-// --- [Firebase Core - Multi-Environment Hybrid Initialization] ---
+// --- [Firebase Core - Global Initialization] ---
 const getFirebaseConfig = () => {
   try {
     if (typeof __firebase_config !== 'undefined' && __firebase_config) {
@@ -61,7 +60,7 @@ const firebaseApp = firebaseConfig ? (getApps().length === 0 ? initializeApp(fir
 const auth = firebaseApp ? getAuth(firebaseApp) : null;
 const db = firebaseApp ? getFirestore(firebaseApp) : null;
 
-// --- [Utility Functions - Audio Engine] ---
+// --- [Utility Functions] ---
 const playSystemSound = (type) => {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -103,7 +102,7 @@ const compressImage = (file) => {
   });
 };
 
-// --- [Neural Link Component - Enhanced Visibility] ---
+// --- [Neural Link Component - High Visibility Optimization] ---
 const NeuralLinkLine = ({ bubbleCoords }) => {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   useEffect(() => {
@@ -112,30 +111,33 @@ const NeuralLinkLine = ({ bubbleCoords }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 중앙 지문 아이콘의 절대 앵커 (%)
+  // 중앙 지문 아이콘의 절대 앵커 (%) - Hero 섹션 중앙부
   const profilePos = { top: 68, left: 50 };
 
-  // 버블(0,0)에서 지문(endX, endY)까지의 벡터 연산
+  // 버블 중심으로부터 앵커 포인트까지의 상대적 픽셀 거리 계산
   const endX = (profilePos.left - bubbleCoords.left) * (winSize.w / 100);
   const endY = (profilePos.top - bubbleCoords.top) * (winSize.h / 100);
 
-  // 베지어 곡선 곡률 조정
+  // 유기적인 곡률 형성을 위한 제어점 (Bezier Curve Control Point)
   const cpX = endX * 0.5 + bubbleCoords.curveSeed;
   const cpY = endY * 0.5;
 
   return (
     <svg 
       className="absolute top-1/2 left-1/2 overflow-visible pointer-events-none z-[-1]"
-      style={{ width: '1px', height: '1px' }}
+      style={{ width: '2px', height: '2px' }}
     >
       <path 
         d={`M 0 0 Q ${cpX} ${cpY} ${endX} ${endY}`} 
         fill="none" 
-        stroke="rgba(34, 211, 238, 0.4)" 
-        strokeWidth="1" 
-        strokeDasharray="4 8" 
+        stroke="rgba(34, 211, 238, 0.6)" 
+        strokeWidth="1.5" 
+        strokeDasharray="4 6" 
         className="animate-neural-flow"
-        style={{ opacity: 0.25 }}
+        style={{ 
+          opacity: 0.6, // 가시성 대폭 상향
+          filter: 'drop-shadow(0 0 3px rgba(34, 211, 238, 0.4))' // 네온 글로우 추가
+        }}
       />
     </svg>
   );
@@ -148,7 +150,7 @@ const FloatingBubble = ({ msg }) => {
     duration: `${Math.random() * 15 + 25}s`, 
     delay: `${Math.random() * 5}s`,
     twinkleDuration: `${Math.random() * 2 + 1}s`,
-    curveSeed: Math.random() * 140 - 70 
+    curveSeed: Math.random() * 120 - 60 
   }));
   
   return (
@@ -236,7 +238,7 @@ const App = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // --- [Firebase Authentication Module - FIXED] ---
+  // --- [Firebase Authentication Module - Enterprise Grade] ---
   useEffect(() => {
     const initAuth = async () => {
       if (!auth) { 
@@ -274,14 +276,12 @@ const App = () => {
     return () => { unsubscribe(); clearTimeout(timer); };
   }, []);
 
-  // --- [Cloud Data Sync Module - Guarded by User Session] ---
+  // --- [Cloud Data Sync Module - Rule 3 Compliance] ---
   useEffect(() => {
     if (!user || !db) return;
 
-    // Rule 1: Strict Paths
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
     
-    // Firestore Listener (Rule 2: Sorting in memory)
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
         const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -294,7 +294,7 @@ const App = () => {
     );
     
     return () => unsubscribe();
-  }, [user, appId]); // dependency on user to ensure Rule 3
+  }, [user, appId]);
 
   useEffect(() => {
     if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || isInitializing || isAutoPlayPaused) return;
@@ -405,8 +405,8 @@ const App = () => {
                 <div className="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-white rounded-full animate-boot-load" />
              </div>
              <div className="flex justify-between w-full">
-                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Establishing Integrity...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R2.8.0</span>
+                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Synchronizing Links...</span>
+                <span className="font-mono text-[8px] text-white/40 uppercase">R2.8.1</span>
              </div>
           </div>
         </div>
@@ -416,7 +416,7 @@ const App = () => {
       <nav className="z-[100] px-6 pt-10 sm:pt-6 pb-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col text-left">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.8.0 | Enterprise Edition</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R2.8.1 | High Visibility</span>
         </div>
         <div className="flex items-center gap-3">
            <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 transition-all group" title="Contact Email">
@@ -433,7 +433,7 @@ const App = () => {
 
       {/* --- Hero Section --- */}
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
-        {/* Floating Messages with Optimized Neural Link */}
+        {/* Floating Messages with Optimized High-Visibility Neural Link */}
         <div className="absolute inset-0 pointer-events-none z-[1]">
           {messages.slice(0, 12).map((msg) => <FloatingBubble key={`hb-${msg.id}`} msg={msg} />)}
         </div>
