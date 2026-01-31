@@ -31,10 +31,10 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R3.1.0 | Visual Memory Update]
- * 1. 방명록 이미지 첨부: compressImage 유틸을 통한 데이터 최적화 업로드
- * 2. 상세 팝업 레이아웃: 이미지-텍스트 최적화 배치 및 Close 인터페이스
- * 3. 기존 Pure Data Drift 컨셉 유지
+ * [Hyzen Labs. CTO Optimized - R3.2.0 | Kinetic Memory Scan]
+ * 1. 방명록 상세 팝업: Ken Burns 패닝 효과 추가 (이미지를 자동으로 훑는 연출)
+ * 2. 시각적 동기화: 상세 팝업 이미지 위에 미세 스캔라인 레이어 배치
+ * 3. 기존 R3.1.0 데이터 스키마 및 클라우드 동기화 로직 보존
  */
 
 const ADMIN_PASS = "5733906";
@@ -321,6 +321,16 @@ const App = () => {
         .animate-boot-load { animation: bootProgress 3s cubic-bezier(0.65, 0, 0.35, 1) forwards; }
         .fused-highlight { background: linear-gradient(90deg, #22d3ee 0%, #ffffff 50%, #22d3ee 100%); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: fusedShimmer 4s linear infinite; position: relative; }
         @keyframes fusedShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        
+        /* Kinetic Memory Scan Animation */
+        @keyframes kineticScan {
+          0% { transform: scale(1.1) translate(0, 0); }
+          25% { transform: scale(1.3) translate(-3%, -2%); }
+          50% { transform: scale(1.2) translate(2%, 3%); }
+          75% { transform: scale(1.4) translate(-1%, -3%); }
+          100% { transform: scale(1.1) translate(0, 0); }
+        }
+        .animate-kinetic-scan { animation: kineticScan 25s ease-in-out infinite; }
       `}</style>
 
       {isInitializing && (
@@ -336,7 +346,7 @@ const App = () => {
       <nav className="z-[100] px-6 pt-10 sm:pt-6 pb-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R3.1.0 | Memory Sync</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R3.2.0 | Kinetic Memory</span>
         </div>
         <div className="flex gap-3">
            <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 transition-all"><Mail size={14} /></a>
@@ -429,38 +439,48 @@ const App = () => {
         <span className="font-brand text-[8px] sm:text-[10px] tracking-[0.8em] font-black uppercase animate-breathe text-cyan-400/80">HYZEN LABS. 2026</span>
       </footer>
 
-      {/* --- Trace Detail Modal (NEW) --- */}
+      {/* --- Trace Detail Modal --- */}
       {selectedTrace && (
         <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4 sm:p-8 bg-black/80 backdrop-blur-xl" onClick={closeModal}>
           <div className="w-full max-w-2xl glass-panel rounded-[3rem] overflow-hidden flex flex-col md:flex-row max-h-[90vh]" onClick={e => e.stopPropagation()}>
-            <div className="md:w-1/2 h-64 md:h-auto relative bg-zinc-900 flex items-center justify-center border-b md:border-b-0 md:border-r border-white/10 overflow-hidden">
+            {/* Image Section with Kinetic Panning */}
+            <div className="md:w-1/2 h-64 md:h-auto relative bg-zinc-950 flex items-center justify-center border-b md:border-b-0 md:border-r border-white/10 overflow-hidden">
               {selectedTrace.image ? (
-                <img src={selectedTrace.image} className="w-full h-full object-cover" alt="Trace Visual" />
+                <div className="w-full h-full relative overflow-hidden">
+                   {/* Kinetic Panning Image */}
+                   <img src={selectedTrace.image} className="w-full h-full object-cover animate-kinetic-scan" alt="Trace Visual" />
+                   {/* Scanline Overlay */}
+                   <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.15)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] z-10 pointer-events-none opacity-40 bg-[length:100%_4px,3px_100%]" />
+                   <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-40" />
+                </div>
               ) : (
                 <div className="flex flex-col items-center opacity-10 gap-2">
                   <User size={60} />
                   <span className="font-brand text-[10px] uppercase">No Visual Data</span>
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent md:hidden" />
             </div>
-            <div className="md:w-1/2 p-8 sm:p-12 flex flex-col justify-between relative">
+
+            <div className="md:w-1/2 p-8 sm:p-12 flex flex-col justify-between relative bg-zinc-900/40">
               <button onClick={closeModal} className="absolute top-6 right-6 p-2 text-white/20 hover:text-white hover:bg-white/5 rounded-full transition-all"><X size={20} /></button>
               
               <div className="space-y-6">
-                <div>
-                  <span className="text-cyan-400 font-brand text-[10px] font-black uppercase tracking-[0.3em]">Identity Link Established</span>
+                <div className="animate-hero-pop">
+                  <span className="text-cyan-400 font-brand text-[10px] font-black uppercase tracking-[0.3em] inline-block mb-1 border-b border-cyan-400/30 pb-1">Identity Link Active</span>
                   <h2 className="text-2xl font-black mt-2 uppercase font-title text-white">{selectedTrace.name}</h2>
-                  <span className="text-[9px] font-mono text-white/30 block mt-1">{selectedTrace.date} / SYNC_SUCCESS</span>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-[9px] font-mono text-white/30">{selectedTrace.date} / SYNC_SUCCESS</span>
+                    <div className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse" />
+                  </div>
                 </div>
                 
-                <div className="relative">
+                <div className="relative animate-hero-pop" style={{ animationDelay: '0.2s' }}>
                   <div className="absolute -left-4 top-0 bottom-0 w-[2px] bg-cyan-500/30" />
-                  <p className="text-sm sm:text-base font-light opacity-90 leading-relaxed italic">"{selectedTrace.text}"</p>
+                  <p className="text-sm sm:text-base font-light opacity-90 leading-relaxed italic text-white/80">"{selectedTrace.text}"</p>
                 </div>
               </div>
 
-              <div className="mt-12 pt-6 border-t border-white/5 flex gap-3">
+              <div className="mt-12 pt-6 border-t border-white/5 flex gap-3 animate-hero-pop" style={{ animationDelay: '0.4s' }}>
                 <button onClick={closeModal} className="flex-1 bg-white text-black py-4 rounded-2xl font-brand text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Close Trace</button>
                 <button onClick={() => { setTargetDeleteId(selectedTrace.id); setIsDeleteModalOpen(true); }} className="w-14 h-14 rounded-2xl border border-red-500/20 flex items-center justify-center text-red-500/50 hover:bg-red-500 hover:text-white transition-all"><Trash2 size={20} /></button>
               </div>
@@ -495,7 +515,6 @@ const App = () => {
                 <textarea style={{fontSize: '16px'}} placeholder="LOG DATA..." className="w-full h-24 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-500/50 resize-none transition-all" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
               </div>
 
-              {/* Photo Upload Integration */}
               <div className="flex items-center gap-3">
                 <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
                 <button type="button" onClick={() => fileInputRef.current?.click()} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed transition-all ${newMessage.image ? 'border-cyan-500/50 text-cyan-400 bg-cyan-500/5' : 'border-white/10 text-white/40 hover:border-white/20'}`}>
