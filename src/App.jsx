@@ -26,16 +26,15 @@ import {
   Sparkles,
   User,
   Youtube,
-  Zap
+  Zap,
+  Image as ImageIcon
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R3.0.0 | Pure Data Drift]
- * 1. 신경망 제거: 시각적 복잡도를 줄이기 위해 버블 간의 연결선(Mesh)을 삭제하고 개별 버블의 부유에 집중
- * 2. 활동 영역 유지: 데이터 버블은 상단 히어로 영역(FUSED REALITY 섹션) 내에서만 유동적으로 움직임
- * 3. 클라우드 무결성: Rule 3 (Auth-First) 아키텍처를 통한 안정적인 실시간 데이터 동기화 유지
- * 4. 모바일 최적화: 상단 Safe-area(pt-10) 및 하단 콘텐츠 카드 높이(h-150px) 규격 고수
- * 5. 브랜드 정체성: FUSED REALITY SYNC AI 워딩 하이라이트 및 지문 인터페이스 보존
+ * [Hyzen Labs. CTO Optimized - R3.1.0 | Visual Memory Update]
+ * 1. 방명록 이미지 첨부: compressImage 유틸을 통한 데이터 최적화 업로드
+ * 2. 상세 팝업 레이아웃: 이미지-텍스트 최적화 배치 및 Close 인터페이스
+ * 3. 기존 Pure Data Drift 컨셉 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -43,7 +42,7 @@ const FALLBACK_APP_ID = 'hyzen-labs-production';
 const YOUTUBE_URL = "https://www.youtube.com/@HyzenLabs";
 const EMAIL_ADDRESS = "jini2aix@gmail.com";
 
-// --- [Firebase Core - Global Initialization] ---
+// --- [Firebase Core] ---
 const getFirebaseConfig = () => {
   try {
     if (typeof __firebase_config !== 'undefined' && __firebase_config) {
@@ -103,13 +102,11 @@ const compressImage = (file) => {
   });
 };
 
-// --- [Neural Network Section - Simplified to Bubbles Only] ---
 const NeuralNetwork = ({ messages }) => {
   const nodes = useMemo(() => {
-    // 메시지 데이터를 기반으로 히어로 영역 내 부유하는 개별 노드들만 생성
     return messages.slice(0, 15).map((msg) => ({
       id: msg.id,
-      top: 15 + (Math.random() * 50), // 히어로 영역 내 랜덤 배치
+      top: 15 + (Math.random() * 50),
       left: 10 + (Math.random() * 80),
       duration: `${20 + Math.random() * 15}s`,
       delay: `${Math.random() * 5}s`,
@@ -178,6 +175,7 @@ const App = () => {
   const [activeView, setActiveView] = useState('traces');
   const [activeIndices, setActiveIndices] = useState({ roadmap: 0, works: 0, traces: 0 });
   const [selectedItem, setSelectedItem] = useState(null); 
+  const [selectedTrace, setSelectedTrace] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -204,33 +202,22 @@ const App = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // --- [Firebase Authentication Module] ---
   useEffect(() => {
     const initAuth = async () => {
-      if (!auth) { 
-        setCloudStatus('error'); 
-        setDiagInfo("Auth System Missing"); 
-        return; 
-      }
+      if (!auth) { setCloudStatus('error'); setDiagInfo("Auth System Missing"); return; }
       try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
         } else {
           await signInAnonymously(auth);
         }
-      } catch (err) { 
-        setCloudStatus('error'); 
-        setDiagInfo("Auth Engine Error"); 
-      }
+      } catch (err) { setCloudStatus('error'); setDiagInfo("Auth Engine Error"); }
     };
 
     initAuth();
     const unsubscribe = onAuthStateChanged(auth, u => {
       setUser(u);
-      if (u) { 
-        setCloudStatus('connected'); 
-        setDiagInfo("Cloud Link Active"); 
-      }
+      if (u) { setCloudStatus('connected'); setDiagInfo("Cloud Link Active"); }
     });
 
     const timer = setTimeout(() => {
@@ -242,7 +229,6 @@ const App = () => {
     return () => { unsubscribe(); clearTimeout(timer); };
   }, []);
 
-  // --- [Cloud Data Sync Module] ---
   useEffect(() => {
     if (!user || !db) return;
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
@@ -251,41 +237,48 @@ const App = () => {
         const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         setMessages(msgs.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
       }, 
-      (error) => { 
-        setCloudStatus('error'); 
-        setDiagInfo(`Sync Link Error`); 
-      }
+      (error) => { setCloudStatus('error'); setDiagInfo(`Sync Link Error`); }
     );
     return () => unsubscribe();
   }, [user, appId]);
 
   useEffect(() => {
-    if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || isInitializing || isAutoPlayPaused) return;
+    if (isModalOpen || isGuestbookOpen || isDeleteModalOpen || selectedTrace || isInitializing || isAutoPlayPaused) return;
     const timer = setInterval(() => {
       setActiveIndices(prev => {
         const currentItems = activeView === 'roadmap' ? roadmapSteps : activeView === 'works' ? projects : messages.slice(0, 15);
         if (currentItems.length === 0) return prev;
         return { ...prev, [activeView]: (prev[activeView] + 1) % currentItems.length };
       });
-    }, 1200);
+    }, 2500);
     return () => clearInterval(timer);
-  }, [activeView, isModalOpen, isGuestbookOpen, isDeleteModalOpen, messages, isInitializing, isAutoPlayPaused]);
+  }, [activeView, isModalOpen, isGuestbookOpen, isDeleteModalOpen, selectedTrace, messages, isInitializing, isAutoPlayPaused]);
 
   const handleUserInteraction = useCallback(() => {
     setIsAutoPlayPaused(true);
     if (autoPlayResumeTimerRef.current) clearTimeout(autoPlayResumeTimerRef.current);
     autoPlayResumeTimerRef.current = setTimeout(() => {
-      if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen) {
+      if (!isModalOpen && !isGuestbookOpen && !isDeleteModalOpen && !selectedTrace) {
         setIsAutoPlayPaused(false);
       }
     }, 3000);
-  }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen]);
+  }, [isModalOpen, isGuestbookOpen, isDeleteModalOpen, selectedTrace]);
 
   const closeModal = () => { 
     setIsModalOpen(false); setIsGuestbookOpen(false); setIsDeleteModalOpen(false); 
-    setSelectedItem(null); setIsAutoPlayPaused(false);
+    setSelectedItem(null); setSelectedTrace(null); setIsAutoPlayPaused(false);
     setDeletePass("");
     if (autoPlayResumeTimerRef.current) clearTimeout(autoPlayResumeTimerRef.current);
+  };
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setIsUploading(true);
+      const compressed = await compressImage(file);
+      setNewMessage(prev => ({ ...prev, image: compressed }));
+      setIsUploading(false);
+    }
   };
 
   const roadmapSteps = [
@@ -320,195 +313,171 @@ const App = () => {
         .animate-hero-pop { animation: heroPop 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes fScan { 0% { transform: translateY(-100%); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(100%); opacity: 0; } }
         .animate-f-scan { animation: fScan 2s linear infinite; }
-        @keyframes fBreath { 
-          0%, 100% { opacity: 0.2; transform: scale(0.95); border-color: rgba(34, 211, 238, 0.2); box-shadow: 0 0 5px rgba(34, 211, 238, 0.1); } 
-          50% { opacity: 0.8; transform: scale(1.05); border-color: rgba(34, 211, 238, 0.8); box-shadow: 0 0 20px rgba(34, 211, 238, 0.4); } 
-        }
+        @keyframes fBreath { 0%, 100% { opacity: 0.2; transform: scale(0.95); border-color: rgba(34, 211, 238, 0.2); } 50% { opacity: 0.8; transform: scale(1.05); border-color: rgba(34, 211, 238, 0.8); } }
         .animate-f-breath { animation: fBreath 3s ease-in-out infinite; }
         @keyframes subtleGlow { 0%, 100% { text-shadow: 0 0 10px rgba(255,255,255,0.4); } 50% { text-shadow: 0 0 20px rgba(255,255,255,0.7); } }
         .animate-text-glow { animation: subtleGlow 3s ease-in-out infinite; }
-        @keyframes bootProgress {
-          0% { width: 0%; }
-          30% { width: 45%; }
-          70% { width: 92%; }
-          100% { width: 100%; }
-        }
+        @keyframes bootProgress { 0% { width: 0%; } 100% { width: 100%; } }
         .animate-boot-load { animation: bootProgress 3s cubic-bezier(0.65, 0, 0.35, 1) forwards; }
+        .fused-highlight { background: linear-gradient(90deg, #22d3ee 0%, #ffffff 50%, #22d3ee 100%); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: fusedShimmer 4s linear infinite; position: relative; }
         @keyframes fusedShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        .fused-highlight {
-          background: linear-gradient(90deg, #22d3ee 0%, #ffffff 50%, #22d3ee 100%);
-          background-size: 200% auto;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: fusedShimmer 4s linear infinite;
-          position: relative;
-        }
-        .fused-highlight::after {
-          content: '';
-          position: absolute;
-          bottom: -2px; left: 0; width: 100%; height: 1px;
-          background: linear-gradient(90deg, transparent, #22d3ee, transparent);
-          box-shadow: 0 0 10px #22d3ee;
-        }
       `}</style>
 
       {isInitializing && (
         <div className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center p-8">
-          <div className="relative mb-12">
-            <ShieldCheck size={50} className="text-cyan-400 animate-pulse" />
-            <div className="absolute inset-0 bg-cyan-400/20 blur-xl animate-pulse" />
-          </div>
-          <div className="flex flex-col items-center gap-4 w-64 sm:w-80">
-             <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/10 relative p-[2px]">
-                <div className="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-white rounded-full animate-boot-load" />
-             </div>
-             <div className="flex justify-between w-full">
-                <span className="font-brand text-[8px] tracking-[0.5em] text-cyan-400 uppercase animate-pulse">Establishing Data...</span>
-                <span className="font-mono text-[8px] text-white/40 uppercase">R3.0.0</span>
-             </div>
+          <ShieldCheck size={50} className="text-cyan-400 animate-pulse mb-8" />
+          <div className="w-64 h-2 bg-white/5 rounded-full overflow-hidden border border-white/10 p-[2px]">
+            <div className="h-full bg-cyan-400 rounded-full animate-boot-load" />
           </div>
         </div>
       )}
 
-      {/* --- Navigation --- */}
+      {/* --- Nav --- */}
       <nav className="z-[100] px-6 pt-10 sm:pt-6 pb-4 flex justify-between items-start shrink-0">
-        <div className="flex flex-col text-left">
+        <div className="flex flex-col">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R3.0.0 | Pure Drift</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">R3.1.0 | Memory Sync</span>
         </div>
-        <div className="flex items-center gap-3">
-           <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 transition-all group" title="Contact Email">
-              <Mail size={14} className="group-hover:scale-110 transition-transform" />
-           </a>
-           <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-red-500 transition-all group" title="YouTube Channel">
-              <Youtube size={14} className="group-hover:scale-110 transition-transform" />
-           </a>
-           <div className={`w-8 h-8 rounded-lg glass-panel flex items-center justify-center transition-all ${cloudStatus === 'connected' ? 'text-cyan-400 border-cyan-500/30' : 'text-amber-500 animate-pulse'}`}>
-              <Cloud size={14} />
-           </div>
+        <div className="flex gap-3">
+           <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-cyan-400 transition-all"><Mail size={14} /></a>
+           <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/40 hover:text-red-500 transition-all"><Youtube size={14} /></a>
+           <div className={`w-8 h-8 rounded-lg glass-panel flex items-center justify-center ${cloudStatus === 'connected' ? 'text-cyan-400' : 'text-amber-500'}`}><Cloud size={14} /></div>
         </div>
       </nav>
 
-      {/* --- Hero Section - Restricted Bubble Area --- */}
+      {/* --- Hero --- */}
       <section className="flex-1 z-10 flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
-        {/* Pure Data Drift: Bubbles floating in Hero Area only, No Lines */}
         {messages.length > 0 && <NeuralNetwork messages={messages} />}
-        
         <div className={`relative inline-block mb-4 pt-2 z-10 ${showMainTitle ? 'animate-hero-pop' : 'opacity-0'}`}>
-          <div className="absolute left-0 w-full h-[1px] bg-cyan-500/40 blur-[1.5px] animate-scan z-10" />
           <h1 className="text-[8vw] sm:text-7xl font-title tracking-[-0.07em] leading-none uppercase">
             <span className="block fused-highlight">FUSED</span>
             <span className="block my-1" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.2)', color: 'transparent' }}>REALITY</span>
             <span className="block mt-1">
-              <span className="text-[0.35em] sm:text-[0.45em] text-white animate-text-glow align-middle mr-2 sm:mr-4 inline-block transform -translate-y-[0.15em] font-black tracking-widest opacity-90">SYNC</span>
+              <span className="text-[0.35em] text-white animate-text-glow font-black tracking-widest mr-2 inline-block">SYNC</span>
               <span className="bg-gradient-to-b from-cyan-400 to-cyan-700 bg-clip-text text-transparent inline-block">AI</span>
             </span>
           </h1>
         </div>
 
-        <div className={`mt-2 sm:mt-6 mb-2 flex flex-col items-center gap-6 z-10 transition-all duration-1000 delay-700 ${showMainTitle ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`mt-2 flex flex-col items-center gap-6 z-10 transition-all duration-1000 delay-700 ${showMainTitle ? 'opacity-100' : 'opacity-0'}`}>
           <div onClick={() => setIsGuestbookOpen(true)} className="group relative cursor-pointer active:scale-95 transition-all">
-            <div className="absolute -inset-8 border border-white/5 rounded-full animate-[spin_25s_linear_infinite]" />
-            <div className="absolute inset-0 z-20 rounded-full flex items-center justify-center pointer-events-none overflow-hidden">
-               <div className="absolute inset-0 flex items-center justify-center animate-f-breath">
-                  <Fingerprint className="text-cyan-400/40" size={50} />
-               </div>
-               <div className="w-full h-full bg-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                  <div className="w-full h-1 bg-cyan-400 blur-sm absolute animate-f-scan" />
-                  <div className="flex items-center justify-center h-full"><Fingerprint className="text-cyan-400" size={40} /></div>
-               </div>
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-zinc-900/90 flex items-center justify-center border border-white/15 relative overflow-hidden shadow-[0_0_30px_rgba(34,211,238,0.25)]">
+              <Fingerprint size={42} className="text-cyan-400/80 group-hover:text-cyan-400 group-hover:scale-110 transition-all duration-500" />
+              <div className="absolute w-full h-[2px] bg-cyan-400/40 blur-[2px] animate-f-scan opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[1px] bg-gradient-to-br from-white/30 to-transparent relative z-10 overflow-hidden shadow-[0_0_30px_rgba(34,211,238,0.25)]">
-              <div className="w-full h-full rounded-full bg-zinc-900/90 flex items-center justify-center overflow-hidden border border-white/15 relative">
-                <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent animate-pulse" />
-                <Fingerprint 
-                  size={42} 
-                  className="text-cyan-400/80 group-hover:text-cyan-400 group-hover:scale-110 transition-all duration-500 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]" 
-                />
-                <div className="absolute w-full h-[2px] bg-cyan-400/40 blur-[2px] animate-f-scan opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </div>
-
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 glass-panel border animate-f-breath rounded-full flex items-center gap-2 z-30">
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 glass-panel animate-f-breath rounded-full flex items-center gap-2">
               <MessageSquare size={10} className="text-cyan-400" />
-              <span className="text-[8px] font-brand font-black uppercase tracking-widest text-white/90">Sync Trace</span>
+              <span className="text-[8px] font-brand font-black uppercase tracking-widest">Trace Sync</span>
             </div>
           </div>
-          <div className="text-center pb-2 sm:pb-4">
-            <h3 className="text-sm font-title font-bold tracking-tight">Gene</h3>
-            <span className="text-[8px] font-brand text-white/40 uppercase tracking-[0.4em] block mt-1.5">Founder</span>
+          <div className="text-center">
+            <h3 className="text-sm font-title font-bold">Gene</h3>
+            <span className="text-[8px] font-brand text-white/40 uppercase tracking-[0.4em] block mt-1">Founder</span>
           </div>
         </div>
       </section>
 
       {/* --- Content Area --- */}
-      <div className="z-10 pb-2 px-6 max-lg mx-auto w-full shrink-0 transition-all duration-1000 delay-[1.2s] relative" style={{ opacity: showMainTitle ? 1 : 0 }}>
+      <div className="z-10 pb-4 px-6 mx-auto w-full shrink-0 transition-all duration-1000 delay-[1.2s] relative" style={{ opacity: showMainTitle ? 1 : 0 }}>
         <div className="glass-panel p-1 rounded-2xl flex gap-1 mb-4 border border-white/10 max-w-lg mx-auto relative z-20">
           {['roadmap', 'works', 'traces'].map((view) => (
             <button key={view} onClick={() => { setActiveView(view); setIsAutoPlayPaused(false); }} 
-              className={`flex-1 py-3 rounded-xl text-[8px] font-brand tracking-widest uppercase transition-all ${activeView === view ? 'bg-white text-black font-black shadow-xl scale-105' : 'text-white/30 hover:text-white/60'}`}>
+              className={`flex-1 py-3 rounded-xl text-[8px] font-brand tracking-widest uppercase transition-all ${activeView === view ? 'bg-white text-black font-black' : 'text-white/30 hover:text-white/60'}`}>
               {view}
             </button>
           ))}
         </div>
 
-        <div className="h-[150px] sm:h-[180px] relative max-w-lg mx-auto overflow-visible">
-          <div className="relative z-10 h-full">
-            {activeView === 'traces' ? (
-              <div className="h-full flex flex-col">
-                {messages.length > 0 ? (
-                  <CoverFlow items={messages.slice(0, 15)} activeIndex={activeIndices.traces} setActiveIndex={(i) => setActiveIndices({...activeIndices, traces: i})} onUserInteraction={handleUserInteraction} renderItem={(msg) => (
-                    <div className="group w-full h-full glass-panel rounded-[2rem] relative overflow-hidden border border-violet-500/30 p-5 flex flex-col justify-between cursor-pointer transition-all">
-                      {msg.image && <img src={msg.image} className="absolute inset-0 w-full h-full object-cover opacity-20 grayscale" alt="" />}
-                      <div className="relative z-10 text-left">
-                        <span className="text-[10px] sm:text-[14px] font-brand text-violet-400 font-black uppercase italic tracking-widest">{msg.name}</span>
-                        <p className="text-[9px] sm:text-[11px] font-light mt-1 line-clamp-2 opacity-80 leading-snug">"{msg.text}"</p>
-                      </div>
-                      <div className="relative z-10 flex justify-between items-end">
-                        <span className="text-[6px] font-mono opacity-30">{msg.date}</span>
-                        <button onClick={(e) => { e.stopPropagation(); setTargetDeleteId(msg.id); setIsDeleteModalOpen(true); }} className="p-1 text-white/10 hover:text-red-500"><Trash2 size={12} /></button>
-                      </div>
+        <div className="h-[150px] sm:h-[180px] relative max-w-lg mx-auto">
+          <CoverFlow 
+            items={activeView === 'roadmap' ? roadmapSteps : activeView === 'works' ? projects : messages.slice(0, 15)} 
+            activeIndex={activeIndices[activeView]} 
+            setActiveIndex={(i) => setActiveIndices({...activeIndices, [activeView]: i})} 
+            onUserInteraction={handleUserInteraction} 
+            renderItem={(item) => (
+              <div onClick={() => { if(activeView === 'traces') { setSelectedTrace(item); } else { setSelectedItem(item); setIsModalOpen(true); } }} className="group w-full h-full glass-panel rounded-[2rem] relative overflow-hidden border border-white/15 p-5 flex flex-col justify-between cursor-pointer transition-all hover:border-cyan-500/50">
+                {activeView === 'traces' ? (
+                  <>
+                    {item.image && <img src={item.image} className="absolute inset-0 w-full h-full object-cover opacity-20 grayscale" alt="" />}
+                    <div className="relative z-10 text-left">
+                      <span className="text-[10px] font-brand text-cyan-400 font-black uppercase italic">{item.name}</span>
+                      <p className="text-[9px] font-light mt-1 line-clamp-2 opacity-80">"{item.text}"</p>
                     </div>
-                  )} />
+                    <div className="relative z-10 flex justify-between items-end">
+                      <span className="text-[6px] font-mono opacity-30">{item.date}</span>
+                      <button onClick={(e) => { e.stopPropagation(); setTargetDeleteId(item.id); setIsDeleteModalOpen(true); }} className="p-1 text-white/10 hover:text-red-500"><Trash2 size={12} /></button>
+                    </div>
+                  </>
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center opacity-20 gap-2 border border-dashed border-white/10 rounded-[2rem]">
-                    <Activity size={20} /><span className="text-[8px] font-brand uppercase tracking-widest">Awaiting Data</span>
-                  </div>
+                  <>
+                    <div className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-xl text-cyan-400">
+                      {React.cloneElement(item.icon, { size: 16 })}
+                    </div>
+                    <div>
+                      <span className="text-[6px] font-brand text-white/30 uppercase tracking-widest">{item.phase || item.tag}</span>
+                      <h3 className="text-[10px] sm:text-xs font-bold mt-0.5 uppercase">{item.title}</h3>
+                    </div>
+                  </>
                 )}
               </div>
-            ) : (
-              <CoverFlow items={activeView === 'roadmap' ? roadmapSteps : projects} activeIndex={activeView === 'roadmap' ? activeIndices.roadmap : activeIndices.works} setActiveIndex={(i) => setActiveIndices({...activeIndices, [activeView]: i})} onUserInteraction={handleUserInteraction} renderItem={(item) => (
-                <div onClick={() => { setSelectedItem(item); setIsModalOpen(true); }} className={`w-full h-full glass-panel p-5 rounded-[2rem] border ${activeView === 'roadmap' ? 'border-cyan-500/30' : 'border-emerald-500/30'} flex flex-col justify-between text-left cursor-pointer transition-colors`}>
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white/5 rounded-xl text-cyan-400">
-                    {React.cloneElement(item.icon, { size: 16 })}
-                  </div>
-                  <div>
-                    <span className="text-[6px] font-brand text-white/30 uppercase tracking-widest">{item.phase || item.tag}</span>
-                    <h3 className="text-[10px] sm:text-xs font-bold mt-0.5 uppercase">{item.title}</h3>
-                  </div>
-                </div>
-              )} />
-            )}
-          </div>
+            )} 
+          />
         </div>
       </div>
 
-      <footer className="z-10 py-6 sm:py-10 flex flex-col items-center shrink-0">
+      <footer className="z-10 py-6 sm:py-8 flex flex-col items-center shrink-0">
         <span className="font-brand text-[8px] sm:text-[10px] tracking-[0.8em] font-black uppercase animate-breathe text-cyan-400/80">HYZEN LABS. 2026</span>
-        <div className="mt-2 sm:mt-3">
-          <span className="text-[6px] sm:text-[7px] font-mono opacity-20 uppercase tracking-[0.3em] font-light italic">All Rights Reserved by HYZEN LABS.</span>
-        </div>
       </footer>
 
-      {/* --- Modals --- */}
+      {/* --- Trace Detail Modal (NEW) --- */}
+      {selectedTrace && (
+        <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4 sm:p-8 bg-black/80 backdrop-blur-xl" onClick={closeModal}>
+          <div className="w-full max-w-2xl glass-panel rounded-[3rem] overflow-hidden flex flex-col md:flex-row max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="md:w-1/2 h-64 md:h-auto relative bg-zinc-900 flex items-center justify-center border-b md:border-b-0 md:border-r border-white/10 overflow-hidden">
+              {selectedTrace.image ? (
+                <img src={selectedTrace.image} className="w-full h-full object-cover" alt="Trace Visual" />
+              ) : (
+                <div className="flex flex-col items-center opacity-10 gap-2">
+                  <User size={60} />
+                  <span className="font-brand text-[10px] uppercase">No Visual Data</span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent md:hidden" />
+            </div>
+            <div className="md:w-1/2 p-8 sm:p-12 flex flex-col justify-between relative">
+              <button onClick={closeModal} className="absolute top-6 right-6 p-2 text-white/20 hover:text-white hover:bg-white/5 rounded-full transition-all"><X size={20} /></button>
+              
+              <div className="space-y-6">
+                <div>
+                  <span className="text-cyan-400 font-brand text-[10px] font-black uppercase tracking-[0.3em]">Identity Link Established</span>
+                  <h2 className="text-2xl font-black mt-2 uppercase font-title text-white">{selectedTrace.name}</h2>
+                  <span className="text-[9px] font-mono text-white/30 block mt-1">{selectedTrace.date} / SYNC_SUCCESS</span>
+                </div>
+                
+                <div className="relative">
+                  <div className="absolute -left-4 top-0 bottom-0 w-[2px] bg-cyan-500/30" />
+                  <p className="text-sm sm:text-base font-light opacity-90 leading-relaxed italic">"{selectedTrace.text}"</p>
+                </div>
+              </div>
+
+              <div className="mt-12 pt-6 border-t border-white/5 flex gap-3">
+                <button onClick={closeModal} className="flex-1 bg-white text-black py-4 rounded-2xl font-brand text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Close Trace</button>
+                <button onClick={() => { setTargetDeleteId(selectedTrace.id); setIsDeleteModalOpen(true); }} className="w-14 h-14 rounded-2xl border border-red-500/20 flex items-center justify-center text-red-500/50 hover:bg-red-500 hover:text-white transition-all"><Trash2 size={20} /></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- Guestbook Modal --- */}
       {isGuestbookOpen && (
-        <div className="fixed inset-0 z-[5000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-md overflow-hidden" onClick={closeModal}>
-          <div className="w-full sm:max-w-md glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-8" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[5000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-md" onClick={closeModal}>
+          <div className="w-full sm:max-w-md glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-8 pb-10 sm:pb-8" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-black font-brand uppercase">Sync Trace</h2>
+              <h2 className="text-xl font-black font-brand uppercase">Initiate Sync</h2>
               <button onClick={closeModal}><X size={20} className="opacity-40" /></button>
             </div>
+            
             <form onSubmit={async (e) => {
               e.preventDefault(); if (!newMessage.name || !newMessage.text || isUploading) return;
               setIsUploading(true);
@@ -518,16 +487,46 @@ const App = () => {
                 setNewMessage({ name: '', text: '', image: null }); closeModal(); playSystemSound('popup');
               } catch (err) { console.error(err); } finally { setIsUploading(false); }
             }} className="space-y-4">
-              <input type="text" style={{fontSize: '16px'}} placeholder="IDENTITY ID" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-brand outline-none focus:border-cyan-500/50" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
-              <textarea style={{fontSize: '16px'}} placeholder="LOG DATA..." className="w-full h-24 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-500/50 resize-none" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
-              <button type="submit" className="w-full bg-cyan-500 py-4 rounded-2xl text-black font-brand font-black uppercase tracking-widest transition-all disabled:opacity-50" disabled={isUploading}>{isUploading ? "PROCESS..." : "INITIATE Neural SYNC"}</button>
+              <div className="relative group">
+                <input type="text" style={{fontSize: '16px'}} placeholder="IDENTITY ID" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-brand outline-none focus:border-cyan-500/50 transition-all" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
+              </div>
+              
+              <div className="relative">
+                <textarea style={{fontSize: '16px'}} placeholder="LOG DATA..." className="w-full h-24 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-500/50 resize-none transition-all" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
+              </div>
+
+              {/* Photo Upload Integration */}
+              <div className="flex items-center gap-3">
+                <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed transition-all ${newMessage.image ? 'border-cyan-500/50 text-cyan-400 bg-cyan-500/5' : 'border-white/10 text-white/40 hover:border-white/20'}`}>
+                  {isUploading ? <Loader2 size={16} className="animate-spin" /> : newMessage.image ? <ImageIcon size={16} /> : <Camera size={16} />}
+                  <span className="text-[10px] font-brand uppercase tracking-tighter">{newMessage.image ? "Image Linked" : "Attach Visual"}</span>
+                </button>
+                {newMessage.image && (
+                  <button type="button" onClick={() => setNewMessage({...newMessage, image: null})} className="w-12 h-12 flex items-center justify-center rounded-xl bg-red-500/10 text-red-500 border border-red-500/20"><X size={16} /></button>
+                )}
+              </div>
+
+              {newMessage.image && (
+                <div className="w-full h-32 rounded-2xl overflow-hidden border border-white/10 relative">
+                  <img src={newMessage.image} className="w-full h-full object-cover" alt="Preview" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
+                    <span className="text-[8px] font-mono text-cyan-400 opacity-80 uppercase tracking-widest">Buffer_ready</span>
+                  </div>
+                </div>
+              )}
+
+              <button type="submit" className="w-full bg-cyan-500 py-4 rounded-2xl text-black font-brand font-black uppercase tracking-widest transition-all hover:bg-white active:scale-[0.98] disabled:opacity-50" disabled={isUploading}>
+                {isUploading ? "PROCESS..." : "INITIATE Neural SYNC"}
+              </button>
             </form>
           </div>
         </div>
       )}
 
+      {/* --- Delete Modal --- */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-[6000] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm" onClick={closeModal}>
+        <div className="fixed inset-0 z-[7000] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm" onClick={closeModal}>
           <div className="w-full max-w-xs glass-panel p-8 rounded-[2.5rem] border border-red-500/30 text-center" onClick={e => e.stopPropagation()}>
             <Lock size={32} className="text-red-500 mx-auto mb-4" />
             <h2 className="text-lg font-black uppercase mb-6">Erase Trace?</h2>
@@ -545,9 +544,10 @@ const App = () => {
         </div>
       )}
 
+      {/* --- Roadmap/Work Modal --- */}
       {isModalOpen && selectedItem && (
         <div className="fixed inset-0 z-[4000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md" onClick={closeModal}>
-          <div className="w-full h-[70vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-10 relative overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="w-full h-[75vh] sm:h-auto sm:max-w-xl glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-10 relative overflow-y-auto" onClick={e => e.stopPropagation()}>
             <button onClick={closeModal} className="absolute top-8 right-8 text-white/20 hover:text-white"><X size={24} /></button>
             <span className="text-cyan-400 font-brand text-[10px] font-bold uppercase tracking-[0.4em]">{selectedItem.phase || selectedItem.tag}</span>
             <h2 className="text-2xl font-black mt-2 mb-8 uppercase font-title leading-tight">{selectedItem.title}</h2>
@@ -556,7 +556,7 @@ const App = () => {
               <div><h4 className="text-[10px] font-brand text-white/30 uppercase mb-1 border-l-2 border-cyan-500 pl-3">Process</h4><p className="text-sm font-light opacity-80 leading-relaxed">{selectedItem.process}</p></div>
               <div><h4 className="text-[10px] font-brand text-white/30 uppercase mb-1 border-l-2 border-cyan-500 pl-3">Result</h4><p className="text-sm font-light opacity-80 leading-relaxed">{selectedItem.result}</p></div>
             </div>
-            <button onClick={closeModal} className="w-full bg-white text-black py-4 rounded-2xl font-brand text-[11px] font-black uppercase tracking-widest shadow-xl">Close Link</button>
+            <button onClick={closeModal} className="w-full bg-white text-black py-4 rounded-2xl font-brand text-[11px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Close Link</button>
           </div>
         </div>
       )}
