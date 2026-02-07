@@ -39,8 +39,8 @@ import {
 
 const ADMIN_PASS = "5733906";
 const FALLBACK_APP_ID = 'hyzen-labs-production';
-const YOUTUBE_URL = "https://www.youtube.com/@HyzenLabs";
-const EMAIL_ADDRESS = "jini2aix@gmail.com";
+const YOUTUBE_URL = "Https://youtube.com/@hyzen-labs-ai";
+const EMAIL_ADDRESS = "jini2gene@gmail.com";
 
 // --- [Firebase Core] ---
 const getFirebaseConfig = () => {
