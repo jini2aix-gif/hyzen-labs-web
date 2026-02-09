@@ -14,16 +14,15 @@ import {
   Mail,
   Youtube,
   Plus,
-  ArrowRight,
   User,
   Image as ImageIcon
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R3.5.0 | Neural Matrix Grid]
- * 1. 고밀도 그리드: 모바일 최적화 5x6 그리드 레이아웃 (30개 동시 조망)
- * 2. 인터렉션: 초소형 카드 터치 시 풀스크린 확장 및 팝업 닫기 UI
- * 3. 시각적 정체성: 데이터 패킷(Author + Mini Image) 중심의 매트릭스 시각화
+ * [Hyzen Labs. CTO Optimized - R3.5.1 | Living Neural Matrix]
+ * 1. 히어로 유지: FUSED REALITY SYNC 타이틀 및 소통 링크 복구
+ * 2. 리빙 그리드: 그리드 내 이미지들에 각각 독립적인 미세 애니메이션 적용
+ * 3. 고밀도 매트릭스: 모바일 5x6 그리드로 30개 이상의 데이터 동시 조망
  */
 
 const ADMIN_PASS = "5733906";
@@ -76,7 +75,7 @@ const compressImage = (file) => {
       img.src = event.target.result;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_SIDE = 800;
+        const MAX_SIDE = 1000;
         let width = img.width; let height = img.height;
         if (width > height) { if (width > MAX_SIDE) { height *= MAX_SIDE / width; width = MAX_SIDE; } }
         else { if (height > MAX_SIDE) { width *= MAX_SIDE / height; height = MAX_SIDE; } }
@@ -90,12 +89,12 @@ const compressImage = (file) => {
 
 const NeuralPulse = () => (
   <div className="inline-flex items-center gap-1 h-full px-1">
-    <div className="flex items-end gap-[1px] h-3">
+    <div className="flex items-end gap-[1.2px] h-3.5">
       {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="w-[1.5px] bg-cyan-400/80 rounded-full" style={{ height: '100%', animation: `syncPulse ${1 + i * 0.2}s ease-in-out infinite`, animationDelay: `${i * 0.15}s` }} />
+        <div key={i} className="w-[2px] bg-cyan-400/80 rounded-full" style={{ height: '100%', animation: `syncPulse ${1 + i * 0.2}s ease-in-out infinite`, animationDelay: `${i * 0.15}s` }} />
       ))}
     </div>
-    <div className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse" />
+    <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
   </div>
 );
 
@@ -178,111 +177,140 @@ const App = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-[#050505] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col max-w-full touch-none" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
+    <div className="fixed inset-0 bg-[#040404] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col max-w-full touch-none" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] pointer-events-none z-[1] mix-blend-overlay" />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Michroma&family=Orbitron:wght@400;700;900&family=JetBrains+Mono&display=swap');
         .font-brand { font-family: 'Orbitron', sans-serif; }
         .font-title { font-family: 'Michroma', sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
-        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); }
         
-        /* Grid Layout Optimizations */
-        .matrix-container {
+        /* High-Density Matrix Grid */
+        .matrix-grid {
           display: grid;
           grid-template-columns: repeat(5, 1fr);
-          grid-auto-rows: minmax(min(15vh, 100px), 1fr);
-          gap: 4px;
+          grid-auto-rows: minmax(min(14vh, 90px), 1fr);
+          gap: 3px;
           overflow-y: auto;
           scrollbar-width: none;
-          padding: 8px;
+          padding: 6px;
           scroll-snap-type: y mandatory;
         }
-        .matrix-container::-webkit-scrollbar { display: none; }
+        .matrix-grid::-webkit-scrollbar { display: none; }
         
-        @media (min-width: 768px) {
-          .matrix-container { grid-template-columns: repeat(8, 1fr); }
+        @media (min-width: 1024px) {
+          .matrix-grid { grid-template-columns: repeat(10, 1fr); }
         }
 
+        /* Packet Animation */
         .data-packet {
           scroll-snap-align: start;
           position: relative;
-          aspect-ratio: 0.8 / 1;
+          aspect-ratio: 0.85 / 1;
           overflow: hidden;
-          background: rgba(255,255,255,0.02);
-          border: 0.5px solid rgba(255,255,255,0.05);
-          transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+          background: #0a0a0a;
+          border: 0.5px solid rgba(255,255,255,0.03);
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .data-packet:active {
-          transform: scale(0.92);
-          background: rgba(34, 211, 238, 0.1);
-          border-color: rgba(34, 211, 238, 0.4);
+        .data-packet:active { transform: scale(0.94); border-color: #22d3ee; }
+
+        @keyframes microPan {
+          0% { transform: scale(1) translate(0, 0); }
+          50% { transform: scale(1.15) translate(2%, 2%); }
+          100% { transform: scale(1) translate(0, 0); }
         }
+        .animate-micro-pan { animation: microPan 25s ease-in-out infinite; }
 
         @keyframes syncPulse { 0%, 100% { height: 30%; opacity: 0.3; } 50% { height: 100%; opacity: 1; } }
-        @keyframes heroPop { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
-        .animate-hero-pop { animation: heroPop 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes heroPop { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+        .animate-hero-pop { animation: heroPop 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
         .fused-highlight { background: linear-gradient(90deg, #22d3ee 0%, #ffffff 50%, #22d3ee 100%); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: fusedShimmer 4s linear infinite; }
         @keyframes fusedShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
-        @keyframes coreBreathe { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.15); opacity: 0.8; } }
+        @keyframes coreBreathe { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.2); opacity: 0.8; } }
         .animate-core-breathe { animation: coreBreathe 4s ease-in-out infinite; }
       `}</style>
 
       {/* --- Boot Sequence --- */}
       {isInitializing && (
-        <div className="fixed inset-0 z-[10000] bg-[#050505] flex flex-col items-center justify-center p-8 overflow-hidden">
+        <div className="fixed inset-0 z-[10000] bg-[#040404] flex flex-col items-center justify-center p-8 overflow-hidden">
           <div className="absolute w-[400px] h-[400px] bg-cyan-500/5 blur-[100px] rounded-full animate-core-breathe" />
-          <div className="relative w-12 h-12 bg-cyan-400 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(34,211,238,0.4)] animate-pulse" />
-          <div className="mt-8 flex flex-col items-center gap-2">
-            <span className="font-brand text-[8px] tracking-[0.6em] text-cyan-400 font-black uppercase">Grid Loading</span>
-            <span className="text-[6px] font-mono opacity-20 uppercase tracking-[0.3em]">Hyzen R3.5.0</span>
+          <div className="relative w-14 h-14 bg-gradient-to-tr from-cyan-400 to-white rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(34,211,238,0.3)] animate-pulse" />
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <span className="font-brand text-[9px] tracking-[0.6em] text-cyan-400 font-black uppercase">Matrix Initialization</span>
+            <span className="text-[6px] font-mono opacity-20 uppercase tracking-[0.3em]">Hyzen R3.5.1 | GENE Protocol</span>
           </div>
         </div>
       )}
 
-      {/* --- Nav --- */}
-      <nav className="z-[100] px-6 pt-10 pb-2 flex justify-between items-center shrink-0 border-b border-white/5">
+      {/* --- Global Header (Links Restoration) --- */}
+      <nav className="z-[100] px-6 pt-12 pb-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col">
-          <span className="font-brand text-[9px] tracking-[0.4em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-          <div className="flex items-center gap-1.5 mt-0.5">
-             <span className="text-[6px] opacity-20 uppercase tracking-[0.2em] font-brand">Matrix Sync</span>
-             <NeuralPulse />
-          </div>
+          <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
+          <span className="text-[7px] opacity-20 uppercase tracking-[0.3em] font-brand mt-1">Living Matrix Ecosystem</span>
         </div>
         <div className="flex gap-4">
-           <Cloud size={14} className={cloudStatus === 'connected' ? 'text-cyan-400' : 'text-amber-500'} />
-           <button onClick={() => setIsGuestbookOpen(true)} className="p-1.5 bg-white text-black rounded-full active:scale-90 transition-all"><Plus size={14} /></button>
+           <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/30 hover:text-cyan-400 transition-all"><Mail size={14} /></a>
+           <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/30 hover:text-red-500 transition-all"><Youtube size={14} /></a>
+           <div className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center"><Cloud size={14} className={cloudStatus === 'connected' ? 'text-cyan-400' : 'text-amber-500'} /></div>
         </div>
       </nav>
 
-      {/* --- Main Matrix Canvas --- */}
+      {/* --- Hero Section (Identity Restoration) --- */}
+      <section className="px-8 mb-6 shrink-0 relative overflow-hidden">
+        <div className={`transition-all duration-1000 ${showMainTitle ? 'opacity-100' : 'opacity-0'}`}>
+          <h1 className="text-[9vw] sm:text-7xl font-title tracking-[-0.08em] leading-[0.9] uppercase">
+            <span className="block fused-highlight">FUSED</span>
+            <span className="block" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.1)', color: 'transparent' }}>REALITY</span>
+            <span className="flex items-center gap-3">
+              <span className="text-[0.35em] text-white font-black tracking-widest">SYNC</span>
+              <NeuralPulse />
+            </span>
+          </h1>
+        </div>
+      </section>
+
+      {/* --- High-Density Neural Matrix --- */}
       <main className="flex-1 overflow-hidden flex flex-col relative z-10">
-        <div className="matrix-container flex-1">
+        <div className="px-8 flex items-center justify-between mb-4 shrink-0">
+          <div className="flex flex-col">
+            <h2 className="text-[11px] font-brand font-black text-white uppercase tracking-[0.2em]">Temporal Stack</h2>
+            <span className="text-[7px] font-mono text-white/20 uppercase">Units: {messages.length}</span>
+          </div>
+          <button onClick={() => setIsGuestbookOpen(true)} className="flex items-center gap-2 bg-white text-black px-5 py-2 rounded-full active:scale-90 transition-all shadow-xl group">
+            <Plus size={14} className="group-hover:rotate-90 transition-transform" />
+            <span className="text-[9px] font-brand font-black uppercase">Record Trace</span>
+          </button>
+        </div>
+
+        <div className="matrix-grid flex-1">
           {messages.length > 0 ? messages.map((item, idx) => (
             <div key={item.id || idx} className="data-packet group" onClick={() => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}>
-              {/* Card Image Background */}
-              {item.image ? (
-                <img src={item.image} className="absolute inset-0 w-full h-full object-cover opacity-40 brightness-75" alt="" />
-              ) : (
-                <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center opacity-20">
-                  <User size={24} className="text-white" />
-                </div>
-              )}
+              {/* Animated Background Layer */}
+              <div className="absolute inset-0 overflow-hidden">
+                {item.image ? (
+                  <img src={item.image} className="absolute inset-0 w-full h-full object-cover opacity-40 brightness-75 animate-micro-pan" style={{ animationDelay: `${idx * 0.3}s` }} alt="" />
+                ) : (
+                  <div className="absolute inset-0 bg-zinc-900/40 flex items-center justify-center">
+                    <User size={20} className="text-white/10" />
+                  </div>
+                )}
+              </div>
               {/* Identity Overlay */}
-              <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/80 to-transparent">
-                <span className="block text-[7px] font-brand font-black text-cyan-400 truncate tracking-tight uppercase">
+              <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/90 to-transparent">
+                <span className="block text-[7px] font-brand font-black text-cyan-400/80 truncate uppercase tracking-tight">
                   {item.name || 'ANON'}
                 </span>
               </div>
-              {/* Scanline Effect */}
-              <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(34,211,238,0.05)_50%,transparent_100%)] bg-[length:100%_2px] animate-scan pointer-events-none" />
+              {/* Scanline Overlay */}
+              <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(34,211,238,0.03)_50%,transparent_100%)] bg-[length:100%_3px] animate-scan pointer-events-none" />
             </div>
           )) : (
-            // Placeholder 그리드 (데이터 없을 때)
+            // Empty Grid Placeholders
             Array.from({length: 30}).map((_, i) => (
-              <div key={i} className="data-packet bg-zinc-900/10 flex items-center justify-center border border-white/5">
+              <div key={i} className="data-packet bg-zinc-900/5 flex items-center justify-center border border-white/5">
                 <Fingerprint size={16} className="text-white/5" />
               </div>
             ))
@@ -290,63 +318,59 @@ const App = () => {
         </div>
       </main>
 
-      {/* --- Footer Statistics --- */}
-      <footer className="z-[100] px-6 py-4 flex justify-between items-center border-t border-white/5 bg-black/80 backdrop-blur-md shrink-0">
-        <div className="flex flex-col">
-          <span className="text-[7px] font-mono text-white/30 uppercase tracking-widest">Active Packets</span>
-          <span className="text-[10px] font-brand font-black text-white">{messages.length} Units</span>
-        </div>
-        <div className="flex items-center gap-3">
-           <a href={`mailto:${EMAIL_ADDRESS}`} className="text-white/20 hover:text-cyan-400"><Mail size={14} /></a>
-           <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" className="text-white/20 hover:text-red-500"><Youtube size={14} /></a>
+      {/* --- Matrix Statistics Footer --- */}
+      <footer className="z-[100] px-8 py-5 flex justify-between items-center border-t border-white/5 bg-black/40 backdrop-blur-md shrink-0">
+        <span className="font-brand text-[8px] tracking-[0.8em] font-black uppercase text-cyan-400/60">HYZEN LABS. 2026</span>
+        <div className="flex gap-2">
+           <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+           <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
         </div>
       </footer>
 
-      {/* --- Detail Expansion Modal --- */}
+      {/* --- Detail Expansion Viewer --- */}
       {isModalOpen && selectedItem && (
-        <div className="fixed inset-0 z-[6000] flex flex-col bg-black animate-hero-pop" onClick={closeModal}>
-          {/* Modal Close Button */}
-          <button onClick={closeModal} className="absolute top-10 right-8 z-[100] p-4 bg-white text-black rounded-full flex items-center gap-2 active:scale-90 transition-all shadow-2xl">
-            <span className="text-[9px] font-brand font-black uppercase">Close</span>
-            <X size={20} />
+        <div className="fixed inset-0 z-[6000] flex flex-col bg-black/95 backdrop-blur-3xl animate-hero-pop" onClick={closeModal}>
+          <button onClick={closeModal} className="absolute top-12 right-10 z-[100] p-4 bg-white text-black rounded-full flex items-center gap-2 active:scale-90 transition-all shadow-2xl">
+            <span className="text-[10px] font-brand font-black uppercase tracking-widest">Secure Close</span>
+            <X size={24} />
           </button>
 
-          {/* Full-screen Image Section */}
-          <div className="h-1/2 relative bg-zinc-950 overflow-hidden border-b border-white/10">
+          {/* Immersive Image Canvas */}
+          <div className="h-[45vh] relative bg-zinc-950 overflow-hidden border-b border-white/5">
             {selectedItem.image ? (
-              <img src={selectedItem.image} className="w-full h-full object-cover animate-pulse" style={{ animationDuration: '5s' }} alt="" />
+              <img src={selectedItem.image} className="w-full h-full object-cover animate-pulse" style={{ animationDuration: '6s' }} alt="" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-white/5">
-                <Fingerprint size={120} />
+                <Fingerprint size={140} />
               </div>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
-            <div className="absolute bottom-10 left-10">
-               <span className="text-cyan-400 font-brand text-[10px] font-black uppercase tracking-[0.4em] border-b border-cyan-400/30 pb-1 inline-block">Temporal Trace Captured</span>
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90" />
+            <div className="absolute bottom-12 left-12">
+               <span className="text-cyan-400 font-brand text-[11px] font-black uppercase tracking-[0.5em] border-b border-cyan-400/30 pb-2 inline-block">Temporal Trace Fragment</span>
             </div>
           </div>
 
-          {/* Detailed Content Section */}
-          <div className="flex-1 p-10 sm:p-16 overflow-y-auto">
-            <div className="max-w-xl mx-auto space-y-10">
-              <h2 className="text-4xl sm:text-6xl font-black uppercase font-title leading-[0.85] text-white">
+          {/* Trace Narrative Content */}
+          <div className="flex-1 p-12 sm:p-20 overflow-y-auto">
+            <div className="max-w-2xl mx-auto space-y-12">
+              <h2 className="text-5xl sm:text-7xl font-black uppercase font-title leading-[0.85] text-white">
                 {selectedItem.name}
               </h2>
               
               <div className="relative">
-                <div className="absolute -left-6 top-0 bottom-0 w-[2.5px] bg-cyan-500/30" />
-                <p className="text-lg sm:text-2xl font-light italic text-white/90 leading-relaxed">
+                <div className="absolute -left-8 top-0 bottom-0 w-[3px] bg-cyan-500/30" />
+                <p className="text-xl sm:text-3xl font-light italic text-white/90 leading-relaxed font-sans">
                   "{selectedItem.text}"
                 </p>
               </div>
 
-              <div className="pt-10 border-t border-white/5 flex items-center justify-between">
+              <div className="pt-12 border-t border-white/5 flex items-center justify-between">
                 <div className="flex flex-col">
-                  <span className="text-[8px] font-mono text-white/20 uppercase tracking-widest">Temporal Log ID</span>
-                  <span className="text-[10px] font-mono text-cyan-400 uppercase mt-1">{selectedItem.date} / SYNC_OK</span>
+                  <span className="text-[9px] font-mono text-white/20 uppercase tracking-[0.4em]">Temporal Timestamp</span>
+                  <span className="text-[12px] font-mono text-cyan-400 uppercase mt-2 tracking-tight">{selectedItem.date} / SYNC_SUCCESS</span>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }} className="p-3 text-white/20 hover:text-red-500 transition-all border border-white/10 rounded-xl">
-                  <Trash2 size={18} />
+                <button onClick={(e) => { e.stopPropagation(); setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }} className="p-4 text-white/10 hover:text-red-500 transition-all border border-white/10 rounded-2xl hover:bg-white/5">
+                  <Trash2 size={22} />
                 </button>
               </div>
             </div>
@@ -354,13 +378,16 @@ const App = () => {
         </div>
       )}
 
-      {/* --- Sync (Input) Modal --- */}
+      {/* --- Sync (Input) Layer --- */}
       {isGuestbookOpen && (
-        <div className="fixed inset-0 z-[7000] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/90 backdrop-blur-xl animate-hero-pop" onClick={closeModal}>
-          <div className="w-full sm:max-w-lg glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-10 sm:p-12" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-10">
-              <h2 className="text-2xl font-black font-brand uppercase tracking-tighter text-cyan-400">New Trace</h2>
-              <button onClick={closeModal} className="p-2 bg-white/5 rounded-full hover:text-white"><X size={20} /></button>
+        <div className="fixed inset-0 z-[7000] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/95 backdrop-blur-2xl animate-hero-pop" onClick={closeModal}>
+          <div className="w-full sm:max-w-xl glass-panel rounded-t-[4rem] sm:rounded-[4rem] p-12 sm:p-16" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-12">
+              <div className="flex flex-col gap-2">
+                <h2 className="text-3xl font-black font-brand uppercase tracking-tighter text-cyan-400">New Trace</h2>
+                <span className="text-[9px] font-mono text-white/30 uppercase tracking-[0.5em]">Capture Neurological Fragment</span>
+              </div>
+              <button onClick={closeModal} className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-all"><X size={24} /></button>
             </div>
             
             <form onSubmit={async (e) => {
@@ -371,47 +398,47 @@ const App = () => {
                 await addDoc(q, { ...newMessage, createdAt: serverTimestamp(), date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) });
                 setNewMessage({ name: '', text: '', image: null }); closeModal(); playSystemSound('popup');
               } catch (err) { console.error(err); } finally { setIsUploading(false); }
-            }} className="space-y-8">
-              <input type="text" style={{fontSize: '16px'}} placeholder="IDENTITY NAME" className="w-full bg-transparent border-b border-white/10 px-0 py-4 text-xs font-brand outline-none focus:border-cyan-500 transition-all uppercase" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
-              <textarea style={{fontSize: '16px'}} placeholder="LOG DATA..." className="w-full h-24 bg-transparent border-b border-white/10 px-0 py-4 text-sm outline-none focus:border-cyan-500 resize-none transition-all font-light" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
+            }} className="space-y-10">
+              <input type="text" style={{fontSize: '18px'}} placeholder="IDENTITY NAME" className="w-full bg-transparent border-b border-white/10 px-0 py-6 text-sm font-brand outline-none focus:border-cyan-500 transition-all uppercase tracking-widest" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
+              <textarea style={{fontSize: '18px'}} placeholder="YOUR NARRATIVE DATA..." className="w-full h-28 bg-transparent border-b border-white/10 px-0 py-6 text-lg outline-none focus:border-cyan-500 resize-none transition-all font-light tracking-tight" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
 
-              <div className="flex gap-4">
+              <div className="flex gap-6">
                 <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
-                <button type="button" onClick={() => fileInputRef.current?.click()} className={`flex-1 h-16 flex items-center justify-center gap-3 rounded-2xl border transition-all ${newMessage.image ? 'border-cyan-500 text-cyan-400' : 'border-white/10 text-white/30'}`}>
-                  {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
-                  <span className="text-[10px] font-brand uppercase font-black tracking-widest">{newMessage.image ? "Linked" : "Attach"}</span>
+                <button type="button" onClick={() => fileInputRef.current?.click()} className={`flex-1 h-20 flex items-center justify-center gap-4 rounded-3xl border transition-all ${newMessage.image ? 'border-cyan-500 text-cyan-400' : 'border-white/10 text-white/30'}`}>
+                  {isUploading ? <Loader2 size={22} className="animate-spin" /> : <Camera size={22} />}
+                  <span className="text-[11px] font-brand font-black uppercase tracking-widest">{newMessage.image ? "Visual Ready" : "Attach Image"}</span>
                 </button>
               </div>
 
               {newMessage.image && (
-                <div className="w-full h-32 rounded-2xl overflow-hidden border border-white/10 shadow-xl">
+                <div className="w-full h-40 rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl animate-hero-pop">
                   <img src={newMessage.image} className="w-full h-full object-cover" alt="Preview" />
                 </div>
               )}
 
-              <button type="submit" className="w-full h-16 bg-white text-black rounded-2xl font-brand font-black uppercase tracking-widest active:scale-95 disabled:opacity-50 shadow-2xl" disabled={isUploading}>
-                {isUploading ? "Syncing..." : "Initiate Sync"}
+              <button type="submit" className="w-full h-20 bg-white text-black rounded-3xl font-brand font-black uppercase tracking-[0.4em] active:scale-[0.98] disabled:opacity-50 shadow-2xl" disabled={isUploading}>
+                {isUploading ? "Processing..." : "Initiate Neural Sync"}
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* --- Delete Protocol --- */}
+      {/* --- Delete Security Protocol --- */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-[8000] flex items-center justify-center p-6 bg-black/95 backdrop-blur-3xl" onClick={closeModal}>
-          <div className="w-full max-w-xs glass-panel p-10 rounded-[3rem] border border-red-500/30 text-center" onClick={e => e.stopPropagation()}>
-            <Lock size={40} className="text-red-500 mx-auto mb-6" />
-            <h2 className="text-lg font-black uppercase font-brand mb-8">Erase Trace</h2>
-            <input type="password" style={{fontSize: '16px'}} placeholder="PASSCODE" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-center mb-8 outline-none focus:border-red-500 font-brand" value={deletePass} onChange={(e) => setDeletePass(e.target.value)} />
+        <div className="fixed inset-0 z-[8000] flex items-center justify-center p-6 bg-black/98 backdrop-blur-3xl animate-hero-pop" onClick={closeModal}>
+          <div className="w-full max-w-xs glass-panel p-12 rounded-[4rem] border border-red-500/30 text-center" onClick={e => e.stopPropagation()}>
+            <Lock size={48} className="text-red-500 mx-auto mb-8" />
+            <h2 className="text-xl font-black uppercase font-brand mb-10 tracking-tighter text-white">Security Pass</h2>
+            <input type="password" style={{fontSize: '18px'}} placeholder="PASSCODE" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-5 text-center mb-10 outline-none focus:border-red-500 font-brand tracking-widest text-white" value={deletePass} onChange={(e) => setDeletePass(e.target.value)} />
             <div className="flex gap-4">
-              <button onClick={closeModal} className="flex-1 py-4 rounded-xl bg-white/5 text-[9px] font-brand font-black uppercase">Abort</button>
+              <button onClick={closeModal} className="flex-1 py-5 rounded-2xl bg-white/5 text-[10px] font-brand font-black uppercase tracking-widest">Abort</button>
               <button onClick={async () => {
                 if (deletePass === ADMIN_PASS && targetDeleteId && db) { 
                   await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', targetDeleteId)); 
                   closeModal(); 
                 }
-              }} className="flex-1 py-4 rounded-xl bg-red-500 text-black font-brand font-black text-[9px] uppercase">Confirm</button>
+              }} className="flex-1 py-5 rounded-2xl bg-red-500 text-black font-brand font-black text-[10px] uppercase tracking-widest">Erase</button>
             </div>
           </div>
         </div>
