@@ -16,14 +16,16 @@ import {
   Plus,
   User,
   Sparkles,
+  Video,
+  Play,
   Image as ImageIcon
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R3.7.2 | Founder Signature & Popup UX Fix]
- * 1. 푸터 개선: 'Founder Gene'을 차분한 화이트 텍스트로 변경 (Subtle White)
- * 2. 팝업 UI 복구: 상단 'X' 버튼 재배치 및 하단 'Secure Close' 버튼과 이원화
- * 3. 심미적 입력창: Orbitron/Michroma 타이포그래피 및 컴팩트 "SYNC" 버튼 유지
+ * [Hyzen Labs. CTO Optimized - R3.8.0 | Multimedia Intelligence Matrix]
+ * 1. 팝업 최적화: 폰트 조정 및 레이아웃 비율 개선을 통해 스크롤 없는 닫기 버튼 확보
+ * 2. 히어로 정제: 메인 타이틀 크기 축소로 시각적 안정감 부여
+ * 3. 동영상 엔진: 매트릭스 내 무음 프리뷰 및 팝업 내 고해상도 재생 기능 추가
  */
 
 const ADMIN_PASS = "5733906";
@@ -66,23 +68,28 @@ const playSystemSound = (type) => {
   } catch (e) {}
 };
 
-const compressImage = (file) => {
+const compressFile = (file) => {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target.result;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_SIDE = 1000;
-        let width = img.width; let height = img.height;
-        if (width > height) { if (width > MAX_SIDE) { height *= MAX_SIDE / width; width = MAX_SIDE; } }
-        else { if (height > MAX_SIDE) { width *= MAX_SIDE / height; height = MAX_SIDE; } }
-        canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.6));
-      };
+      if (file.type.startsWith('image/')) {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_SIDE = 800;
+          let width = img.width; let height = img.height;
+          if (width > height) { if (width > MAX_SIDE) { height *= MAX_SIDE / width; width = MAX_SIDE; } }
+          else { if (height > MAX_SIDE) { width *= MAX_SIDE / height; height = MAX_SIDE; } }
+          canvas.width = width; canvas.height = height;
+          const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+          resolve({ data: canvas.toDataURL('image/jpeg', 0.6), type: 'image' });
+        };
+      } else {
+        // Video is passed as Base64 (Size limit aware: Firestore has 1MB limit)
+        resolve({ data: event.target.result, type: 'video' });
+      }
     };
   });
 };
@@ -111,7 +118,7 @@ const App = () => {
   const [cloudStatus, setCloudStatus] = useState('disconnected');
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState({ name: '', text: '', image: null });
+  const [newMessage, setNewMessage] = useState({ name: '', text: '', mediaData: null, mediaType: 'image' });
   
   const fileInputRef = useRef(null);
 
@@ -166,12 +173,16 @@ const App = () => {
     setSelectedItem(null); setDeletePass("");
   };
 
-  const handleImageChange = async (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 1024 * 1024) {
+        // Firestore has a 1MB limit for the whole document
+        return; 
+      }
       setIsUploading(true);
-      const compressed = await compressImage(file);
-      setNewMessage(prev => ({ ...prev, image: compressed }));
+      const result = await compressFile(file);
+      setNewMessage(prev => ({ ...prev, mediaData: result.data, mediaType: result.type }));
       setIsUploading(false);
     }
   };
@@ -186,7 +197,6 @@ const App = () => {
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); }
         
-        /* High-Density Matrix Grid */
         .matrix-container {
           position: relative;
           margin: 0 10px 10px;
@@ -264,14 +274,16 @@ const App = () => {
         .floating-modal-container {
           width: 92%;
           max-width: 500px;
-          height: 82vh;
+          height: 85vh;
           border-radius: 40px;
           box-shadow: 0 50px 100px -20px rgba(0,0,0,0.9), 0 0 50px rgba(34, 211, 238, 0.05);
           overflow: hidden;
           position: relative;
+          display: flex;
+          flex-direction: column;
         }
         @media (min-width: 1024px) {
-          .floating-modal-container { width: 45%; max-width: 950px; flex-direction: row; display: flex; height: 65vh; }
+          .floating-modal-container { width: 55%; max-width: 1000px; flex-direction: row; height: 70vh; }
         }
       `}</style>
 
@@ -311,12 +323,12 @@ const App = () => {
         </div>
       </nav>
 
-      {/* --- Hero Section --- */}
-      <section className="px-8 pt-12 mb-14 shrink-0 relative overflow-hidden">
+      {/* --- Hero Section (Resized) --- */}
+      <section className="px-8 pt-8 mb-10 shrink-0 relative overflow-hidden">
         <div className={`transition-all duration-1000 ${showMainTitle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
-          <h1 className="text-[9vw] sm:text-7xl font-title tracking-[-0.08em] leading-[0.9] uppercase">
+          <h1 className="text-[7vw] sm:text-5xl font-title tracking-[-0.06em] leading-[0.9] uppercase">
             <span className="block fused-highlight">FUSED</span>
-            <span className="block" style={{ WebkitTextStroke: '1.2px rgba(255,255,255,0.5)', color: 'rgba(255,255,255,0.08)', textShadow: '0 0 20px rgba(255,255,255,0.15)' }}>REALITY</span>
+            <span className="block" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.4)', color: 'rgba(255,255,255,0.06)', textShadow: '0 0 10px rgba(255,255,255,0.1)' }}>REALITY</span>
             <span className="flex items-center gap-3">
               <span className="text-[0.35em] text-white font-black tracking-widest">SYNC</span>
               <NeuralPulse />
@@ -329,19 +341,18 @@ const App = () => {
       <main className="flex-1 overflow-hidden flex flex-col relative z-10">
         <div className="px-10 flex items-center justify-between mb-5 shrink-0">
           <div className="flex flex-col">
-            <h2 className="text-[12px] font-brand font-black text-white uppercase tracking-[0.3em]">Digital Stack</h2>
+            <h2 className="text-[11px] font-brand font-black text-white uppercase tracking-[0.2em]">Digital Stack</h2>
             <span className="text-[7px] font-mono text-white/20 uppercase tracking-widest">Nodes: {messages.length} Units</span>
           </div>
           
           <button 
             onClick={() => setIsGuestbookOpen(true)} 
-            className="group flex items-center gap-3 glass-panel px-5 py-2.5 rounded-full border border-white/10 hover:bg-white active:scale-95 transition-all duration-500 trace-button-flow"
+            className="group flex items-center gap-3 glass-panel px-5 py-2 rounded-full border border-white/10 hover:bg-white active:scale-95 transition-all duration-500 trace-button-flow"
           >
-            <div className="relative w-5 h-5 flex items-center justify-center">
-              <Fingerprint size={18} className="text-cyan-400 group-hover:text-black transition-colors" />
-              <div className="absolute inset-0 bg-cyan-400/20 rounded-full animate-ping group-hover:hidden" />
+            <div className="relative w-4 h-4 flex items-center justify-center">
+              <Fingerprint size={16} className="text-cyan-400 group-hover:text-black transition-colors" />
             </div>
-            <span className="text-[10px] font-brand font-black text-white group-hover:text-black uppercase tracking-tighter">Sync Trace</span>
+            <span className="text-[9px] font-brand font-black text-white group-hover:text-black uppercase tracking-tighter">Sync Trace</span>
           </button>
         </div>
 
@@ -354,20 +365,26 @@ const App = () => {
                 onClick={() => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
               >
                 <div className="absolute inset-0 overflow-hidden">
-                  {item.image ? (
-                    <img src={item.image} className="absolute inset-0 w-full h-full object-cover opacity-40 brightness-75 animate-micro-pan" style={{ animationDelay: `${idx * 0.3}s` }} alt="" />
+                  {item.mediaType === 'video' ? (
+                    <video 
+                      src={item.mediaData || item.image} 
+                      className="absolute inset-0 w-full h-full object-cover opacity-40 brightness-75 grayscale group-hover:grayscale-0 group-hover:opacity-70 transition-all"
+                      autoPlay muted loop playsInline
+                    />
+                  ) : item.image || item.mediaData ? (
+                    <img src={item.mediaData || item.image} className="absolute inset-0 w-full h-full object-cover opacity-40 brightness-75 animate-micro-pan" alt="" />
                   ) : (
                     <div className="absolute inset-0 bg-zinc-900/40 flex items-center justify-center">
                       <User size={20} className="text-white/10" />
                     </div>
                   )}
+                  {item.mediaType === 'video' && <div className="absolute top-1.5 right-1.5 text-white/40"><Video size={10} /></div>}
                 </div>
                 <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/90 to-transparent">
                   <span className="block text-[7px] font-brand font-black text-cyan-400/80 truncate uppercase tracking-tight">
                     {item.name || 'ANON'}
                   </span>
                 </div>
-                <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(34,211,238,0.03)_50%,transparent_100%)] bg-[length:100%_3px] animate-scan pointer-events-none" />
               </div>
             )) : (
               Array.from({length: 30}).map((_, i) => (
@@ -381,8 +398,8 @@ const App = () => {
         </div>
       </main>
 
-      {/* --- Footer (Founder Gene Signature Fixed) --- */}
-      <footer className="z-[100] px-10 py-8 flex justify-between items-end border-t border-white/5 bg-black/60 backdrop-blur-md shrink-0">
+      {/* --- Footer --- */}
+      <footer className="z-[100] px-10 py-6 flex justify-between items-end border-t border-white/5 bg-black/60 backdrop-blur-md shrink-0">
         <div className="flex flex-col gap-2">
           <span className="font-brand text-[9px] tracking-[0.8em] font-black uppercase text-cyan-400/70">HYZEN LABS. 2026</span>
           <div className="flex items-center gap-2">
@@ -398,59 +415,65 @@ const App = () => {
         </div>
       </footer>
 
-      {/* --- Floating Detail Modal (Close Button Restored) --- */}
+      {/* --- Floating Detail Modal (Compact UX) --- */}
       {isModalOpen && selectedItem && (
         <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/85 backdrop-blur-2xl animate-hero-pop" onClick={closeModal}>
-          <div className="floating-modal-container glass-panel flex flex-col relative" onClick={e => e.stopPropagation()}>
+          <div className="floating-modal-container glass-panel relative" onClick={e => e.stopPropagation()}>
             
             {/* Top-Right 'X' Close Button */}
-            <button onClick={closeModal} className="absolute top-6 right-6 z-[110] p-3 bg-black/40 hover:bg-white text-white hover:text-black rounded-full transition-all border border-white/10 backdrop-blur-md">
-              <X size={24} />
+            <button onClick={closeModal} className="absolute top-5 right-5 z-[110] p-2.5 bg-black/40 hover:bg-white text-white hover:text-black rounded-full transition-all border border-white/10 backdrop-blur-md">
+              <X size={20} />
             </button>
 
-            <div className="h-1/2 lg:h-auto lg:w-3/5 relative bg-black overflow-hidden border-b lg:border-b-0 lg:border-r border-white/10">
-              {selectedItem.image ? (
-                <img src={selectedItem.image} className="w-full h-full object-cover animate-ken-burns" alt="" />
+            {/* Media Canvas Section (Reduced height for mobile) */}
+            <div className="h-[35vh] lg:h-auto lg:w-1/2 relative bg-black overflow-hidden border-b lg:border-b-0 lg:border-r border-white/10">
+              {selectedItem.mediaType === 'video' ? (
+                <video 
+                  src={selectedItem.mediaData || selectedItem.image} 
+                  className="w-full h-full object-cover"
+                  autoPlay controls playsInline
+                />
+              ) : (selectedItem.image || selectedItem.mediaData) ? (
+                <img src={selectedItem.mediaData || selectedItem.image} className="w-full h-full object-cover animate-ken-burns" alt="" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-white/5 bg-zinc-900">
-                   <Fingerprint size={140} />
+                   <Fingerprint size={120} />
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90" />
-              <div className="absolute bottom-6 left-8">
-                <span className="text-cyan-400 font-brand text-[9px] font-black uppercase tracking-[0.4em] border-b border-cyan-400/30 pb-1">Digital Core Synchronized</span>
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
             </div>
 
-            <div className="flex-1 p-8 lg:p-14 flex flex-col justify-between overflow-y-auto bg-zinc-950/40">
-              <div className="space-y-8">
+            {/* Content Section (Optimized for visibility) */}
+            <div className="flex-1 p-6 lg:p-12 flex flex-col justify-between bg-zinc-950/40">
+              <div className="space-y-4 lg:space-y-6">
                 <div>
-                  <span className="text-cyan-400 font-brand text-[10px] font-black uppercase tracking-[0.3em] inline-block mb-2">Neural Identity</span>
-                  <h2 className="text-4xl lg:text-6xl font-black uppercase font-title leading-none text-white tracking-tighter">
+                  <span className="text-cyan-400 font-brand text-[9px] font-black uppercase tracking-[0.3em] inline-block mb-1">Neural Identity</span>
+                  <h2 className="text-3xl lg:text-5xl font-black uppercase font-title leading-none text-white tracking-tighter">
                     {selectedItem.name}
                   </h2>
                 </div>
                 
                 <div className="relative">
-                  <div className="absolute -left-6 top-0 bottom-0 w-[2.5px] bg-cyan-500/40" />
-                  <p className="text-lg lg:text-2xl font-light italic text-white/95 leading-relaxed font-sans">
+                  <div className="absolute -left-4 top-0 bottom-0 w-[2px] bg-cyan-500/40" />
+                  <p className="text-sm lg:text-lg font-light italic text-white/90 leading-relaxed font-sans line-clamp-6">
                     "{selectedItem.text}"
                   </p>
                 </div>
               </div>
 
-              <div className="mt-12 pt-8 border-t border-white/5 flex flex-col gap-5">
+              {/* Bottom Actions (Always visible) */}
+              <div className="mt-6 pt-5 border-t border-white/5 flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
-                    <span className="text-[8px] font-mono text-white/30 uppercase tracking-[0.3em]">Temporal Stamp</span>
-                    <span className="text-[11px] font-mono text-cyan-400 uppercase mt-1 tracking-tight">{selectedItem.date}</span>
+                    <span className="text-[7px] font-mono text-white/20 uppercase tracking-[0.3em]">Temporal Stamp</span>
+                    <span className="text-[9px] font-mono text-cyan-400 uppercase mt-0.5 tracking-tight">{selectedItem.date}</span>
                   </div>
-                  <button onClick={(e) => { e.stopPropagation(); setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }} className="p-4 text-white/10 hover:text-red-500 transition-all hover:bg-white/5 rounded-2xl">
-                    <Trash2 size={20} />
+                  <button onClick={(e) => { e.stopPropagation(); setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }} className="p-3 text-white/10 hover:text-red-500 transition-all">
+                    <Trash2 size={16} />
                   </button>
                 </div>
                 
-                <button onClick={closeModal} className="w-full bg-white text-black py-5 rounded-2xl font-brand text-[11px] font-black uppercase tracking-[0.3em] active:scale-[0.98] transition-all shadow-2xl hover:bg-cyan-400">
+                <button onClick={closeModal} className="w-full bg-white text-black py-4 rounded-xl font-brand text-[10px] font-black uppercase tracking-[0.2em] active:scale-[0.98] transition-all shadow-lg hover:bg-cyan-400">
                   Secure Close
                 </button>
               </div>
@@ -459,16 +482,16 @@ const App = () => {
         </div>
       )}
 
-      {/* --- Refined Sync Modal --- */}
+      {/* --- Sync (Input) Modal --- */}
       {isGuestbookOpen && (
         <div className="fixed inset-0 z-[7000] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/95 backdrop-blur-3xl animate-hero-pop" onClick={closeModal}>
-          <div className="w-full sm:max-w-xl glass-panel rounded-t-[3.5rem] sm:rounded-[3.5rem] p-10 sm:p-14 shadow-[0_0_100px_rgba(34,211,238,0.1)]" onClick={e => e.stopPropagation()}>
+          <div className="w-full sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[3rem] p-10 sm:p-12" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-10">
               <div className="flex flex-col gap-1.5">
-                <h2 className="text-2xl font-black font-brand uppercase tracking-tight text-white">New Trace</h2>
-                <span className="text-[8px] font-mono text-cyan-400/60 uppercase tracking-[0.4em]">Neurological Capture Sequence</span>
+                <h2 className="text-xl font-black font-brand uppercase tracking-tight text-white">New Trace</h2>
+                <span className="text-[7px] font-mono text-cyan-400/60 uppercase tracking-[0.4em]">Neurological Capture Sequence</span>
               </div>
-              <button onClick={closeModal} className="p-2.5 bg-white/5 rounded-full hover:bg-white/10 transition-all text-white/40"><X size={20} /></button>
+              <button onClick={closeModal} className="p-2.5 bg-white/5 rounded-full hover:bg-white/10 transition-all text-white/40"><X size={18} /></button>
             </div>
             
             <form onSubmit={async (e) => {
@@ -476,10 +499,17 @@ const App = () => {
               setIsUploading(true);
               try {
                 const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-                await addDoc(q, { ...newMessage, createdAt: serverTimestamp(), date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) });
-                setNewMessage({ name: '', text: '', image: null }); closeModal(); playSystemSound('popup');
+                await addDoc(q, { 
+                  name: newMessage.name, 
+                  text: newMessage.text, 
+                  mediaData: newMessage.mediaData, 
+                  mediaType: newMessage.mediaType,
+                  createdAt: serverTimestamp(), 
+                  date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) 
+                });
+                setNewMessage({ name: '', text: '', mediaData: null, mediaType: 'image' }); closeModal(); playSystemSound('popup');
               } catch (err) { console.error(err); } finally { setIsUploading(false); }
-            }} className="space-y-10">
+            }} className="space-y-8">
               <div className="space-y-1">
                 <label className="text-[8px] font-brand text-cyan-400/50 uppercase tracking-[0.3em] ml-1">Identity Name</label>
                 <input 
@@ -506,16 +536,20 @@ const App = () => {
               </div>
 
               <div className="flex gap-4">
-                <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
-                <button type="button" onClick={() => fileInputRef.current?.click()} className={`flex-1 h-16 flex items-center justify-center gap-4 rounded-3xl border transition-all ${newMessage.image ? 'border-cyan-500 text-cyan-400 bg-cyan-400/5 shadow-[0_0_15px_rgba(34,211,238,0.1)]' : 'border-white/10 text-white/30 hover:border-white/20'}`}>
-                  {isUploading ? <Loader2 size={20} className="animate-spin" /> : <Camera size={20} />}
-                  <span className="text-[9px] font-brand font-black uppercase tracking-widest">{newMessage.image ? "Visual Ready" : "Attach Image"}</span>
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*,video/*" className="hidden" />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className={`flex-1 h-16 flex items-center justify-center gap-4 rounded-2xl border transition-all ${newMessage.mediaData ? 'border-cyan-500 text-cyan-400 bg-cyan-400/5 shadow-[0_0_15px_rgba(34,211,238,0.1)]' : 'border-white/10 text-white/30 hover:border-white/20'}`}>
+                  {isUploading ? <Loader2 size={18} className="animate-spin" /> : newMessage.mediaType === 'video' ? <Video size={18} /> : <Camera size={18} />}
+                  <span className="text-[9px] font-brand font-black uppercase tracking-widest">{newMessage.mediaData ? "Visual Ready" : "Attach Media"}</span>
                 </button>
               </div>
 
-              {newMessage.image && (
+              {newMessage.mediaData && (
                 <div className="w-full h-36 rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl animate-hero-pop">
-                  <img src={newMessage.image} className="w-full h-full object-cover" alt="Preview" />
+                  {newMessage.mediaType === 'video' ? (
+                    <video src={newMessage.mediaData} className="w-full h-full object-cover" muted autoPlay loop />
+                  ) : (
+                    <img src={newMessage.mediaData} className="w-full h-full object-cover" alt="Preview" />
+                  )}
                 </div>
               )}
 
