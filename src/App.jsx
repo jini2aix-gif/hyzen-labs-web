@@ -19,10 +19,10 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R3.5.1 | Living Neural Matrix]
- * 1. 히어로 유지: FUSED REALITY SYNC 타이틀 및 소통 링크 복구
- * 2. 리빙 그리드: 그리드 내 이미지들에 각각 독립적인 미세 애니메이션 적용
- * 3. 고밀도 매트릭스: 모바일 5x6 그리드로 30개 이상의 데이터 동시 조망
+ * [Hyzen Labs. CTO Optimized - R3.5.2 | Living Matrix Refinement]
+ * 1. 히어로 최적화: 타이틀 위치 하향 조정 및 'REALITY' 가독성 향상
+ * 2. 자율형 그리드: 터치 없이도 패킷들이 스스로 유영하는 Floating 애니메이션 적용
+ * 3. 곡선미 강조: 데이터 패킷 마감 처리를 부드러운 곡선으로 변경 (Soft-corner)
  */
 
 const ADMIN_PASS = "5733906";
@@ -191,29 +191,36 @@ const App = () => {
           display: grid;
           grid-template-columns: repeat(5, 1fr);
           grid-auto-rows: minmax(min(14vh, 90px), 1fr);
-          gap: 3px;
+          gap: 6px;
           overflow-y: auto;
           scrollbar-width: none;
-          padding: 6px;
+          padding: 10px;
           scroll-snap-type: y mandatory;
         }
         .matrix-grid::-webkit-scrollbar { display: none; }
         
         @media (min-width: 1024px) {
-          .matrix-grid { grid-template-columns: repeat(10, 1fr); }
+          .matrix-grid { grid-template-columns: repeat(10, 1fr); gap: 10px; padding: 20px; }
         }
 
-        /* Packet Animation */
+        /* Packet Animation & Shape */
         .data-packet {
           scroll-snap-align: start;
           position: relative;
           aspect-ratio: 0.85 / 1;
           overflow: hidden;
           background: #0a0a0a;
-          border: 0.5px solid rgba(255,255,255,0.03);
+          border: 0.5px solid rgba(255,255,255,0.05);
+          border-radius: 12px; /* 곡선 마감 처리 */
           transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          animation: packetFloat 6s ease-in-out infinite;
         }
-        .data-packet:active { transform: scale(0.94); border-color: #22d3ee; }
+        .data-packet:active { transform: scale(0.92) !important; border-color: #22d3ee; }
+
+        @keyframes packetFloat {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-3px) scale(1.02); }
+        }
 
         @keyframes microPan {
           0% { transform: scale(1) translate(0, 0); }
@@ -223,8 +230,8 @@ const App = () => {
         .animate-micro-pan { animation: microPan 25s ease-in-out infinite; }
 
         @keyframes syncPulse { 0%, 100% { height: 30%; opacity: 0.3; } 50% { height: 100%; opacity: 1; } }
-        @keyframes heroPop { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
-        .animate-hero-pop { animation: heroPop 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes heroPop { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
+        .animate-hero-pop { animation: heroPop 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
         .fused-highlight { background: linear-gradient(90deg, #22d3ee 0%, #ffffff 50%, #22d3ee 100%); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: fusedShimmer 4s linear infinite; }
         @keyframes fusedShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
@@ -240,12 +247,12 @@ const App = () => {
           <div className="relative w-14 h-14 bg-gradient-to-tr from-cyan-400 to-white rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(34,211,238,0.3)] animate-pulse" />
           <div className="mt-8 flex flex-col items-center gap-3">
             <span className="font-brand text-[9px] tracking-[0.6em] text-cyan-400 font-black uppercase">Matrix Initialization</span>
-            <span className="text-[6px] font-mono opacity-20 uppercase tracking-[0.3em]">Hyzen R3.5.1 | GENE Protocol</span>
+            <span className="text-[6px] font-mono opacity-20 uppercase tracking-[0.3em]">Hyzen R3.5.2 | GENE OS</span>
           </div>
         </div>
       )}
 
-      {/* --- Global Header (Links Restoration) --- */}
+      {/* --- Global Header --- */}
       <nav className="z-[100] px-6 pt-12 pb-4 flex justify-between items-start shrink-0">
         <div className="flex flex-col">
           <span className="font-brand text-[10px] tracking-[0.5em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
@@ -258,12 +265,12 @@ const App = () => {
         </div>
       </nav>
 
-      {/* --- Hero Section (Identity Restoration) --- */}
-      <section className="px-8 mb-6 shrink-0 relative overflow-hidden">
-        <div className={`transition-all duration-1000 ${showMainTitle ? 'opacity-100' : 'opacity-0'}`}>
+      {/* --- Hero Section (Position Adjusted) --- */}
+      <section className="px-8 pt-6 mb-8 shrink-0 relative overflow-hidden">
+        <div className={`transition-all duration-1000 ${showMainTitle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <h1 className="text-[9vw] sm:text-7xl font-title tracking-[-0.08em] leading-[0.9] uppercase">
             <span className="block fused-highlight">FUSED</span>
-            <span className="block" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.1)', color: 'transparent' }}>REALITY</span>
+            <span className="block" style={{ WebkitTextStroke: '1.2px rgba(255,255,255,0.4)', color: 'rgba(255,255,255,0.05)', textShadow: '0 0 10px rgba(255,255,255,0.1)' }}>REALITY</span>
             <span className="flex items-center gap-3">
               <span className="text-[0.35em] text-white font-black tracking-widest">SYNC</span>
               <NeuralPulse />
@@ -287,7 +294,12 @@ const App = () => {
 
         <div className="matrix-grid flex-1">
           {messages.length > 0 ? messages.map((item, idx) => (
-            <div key={item.id || idx} className="data-packet group" onClick={() => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}>
+            <div 
+              key={item.id || idx} 
+              className="data-packet group" 
+              style={{ animationDelay: `${idx * 0.2}s` }}
+              onClick={() => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
+            >
               {/* Animated Background Layer */}
               <div className="absolute inset-0 overflow-hidden">
                 {item.image ? (
