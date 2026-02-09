@@ -20,10 +20,10 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R3.7.1 | Minimalist Sync Interface]
- * 1. 입력창 고도화: Identity Name 및 Narrative Data 폰트/크기 심미적 개선
- * 2. 버튼 최적화: "INITIATE NEURAL SYNC" -> "SYNC" 로 단축 및 컴팩트 사이즈 적용
- * 3. 기존 R3.7.0 의 Digital Stack 및 퀀텀 바운더리 로직 유지
+ * [Hyzen Labs. CTO Optimized - R3.7.2 | Founder Signature & Popup UX Fix]
+ * 1. 푸터 개선: 'Founder Gene'을 차분한 화이트 텍스트로 변경 (Subtle White)
+ * 2. 팝업 UI 복구: 상단 'X' 버튼 재배치 및 하단 'Secure Close' 버튼과 이원화
+ * 3. 심미적 입력창: Orbitron/Michroma 타이포그래피 및 컴팩트 "SYNC" 버튼 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -381,13 +381,13 @@ const App = () => {
         </div>
       </main>
 
-      {/* --- Enhanced Footer --- */}
+      {/* --- Footer (Founder Gene Signature Fixed) --- */}
       <footer className="z-[100] px-10 py-8 flex justify-between items-end border-t border-white/5 bg-black/60 backdrop-blur-md shrink-0">
         <div className="flex flex-col gap-2">
           <span className="font-brand text-[9px] tracking-[0.8em] font-black uppercase text-cyan-400/70">HYZEN LABS. 2026</span>
-          <div className="flex items-center gap-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_10px_#22d3ee] animate-pulse" />
-            <span className="text-[10px] font-brand tracking-[0.5em] text-white font-black uppercase bg-cyan-900/10 px-4 py-1.5 rounded-md border border-cyan-400/30">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-1 rounded-full bg-white/40" />
+            <span className="text-[9px] font-brand tracking-[0.5em] text-white/40 uppercase">
               Founder Gene
             </span>
           </div>
@@ -398,11 +398,16 @@ const App = () => {
         </div>
       </footer>
 
-      {/* --- Floating Detail Modal --- */}
+      {/* --- Floating Detail Modal (Close Button Restored) --- */}
       {isModalOpen && selectedItem && (
         <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/85 backdrop-blur-2xl animate-hero-pop" onClick={closeModal}>
-          <div className="floating-modal-container glass-panel flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="floating-modal-container glass-panel flex flex-col relative" onClick={e => e.stopPropagation()}>
             
+            {/* Top-Right 'X' Close Button */}
+            <button onClick={closeModal} className="absolute top-6 right-6 z-[110] p-3 bg-black/40 hover:bg-white text-white hover:text-black rounded-full transition-all border border-white/10 backdrop-blur-md">
+              <X size={24} />
+            </button>
+
             <div className="h-1/2 lg:h-auto lg:w-3/5 relative bg-black overflow-hidden border-b lg:border-b-0 lg:border-r border-white/10">
               {selectedItem.image ? (
                 <img src={selectedItem.image} className="w-full h-full object-cover animate-ken-burns" alt="" />
@@ -475,7 +480,6 @@ const App = () => {
                 setNewMessage({ name: '', text: '', image: null }); closeModal(); playSystemSound('popup');
               } catch (err) { console.error(err); } finally { setIsUploading(false); }
             }} className="space-y-10">
-              {/* Identity Name Field */}
               <div className="space-y-1">
                 <label className="text-[8px] font-brand text-cyan-400/50 uppercase tracking-[0.3em] ml-1">Identity Name</label>
                 <input 
@@ -489,7 +493,6 @@ const App = () => {
                 />
               </div>
 
-              {/* Narrative Data Field */}
               <div className="space-y-1">
                 <label className="text-[8px] font-brand text-cyan-400/50 uppercase tracking-[0.3em] ml-1">Your Narrative Data</label>
                 <textarea 
@@ -504,7 +507,7 @@ const App = () => {
 
               <div className="flex gap-4">
                 <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
-                <button type="button" onClick={() => fileInputRef.current?.click()} className={`flex-1 h-16 flex items-center justify-center gap-4 rounded-2xl border transition-all ${newMessage.image ? 'border-cyan-500 text-cyan-400 bg-cyan-400/5 shadow-[0_0_15px_rgba(34,211,238,0.1)]' : 'border-white/10 text-white/30 hover:border-white/20'}`}>
+                <button type="button" onClick={() => fileInputRef.current?.click()} className={`flex-1 h-16 flex items-center justify-center gap-4 rounded-3xl border transition-all ${newMessage.image ? 'border-cyan-500 text-cyan-400 bg-cyan-400/5 shadow-[0_0_15px_rgba(34,211,238,0.1)]' : 'border-white/10 text-white/30 hover:border-white/20'}`}>
                   {isUploading ? <Loader2 size={20} className="animate-spin" /> : <Camera size={20} />}
                   <span className="text-[9px] font-brand font-black uppercase tracking-widest">{newMessage.image ? "Visual Ready" : "Attach Image"}</span>
                 </button>
@@ -516,7 +519,6 @@ const App = () => {
                 </div>
               )}
 
-              {/* Compact SYNC Button */}
               <button 
                 type="submit" 
                 className="w-full h-14 bg-white text-black rounded-2xl font-brand font-black uppercase tracking-[0.5em] text-[12px] active:scale-[0.98] disabled:opacity-50 shadow-xl transition-all hover:bg-cyan-400" 
