@@ -19,10 +19,10 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R3.5.2 | Living Matrix Refinement]
- * 1. 히어로 최적화: 타이틀 위치 하향 조정 및 'REALITY' 가독성 향상
- * 2. 자율형 그리드: 터치 없이도 패킷들이 스스로 유영하는 Floating 애니메이션 적용
- * 3. 곡선미 강조: 데이터 패킷 마감 처리를 부드러운 곡선으로 변경 (Soft-corner)
+ * [Hyzen Labs. CTO Optimized - R3.6.0 | Neural Drift & Floating Modal]
+ * 1. 비동기 유영: 각 데이터 패킷이 독립적인 애니메이션 주기를 가짐 (각개 유영)
+ * 2. 부유형 모달: 풀스크린이 아닌, 배경이 투영되는 플로팅 팝업 시각화
+ * 3. 히어로 가독성: REALITY 텍스트 강조 및 하단 버튼 레이아웃 최적화
  */
 
 const ADMIN_PASS = "5733906";
@@ -55,7 +55,6 @@ const playSystemSound = (type) => {
     osc.connect(gain); gain.connect(audioCtx.destination);
     if (type === 'start') {
       osc.type = 'sine'; osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
       gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
       osc.start(); osc.stop(audioCtx.currentTime + 0.5);
     } else if (type === 'popup') {
@@ -177,7 +176,7 @@ const App = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-[#040404] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col max-w-full touch-none" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
+    <div className="fixed inset-0 bg-[#020202] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col max-w-full touch-none" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] pointer-events-none z-[1] mix-blend-overlay" />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Michroma&family=Orbitron:wght@400;700;900&family=JetBrains+Mono&display=swap');
@@ -195,7 +194,6 @@ const App = () => {
           overflow-y: auto;
           scrollbar-width: none;
           padding: 10px;
-          scroll-snap-type: y mandatory;
         }
         .matrix-grid::-webkit-scrollbar { display: none; }
         
@@ -205,26 +203,30 @@ const App = () => {
 
         /* Packet Animation & Shape */
         .data-packet {
-          scroll-snap-align: start;
           position: relative;
           aspect-ratio: 0.85 / 1;
           overflow: hidden;
           background: #0a0a0a;
-          border: 0.5px solid rgba(255,255,255,0.05);
-          border-radius: 12px; /* 곡선 마감 처리 */
+          border: 0.5px solid rgba(255,255,255,0.06);
+          border-radius: 16px; /* 부드러운 곡선 마감 */
           transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-          animation: packetFloat 6s ease-in-out infinite;
         }
-        .data-packet:active { transform: scale(0.92) !important; border-color: #22d3ee; }
 
-        @keyframes packetFloat {
-          0%, 100% { transform: translateY(0) scale(1); }
-          50% { transform: translateY(-3px) scale(1.02); }
-        }
+        /* 각개 유영 애니메이션 (Variations) */
+        @keyframes driftA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-2px, -6px) rotate(1deg); } }
+        @keyframes driftB { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(3px, -4px) rotate(-1deg); } }
+        @keyframes driftC { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-1px, -8px); } }
+
+        .packet-drift-0 { animation: driftA 7s ease-in-out infinite; }
+        .packet-drift-1 { animation: driftB 8s ease-in-out infinite; }
+        .packet-drift-2 { animation: driftC 9s ease-in-out infinite; }
+        .packet-drift-3 { animation: driftA 10s ease-in-out infinite; animation-direction: reverse; }
+
+        .data-packet:active { transform: scale(0.9) !important; border-color: #22d3ee; }
 
         @keyframes microPan {
           0% { transform: scale(1) translate(0, 0); }
-          50% { transform: scale(1.15) translate(2%, 2%); }
+          50% { transform: scale(1.1) translate(2%, 2%); }
           100% { transform: scale(1) translate(0, 0); }
         }
         .animate-micro-pan { animation: microPan 25s ease-in-out infinite; }
@@ -238,16 +240,31 @@ const App = () => {
 
         @keyframes coreBreathe { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.2); opacity: 0.8; } }
         .animate-core-breathe { animation: coreBreathe 4s ease-in-out infinite; }
+
+        /* Modal Specifics */
+        .floating-modal-container {
+          width: 90%;
+          max-width: 500px;
+          height: 85vh;
+          max-height: 800px;
+          border-radius: 40px;
+          box-shadow: 0 50px 100px -20px rgba(0,0,0,0.8), 0 0 50px rgba(34, 211, 238, 0.1);
+          overflow: hidden;
+          position: relative;
+        }
+        @media (min-width: 1024px) {
+          .floating-modal-container { width: 40%; max-width: 900px; flex-direction: row; display: flex; height: 60vh; }
+        }
       `}</style>
 
       {/* --- Boot Sequence --- */}
       {isInitializing && (
-        <div className="fixed inset-0 z-[10000] bg-[#040404] flex flex-col items-center justify-center p-8 overflow-hidden">
+        <div className="fixed inset-0 z-[10000] bg-[#020202] flex flex-col items-center justify-center p-8 overflow-hidden">
           <div className="absolute w-[400px] h-[400px] bg-cyan-500/5 blur-[100px] rounded-full animate-core-breathe" />
           <div className="relative w-14 h-14 bg-gradient-to-tr from-cyan-400 to-white rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(34,211,238,0.3)] animate-pulse" />
           <div className="mt-8 flex flex-col items-center gap-3">
-            <span className="font-brand text-[9px] tracking-[0.6em] text-cyan-400 font-black uppercase">Matrix Initialization</span>
-            <span className="text-[6px] font-mono opacity-20 uppercase tracking-[0.3em]">Hyzen R3.5.2 | GENE OS</span>
+            <span className="font-brand text-[9px] tracking-[0.6em] text-cyan-400 font-black uppercase">Grid Initialization</span>
+            <span className="text-[6px] font-mono opacity-20 uppercase tracking-[0.3em]">Hyzen R3.6.0 | GENE Protocol</span>
           </div>
         </div>
       )}
@@ -265,12 +282,12 @@ const App = () => {
         </div>
       </nav>
 
-      {/* --- Hero Section (Position Adjusted) --- */}
-      <section className="px-8 pt-6 mb-8 shrink-0 relative overflow-hidden">
+      {/* --- Hero Section (Spacing Adjusted) --- */}
+      <section className="px-8 pt-10 mb-8 shrink-0 relative overflow-hidden">
         <div className={`transition-all duration-1000 ${showMainTitle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <h1 className="text-[9vw] sm:text-7xl font-title tracking-[-0.08em] leading-[0.9] uppercase">
             <span className="block fused-highlight">FUSED</span>
-            <span className="block" style={{ WebkitTextStroke: '1.2px rgba(255,255,255,0.4)', color: 'rgba(255,255,255,0.05)', textShadow: '0 0 10px rgba(255,255,255,0.1)' }}>REALITY</span>
+            <span className="block" style={{ WebkitTextStroke: '1.2px rgba(255,255,255,0.4)', color: 'rgba(255,255,255,0.06)', textShadow: '0 0 15px rgba(255,255,255,0.1)' }}>REALITY</span>
             <span className="flex items-center gap-3">
               <span className="text-[0.35em] text-white font-black tracking-widest">SYNC</span>
               <NeuralPulse />
@@ -296,11 +313,9 @@ const App = () => {
           {messages.length > 0 ? messages.map((item, idx) => (
             <div 
               key={item.id || idx} 
-              className="data-packet group" 
-              style={{ animationDelay: `${idx * 0.2}s` }}
+              className={`data-packet group packet-drift-${idx % 4}`}
               onClick={() => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
             >
-              {/* Animated Background Layer */}
               <div className="absolute inset-0 overflow-hidden">
                 {item.image ? (
                   <img src={item.image} className="absolute inset-0 w-full h-full object-cover opacity-40 brightness-75 animate-micro-pan" style={{ animationDelay: `${idx * 0.3}s` }} alt="" />
@@ -310,19 +325,16 @@ const App = () => {
                   </div>
                 )}
               </div>
-              {/* Identity Overlay */}
               <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/90 to-transparent">
                 <span className="block text-[7px] font-brand font-black text-cyan-400/80 truncate uppercase tracking-tight">
                   {item.name || 'ANON'}
                 </span>
               </div>
-              {/* Scanline Overlay */}
               <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(34,211,238,0.03)_50%,transparent_100%)] bg-[length:100%_3px] animate-scan pointer-events-none" />
             </div>
           )) : (
-            // Empty Grid Placeholders
             Array.from({length: 30}).map((_, i) => (
-              <div key={i} className="data-packet bg-zinc-900/5 flex items-center justify-center border border-white/5">
+              <div key={i} className="data-packet bg-zinc-900/5 flex items-center justify-center border border-white/5 rounded-2xl">
                 <Fingerprint size={16} className="text-white/5" />
               </div>
             ))
@@ -339,50 +351,58 @@ const App = () => {
         </div>
       </footer>
 
-      {/* --- Detail Expansion Viewer --- */}
+      {/* --- Floating Detail Modal (Full Zoom 탈피) --- */}
       {isModalOpen && selectedItem && (
-        <div className="fixed inset-0 z-[6000] flex flex-col bg-black/95 backdrop-blur-3xl animate-hero-pop" onClick={closeModal}>
-          <button onClick={closeModal} className="absolute top-12 right-10 z-[100] p-4 bg-white text-black rounded-full flex items-center gap-2 active:scale-90 transition-all shadow-2xl">
-            <span className="text-[10px] font-brand font-black uppercase tracking-widest">Secure Close</span>
-            <X size={24} />
-          </button>
-
-          {/* Immersive Image Canvas */}
-          <div className="h-[45vh] relative bg-zinc-950 overflow-hidden border-b border-white/5">
-            {selectedItem.image ? (
-              <img src={selectedItem.image} className="w-full h-full object-cover animate-pulse" style={{ animationDuration: '6s' }} alt="" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-white/5">
-                <Fingerprint size={140} />
-              </div>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90" />
-            <div className="absolute bottom-12 left-12">
-               <span className="text-cyan-400 font-brand text-[11px] font-black uppercase tracking-[0.5em] border-b border-cyan-400/30 pb-2 inline-block">Temporal Trace Fragment</span>
-            </div>
-          </div>
-
-          {/* Trace Narrative Content */}
-          <div className="flex-1 p-12 sm:p-20 overflow-y-auto">
-            <div className="max-w-2xl mx-auto space-y-12">
-              <h2 className="text-5xl sm:text-7xl font-black uppercase font-title leading-[0.85] text-white">
-                {selectedItem.name}
-              </h2>
-              
-              <div className="relative">
-                <div className="absolute -left-8 top-0 bottom-0 w-[3px] bg-cyan-500/30" />
-                <p className="text-xl sm:text-3xl font-light italic text-white/90 leading-relaxed font-sans">
-                  "{selectedItem.text}"
-                </p>
-              </div>
-
-              <div className="pt-12 border-t border-white/5 flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-mono text-white/20 uppercase tracking-[0.4em]">Temporal Timestamp</span>
-                  <span className="text-[12px] font-mono text-cyan-400 uppercase mt-2 tracking-tight">{selectedItem.date} / SYNC_SUCCESS</span>
+        <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/80 backdrop-blur-xl" onClick={closeModal}>
+          <div className="floating-modal-container glass-panel flex flex-col animate-hero-pop" onClick={e => e.stopPropagation()}>
+            
+            {/* Image Section (Top or Left) */}
+            <div className="h-1/2 lg:h-auto lg:w-3/5 relative bg-zinc-950 overflow-hidden">
+              {selectedItem.image ? (
+                <img src={selectedItem.image} className="w-full h-full object-cover animate-pulse" style={{ animationDuration: '6s' }} alt="" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-white/5 bg-zinc-900">
+                   <Fingerprint size={140} />
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }} className="p-4 text-white/10 hover:text-red-500 transition-all border border-white/10 rounded-2xl hover:bg-white/5">
-                  <Trash2 size={22} />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
+              <div className="absolute bottom-6 left-8">
+                <span className="text-cyan-400 font-brand text-[9px] font-black uppercase tracking-[0.4em] border-b border-cyan-400/30 pb-1">Captured Trace</span>
+              </div>
+            </div>
+
+            {/* Content Section (Bottom or Right) */}
+            <div className="flex-1 p-8 lg:p-12 flex flex-col justify-between overflow-y-auto">
+              <div className="space-y-6 lg:space-y-8">
+                <div>
+                  <span className="text-cyan-400 font-brand text-[10px] font-black uppercase tracking-[0.3em] inline-block mb-2">Neural Identity</span>
+                  <h2 className="text-3xl lg:text-5xl font-black uppercase font-title leading-none text-white">
+                    {selectedItem.name}
+                  </h2>
+                </div>
+                
+                <div className="relative">
+                  <div className="absolute -left-6 top-0 bottom-0 w-[2px] bg-cyan-500/30" />
+                  <p className="text-base lg:text-xl font-light italic text-white/90 leading-relaxed font-sans">
+                    "{selectedItem.text}"
+                  </p>
+                </div>
+              </div>
+
+              {/* Bottom Actions Integration */}
+              <div className="mt-10 pt-6 border-t border-white/5 flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-[8px] font-mono text-white/20 uppercase tracking-[0.3em]">Temporal Stamp</span>
+                    <span className="text-[10px] font-mono text-cyan-400 uppercase mt-1 tracking-tight">{selectedItem.date}</span>
+                  </div>
+                  <button onClick={(e) => { e.stopPropagation(); setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }} className="p-3 text-white/10 hover:text-red-500 transition-all">
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+                
+                <button onClick={closeModal} className="w-full bg-white text-black py-4 rounded-2xl font-brand text-[10px] font-black uppercase tracking-[0.2em] active:scale-95 transition-all shadow-xl hover:bg-cyan-400">
+                  Secure Close
                 </button>
               </div>
             </div>
@@ -390,11 +410,11 @@ const App = () => {
         </div>
       )}
 
-      {/* --- Sync (Input) Layer --- */}
+      {/* --- Sync (Input) Modal --- */}
       {isGuestbookOpen && (
         <div className="fixed inset-0 z-[7000] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/95 backdrop-blur-2xl animate-hero-pop" onClick={closeModal}>
-          <div className="w-full sm:max-w-xl glass-panel rounded-t-[4rem] sm:rounded-[4rem] p-12 sm:p-16" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-12">
+          <div className="w-full sm:max-w-xl glass-panel rounded-t-[3rem] sm:rounded-[3rem] p-12 sm:p-16" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-10">
               <div className="flex flex-col gap-2">
                 <h2 className="text-3xl font-black font-brand uppercase tracking-tighter text-cyan-400">New Trace</h2>
                 <span className="text-[9px] font-mono text-white/30 uppercase tracking-[0.5em]">Capture Neurological Fragment</span>
@@ -410,25 +430,25 @@ const App = () => {
                 await addDoc(q, { ...newMessage, createdAt: serverTimestamp(), date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) });
                 setNewMessage({ name: '', text: '', image: null }); closeModal(); playSystemSound('popup');
               } catch (err) { console.error(err); } finally { setIsUploading(false); }
-            }} className="space-y-10">
-              <input type="text" style={{fontSize: '18px'}} placeholder="IDENTITY NAME" className="w-full bg-transparent border-b border-white/10 px-0 py-6 text-sm font-brand outline-none focus:border-cyan-500 transition-all uppercase tracking-widest" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
-              <textarea style={{fontSize: '18px'}} placeholder="YOUR NARRATIVE DATA..." className="w-full h-28 bg-transparent border-b border-white/10 px-0 py-6 text-lg outline-none focus:border-cyan-500 resize-none transition-all font-light tracking-tight" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
+            }} className="space-y-8">
+              <input type="text" style={{fontSize: '18px'}} placeholder="IDENTITY NAME" className="w-full bg-transparent border-b border-white/10 px-0 py-4 text-sm font-brand outline-none focus:border-cyan-500 transition-all uppercase tracking-widest" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
+              <textarea style={{fontSize: '18px'}} placeholder="YOUR NARRATIVE DATA..." className="w-full h-24 bg-transparent border-b border-white/10 px-0 py-4 text-base outline-none focus:border-cyan-500 resize-none transition-all font-light tracking-tight" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
 
-              <div className="flex gap-6">
+              <div className="flex gap-4">
                 <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
-                <button type="button" onClick={() => fileInputRef.current?.click()} className={`flex-1 h-20 flex items-center justify-center gap-4 rounded-3xl border transition-all ${newMessage.image ? 'border-cyan-500 text-cyan-400' : 'border-white/10 text-white/30'}`}>
-                  {isUploading ? <Loader2 size={22} className="animate-spin" /> : <Camera size={22} />}
+                <button type="button" onClick={() => fileInputRef.current?.click()} className={`flex-1 h-16 flex items-center justify-center gap-4 rounded-2xl border transition-all ${newMessage.image ? 'border-cyan-500 text-cyan-400' : 'border-white/10 text-white/30'}`}>
+                  {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
                   <span className="text-[11px] font-brand font-black uppercase tracking-widest">{newMessage.image ? "Visual Ready" : "Attach Image"}</span>
                 </button>
               </div>
 
               {newMessage.image && (
-                <div className="w-full h-40 rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl animate-hero-pop">
+                <div className="w-full h-32 rounded-2xl overflow-hidden border border-white/10 shadow-2xl animate-hero-pop">
                   <img src={newMessage.image} className="w-full h-full object-cover" alt="Preview" />
                 </div>
               )}
 
-              <button type="submit" className="w-full h-20 bg-white text-black rounded-3xl font-brand font-black uppercase tracking-[0.4em] active:scale-[0.98] disabled:opacity-50 shadow-2xl" disabled={isUploading}>
+              <button type="submit" className="w-full h-16 bg-white text-black rounded-3xl font-brand font-black uppercase tracking-[0.4em] active:scale-[0.98] disabled:opacity-50 shadow-2xl" disabled={isUploading}>
                 {isUploading ? "Processing..." : "Initiate Neural Sync"}
               </button>
             </form>
@@ -439,12 +459,12 @@ const App = () => {
       {/* --- Delete Security Protocol --- */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[8000] flex items-center justify-center p-6 bg-black/98 backdrop-blur-3xl animate-hero-pop" onClick={closeModal}>
-          <div className="w-full max-w-xs glass-panel p-12 rounded-[4rem] border border-red-500/30 text-center" onClick={e => e.stopPropagation()}>
-            <Lock size={48} className="text-red-500 mx-auto mb-8" />
-            <h2 className="text-xl font-black uppercase font-brand mb-10 tracking-tighter text-white">Security Pass</h2>
-            <input type="password" style={{fontSize: '18px'}} placeholder="PASSCODE" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-5 text-center mb-10 outline-none focus:border-red-500 font-brand tracking-widest text-white" value={deletePass} onChange={(e) => setDeletePass(e.target.value)} />
+          <div className="w-full max-w-xs glass-panel p-10 rounded-[3rem] border border-red-500/30 text-center" onClick={e => e.stopPropagation()}>
+            <Lock size={40} className="text-red-500 mx-auto mb-6" />
+            <h2 className="text-xl font-black uppercase font-brand mb-8 tracking-tighter text-white">Security Pass</h2>
+            <input type="password" style={{fontSize: '18px'}} placeholder="PASSCODE" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-center mb-8 outline-none focus:border-red-500 font-brand tracking-widest text-white" value={deletePass} onChange={(e) => setDeletePass(e.target.value)} />
             <div className="flex gap-4">
-              <button onClick={closeModal} className="flex-1 py-5 rounded-2xl bg-white/5 text-[10px] font-brand font-black uppercase tracking-widest">Abort</button>
+              <button onClick={closeModal} className="flex-1 py-4 rounded-xl bg-white/5 text-[10px] font-brand font-black uppercase tracking-widest">Abort</button>
               <button onClick={async () => {
                 if (deletePass === ADMIN_PASS && targetDeleteId && db) { 
                   await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', targetDeleteId)); 
