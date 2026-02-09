@@ -19,10 +19,10 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R3.6.0 | Neural Drift & Floating Modal]
- * 1. 비동기 유영: 각 데이터 패킷이 독립적인 애니메이션 주기를 가짐 (각개 유영)
- * 2. 부유형 모달: 풀스크린이 아닌, 배경이 투영되는 플로팅 팝업 시각화
- * 3. 히어로 가독성: REALITY 텍스트 강조 및 하단 버튼 레이아웃 최적화
+ * [Hyzen Labs. CTO Optimized - R3.6.1 | Kinetic Matrix Boost]
+ * 1. 애니메이션 강화: 데이터 패킷의 유영 속도를 상향 조정하여 역동성 부여
+ * 2. 레이아웃 최적화: 히어로 섹션과 매트릭스 사이의 간격 확대
+ * 3. 브랜드 시그니처: 푸터에 'Founder Gene' 표기 추가
  */
 
 const ADMIN_PASS = "5733906";
@@ -208,19 +208,19 @@ const App = () => {
           overflow: hidden;
           background: #0a0a0a;
           border: 0.5px solid rgba(255,255,255,0.06);
-          border-radius: 16px; /* 부드러운 곡선 마감 */
+          border-radius: 16px;
           transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* 각개 유영 애니메이션 (Variations) */
-        @keyframes driftA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-2px, -6px) rotate(1deg); } }
-        @keyframes driftB { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(3px, -4px) rotate(-1deg); } }
-        @keyframes driftC { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-1px, -8px); } }
+        /* 각개 유영 애니메이션 (속도 향상 버전) */
+        @keyframes driftA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-3px, -8px) rotate(1.5deg); } }
+        @keyframes driftB { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(4px, -6px) rotate(-1.5deg); } }
+        @keyframes driftC { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-2px, -10px); } }
 
-        .packet-drift-0 { animation: driftA 7s ease-in-out infinite; }
-        .packet-drift-1 { animation: driftB 8s ease-in-out infinite; }
-        .packet-drift-2 { animation: driftC 9s ease-in-out infinite; }
-        .packet-drift-3 { animation: driftA 10s ease-in-out infinite; animation-direction: reverse; }
+        .packet-drift-0 { animation: driftA 3.5s ease-in-out infinite; }
+        .packet-drift-1 { animation: driftB 4s ease-in-out infinite; }
+        .packet-drift-2 { animation: driftC 4.5s ease-in-out infinite; }
+        .packet-drift-3 { animation: driftA 5s ease-in-out infinite; animation-direction: reverse; }
 
         .data-packet:active { transform: scale(0.9) !important; border-color: #22d3ee; }
 
@@ -229,7 +229,7 @@ const App = () => {
           50% { transform: scale(1.1) translate(2%, 2%); }
           100% { transform: scale(1) translate(0, 0); }
         }
-        .animate-micro-pan { animation: microPan 25s ease-in-out infinite; }
+        .animate-micro-pan { animation: microPan 20s ease-in-out infinite; }
 
         @keyframes syncPulse { 0%, 100% { height: 30%; opacity: 0.3; } 50% { height: 100%; opacity: 1; } }
         @keyframes heroPop { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
@@ -264,7 +264,7 @@ const App = () => {
           <div className="relative w-14 h-14 bg-gradient-to-tr from-cyan-400 to-white rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(34,211,238,0.3)] animate-pulse" />
           <div className="mt-8 flex flex-col items-center gap-3">
             <span className="font-brand text-[9px] tracking-[0.6em] text-cyan-400 font-black uppercase">Grid Initialization</span>
-            <span className="text-[6px] font-mono opacity-20 uppercase tracking-[0.3em]">Hyzen R3.6.0 | GENE Protocol</span>
+            <span className="text-[6px] font-mono opacity-20 uppercase tracking-[0.3em]">Hyzen R3.6.1 | GENE Protocol</span>
           </div>
         </div>
       )}
@@ -282,12 +282,12 @@ const App = () => {
         </div>
       </nav>
 
-      {/* --- Hero Section (Spacing Adjusted) --- */}
-      <section className="px-8 pt-10 mb-8 shrink-0 relative overflow-hidden">
+      {/* --- Hero Section (Gap Increased) --- */}
+      <section className="px-8 pt-12 mb-14 shrink-0 relative overflow-hidden">
         <div className={`transition-all duration-1000 ${showMainTitle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <h1 className="text-[9vw] sm:text-7xl font-title tracking-[-0.08em] leading-[0.9] uppercase">
             <span className="block fused-highlight">FUSED</span>
-            <span className="block" style={{ WebkitTextStroke: '1.2px rgba(255,255,255,0.4)', color: 'rgba(255,255,255,0.06)', textShadow: '0 0 15px rgba(255,255,255,0.1)' }}>REALITY</span>
+            <span className="block" style={{ WebkitTextStroke: '1.2px rgba(255,255,255,0.5)', color: 'rgba(255,255,255,0.08)', textShadow: '0 0 20px rgba(255,255,255,0.15)' }}>REALITY</span>
             <span className="flex items-center gap-3">
               <span className="text-[0.35em] text-white font-black tracking-widest">SYNC</span>
               <NeuralPulse />
@@ -342,21 +342,24 @@ const App = () => {
         </div>
       </main>
 
-      {/* --- Matrix Statistics Footer --- */}
-      <footer className="z-[100] px-8 py-5 flex justify-between items-center border-t border-white/5 bg-black/40 backdrop-blur-md shrink-0">
-        <span className="font-brand text-[8px] tracking-[0.8em] font-black uppercase text-cyan-400/60">HYZEN LABS. 2026</span>
+      {/* --- Matrix Statistics Footer (Founder Gene Added) --- */}
+      <footer className="z-[100] px-8 py-6 flex justify-between items-center border-t border-white/5 bg-black/40 backdrop-blur-md shrink-0">
+        <div className="flex flex-col gap-1">
+          <span className="font-brand text-[8px] tracking-[0.8em] font-black uppercase text-cyan-400/60">HYZEN LABS. 2026</span>
+          <span className="text-[6px] font-brand tracking-[0.4em] text-white/20 uppercase">Founder Gene</span>
+        </div>
         <div className="flex gap-2">
            <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
            <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
         </div>
       </footer>
 
-      {/* --- Floating Detail Modal (Full Zoom 탈피) --- */}
+      {/* --- Floating Detail Modal --- */}
       {isModalOpen && selectedItem && (
         <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/80 backdrop-blur-xl" onClick={closeModal}>
           <div className="floating-modal-container glass-panel flex flex-col animate-hero-pop" onClick={e => e.stopPropagation()}>
             
-            {/* Image Section (Top or Left) */}
+            {/* Image Section */}
             <div className="h-1/2 lg:h-auto lg:w-3/5 relative bg-zinc-950 overflow-hidden">
               {selectedItem.image ? (
                 <img src={selectedItem.image} className="w-full h-full object-cover animate-pulse" style={{ animationDuration: '6s' }} alt="" />
@@ -371,7 +374,7 @@ const App = () => {
               </div>
             </div>
 
-            {/* Content Section (Bottom or Right) */}
+            {/* Content Section */}
             <div className="flex-1 p-8 lg:p-12 flex flex-col justify-between overflow-y-auto">
               <div className="space-y-6 lg:space-y-8">
                 <div>
