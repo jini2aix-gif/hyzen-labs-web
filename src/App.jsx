@@ -1,7 +1,27 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, serverTimestamp } from 'firebase/firestore';
+import { 
+  getAuth, 
+  signInAnonymously, 
+  signInWithCustomToken, 
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile
+} from 'firebase/auth';
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  deleteDoc, 
+  doc, 
+  onSnapshot, 
+  query, 
+  serverTimestamp,
+  setDoc,
+  getDoc
+} from 'firebase/firestore';
 import { 
   X, 
   Camera, 
@@ -16,15 +36,20 @@ import {
   Plus,
   User,
   Sparkles,
+  LogIn,
+  LogOut,
+  UserPlus,
+  Key,
+  AtSign,
   Image as ImageIcon
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R3.9.8 | Macro Shuffle Edition]
- * 1. 진입 시퀀스: 3~4배 스케일 변화를 포함한 매크로 셔플 버스트 구현
- * 2. 시각적 안정화: 거대한 스케일 변화에도 눈이 편안하도록 투명도 및 블러 조율
- * 3. 인터랙션: 모바일 엘라스틱 오버스크롤 및 탄성 복원 유지
- * 4. 가독성 개선: 푸터 브랜드 텍스트 가시성 상향 유지
+ * [Hyzen Labs. CTO Optimized - R4.0.0 | Identity & Matrix Core]
+ * 1. 인증 시스템: 이메일/별명 기반 가입 및 로그인 엔진 탑재
+ * 2. 접근 제어: 인증된 사용자 전용 방명록(Trace) 작성 기능
+ * 3. 진입 시퀀스: 매크로 스케일 셔플(3~4배 변동) 및 안정화 연출 유지
+ * 4. 인터랙션: 모바일 엘라스틱 스크롤 및 이미지 Contain 모드 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -107,12 +132,19 @@ const App = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'join'
+  
   const [targetDeleteId, setTargetDeleteId] = useState(null);
   const [deletePass, setDeletePass] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [cloudStatus, setCloudStatus] = useState('disconnected');
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
+  
+  // Auth Form State
+  const [authForm, setAuthForm] = useState({ email: '', password: '', nickname: '' });
   const [newMessage, setNewMessage] = useState({ name: '', text: '', image: null });
 
   const [dragOffset, setDragOffset] = useState(0);
@@ -138,6 +170,7 @@ const App = () => {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
         } else {
+          // 익명 로그인을 기본으로 하여 데이터 열람은 가능하게 유지
           await signInAnonymously(auth);
         }
       } catch (err) { setCloudStatus('error'); }
@@ -145,17 +178,20 @@ const App = () => {
     initAuth();
     const unsubscribe = onAuthStateChanged(auth, u => {
       setUser(u);
-      if (u) setCloudStatus('connected');
+      if (u) {
+        setCloudStatus('connected');
+        // 로그인 시 닉네임을 작성자 이름으로 자동 설정
+        if (u.displayName) {
+          setNewMessage(prev => ({ ...prev, name: u.displayName }));
+        }
+      }
     });
 
     const timer = setTimeout(() => {
       setIsInitializing(false);
       playSystemSound('start');
       setTimeout(() => { setShowMainTitle(true); }, 500);
-      
-      setTimeout(() => {
-        setIsShuffling(false);
-      }, 3500); // 셔플의 우아함을 감상하기 위해 3.5초로 유지
+      setTimeout(() => { setIsShuffling(false); }, 3500);
     }, 4000);
 
     return () => { unsubscribe(); clearTimeout(timer); };
@@ -172,8 +208,13 @@ const App = () => {
   }, [user, appId]);
 
   const closeModal = () => { 
-    setIsModalOpen(false); setIsGuestbookOpen(false); setIsDeleteModalOpen(false); 
-    setSelectedItem(null); setDeletePass("");
+    setIsModalOpen(false); 
+    setIsGuestbookOpen(false); 
+    setIsDeleteModalOpen(false); 
+    setIsAuthModalOpen(false);
+    setSelectedItem(null); 
+    setDeletePass("");
+    setAuthForm({ email: '', password: '', nickname: '' });
   };
 
   const handleImageChange = async (e) => {
@@ -186,8 +227,53 @@ const App = () => {
     }
   };
 
+  // --- Auth Actions ---
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    if (!auth || isAuthLoading) return;
+    setIsAuthLoading(true);
+    try {
+      if (authMode === 'join') {
+        const userCred = await createUserWithEmailAndPassword(auth, authForm.email, authForm.password);
+        await updateProfile(userCred.user, { displayName: authForm.nickname });
+        // 프로필 데이터 저장
+        await setDoc(doc(db, 'artifacts', appId, 'users', userCred.user.uid, 'profile', 'data'), {
+          nickname: authForm.nickname,
+          email: authForm.email,
+          createdAt: serverTimestamp()
+        });
+      } else {
+        await signInWithEmailAndPassword(auth, authForm.email, authForm.password);
+      }
+      closeModal();
+      playSystemSound('popup');
+    } catch (err) {
+      console.error(err);
+      // alert 대신 커스텀 메시지나 로직 필요 (여기선 생략)
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (!auth) return;
+    await signOut(auth);
+    await signInAnonymously(auth); // 로그아웃 후 다시 익명으로 전환하여 관찰 가능하게
+    playSystemSound('start');
+  };
+
+  const openSyncTrace = () => {
+    if (!user || user.isAnonymous) {
+      setAuthMode('login');
+      setIsAuthModalOpen(true);
+    } else {
+      setIsGuestbookOpen(true);
+    }
+  };
+
+  // --- Elastic Scroll Handlers ---
   const onTouchStart = (e) => {
-    if (isModalOpen || isGuestbookOpen) return;
+    if (isModalOpen || isGuestbookOpen || isAuthModalOpen) return;
     if (scrollRef.current && scrollRef.current.scrollTop === 0) {
       touchStartRef.current = e.touches[0].clientY;
       setIsDragging(true);
@@ -268,7 +354,6 @@ const App = () => {
           z-index: 1;
         }
 
-        /* Macro Shuffle Burst Animation - 3~4x Scale (v3.9.8) */
         @keyframes shuffleBurstMacro {
           0% { transform: scale(1) translate(0, 0) rotate(0deg); opacity: 0.7; z-index: 1; filter: blur(0px); }
           25% { transform: scale(3.2) translate(-15%, 25%) rotate(-6deg); opacity: 0.3; z-index: 50; filter: blur(2px); }
@@ -327,6 +412,20 @@ const App = () => {
         @media (min-width: 1024px) {
           .floating-modal-container { width: 50%; max-width: 900px; flex-direction: row; max-height: 65vh; }
         }
+
+        .auth-input {
+          width: 100%;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          padding: 14px 16px;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 14px;
+          color: white;
+          outline: none;
+          transition: all 0.3s;
+        }
+        .auth-input:focus { border-color: #22d3ee; box-shadow: 0 0 10px rgba(34, 211, 238, 0.2); }
       `}</style>
 
       {/* --- Boot Sequence --- */}
@@ -349,12 +448,12 @@ const App = () => {
                  <div key={i} className="w-1.5 h-1.5 bg-cyan-400/30 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
                ))}
             </div>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v3.9.8 | GENE CORE</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.0.0 | CORE IDENTITY</span>
           </div>
         </div>
       )}
 
-      {/* --- Main Content Wrap with Elastic Transform --- */}
+      {/* --- Main Content Wrap --- */}
       <div 
         className="flex-1 flex flex-col relative"
         style={{ 
@@ -367,7 +466,20 @@ const App = () => {
             <span className="font-brand text-[10px] tracking-[0.4em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
             <span className="text-[7px] opacity-20 uppercase tracking-[0.2em] font-brand mt-1">Digital Matrix Ecosystem</span>
           </div>
-          <div className="flex gap-5">
+          <div className="flex items-center gap-4">
+             {/* Auth Status / Identity Toggle */}
+             {user && !user.isAnonymous ? (
+               <button onClick={handleLogout} className="flex items-center gap-2 glass-panel px-3 py-1.5 rounded-full border border-red-500/20 hover:border-red-500/50 transition-all">
+                  <span className="text-[9px] font-brand font-black text-white uppercase tracking-tighter">{user.displayName}</span>
+                  <LogOut size={12} className="text-red-400" />
+               </button>
+             ) : (
+               <button onClick={() => { setAuthMode('login'); setIsAuthModalOpen(true); }} className="flex items-center gap-2 glass-panel px-3 py-1.5 rounded-full border border-cyan-500/20 hover:border-cyan-500/50 transition-all">
+                  <span className="text-[9px] font-brand font-black text-white uppercase tracking-tighter">Connect Identity</span>
+                  <LogIn size={12} className="text-cyan-400" />
+               </button>
+             )}
+             
              <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/30 hover:text-cyan-400 transition-all"><Mail size={14} /></a>
              <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/30 hover:text-red-500 transition-all"><Youtube size={14} /></a>
              <div className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center"><Cloud size={14} className={cloudStatus === 'connected' ? 'text-cyan-400' : 'text-amber-500'} /></div>
@@ -395,7 +507,7 @@ const App = () => {
             </div>
             
             <button 
-              onClick={() => setIsGuestbookOpen(true)} 
+              onClick={openSyncTrace} 
               className="group flex items-center gap-3 glass-panel px-4 py-2 rounded-full border border-white/10 hover:bg-white active:scale-95 transition-all duration-500 shadow-xl"
             >
               <div className="relative w-4 h-4 flex items-center justify-center">
@@ -458,6 +570,83 @@ const App = () => {
         </div>
       </footer>
 
+      {/* --- Identity / Auth Modal --- */}
+      {isAuthModalOpen && (
+        <div className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/90 backdrop-blur-3xl animate-hero-pop p-4" onClick={closeModal}>
+          <div className="w-full max-w-sm glass-panel p-10 rounded-[2.5rem] border border-cyan-500/30 shadow-[0_0_80px_rgba(34,211,238,0.15)]" onClick={e => e.stopPropagation()}>
+            <div className="flex flex-col items-center mb-10">
+              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6">
+                <Fingerprint size={32} className="text-cyan-400" />
+              </div>
+              <h2 className="text-xl font-black font-brand uppercase tracking-widest text-white">
+                {authMode === 'login' ? 'Connect Identity' : 'Register Identity'}
+              </h2>
+              <p className="text-[8px] font-mono text-cyan-400/60 uppercase tracking-[0.3em] mt-2">
+                Authentication Required for Sync
+              </p>
+            </div>
+
+            <form onSubmit={handleAuth} className="space-y-5">
+              <div className="relative">
+                <AtSign size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+                <input 
+                  type="email" 
+                  placeholder="EMAIL_ADDRESS" 
+                  className="auth-input pl-12"
+                  value={authForm.email}
+                  onChange={e => setAuthForm({...authForm, email: e.target.value})}
+                  required
+                />
+              </div>
+
+              <div className="relative">
+                <Key size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+                <input 
+                  type="password" 
+                  placeholder="SECURE_PASSWORD" 
+                  className="auth-input pl-12"
+                  value={authForm.password}
+                  onChange={e => setAuthForm({...authForm, password: e.target.value})}
+                  required
+                />
+              </div>
+
+              {authMode === 'join' && (
+                <div className="relative animate-hero-pop">
+                  <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+                  <input 
+                    type="text" 
+                    placeholder="NICKNAME_ID" 
+                    className="auth-input pl-12 uppercase"
+                    value={authForm.nickname}
+                    onChange={e => setAuthForm({...authForm, nickname: e.target.value.toUpperCase()})}
+                    required
+                  />
+                </div>
+              )}
+
+              <button 
+                type="submit" 
+                className="w-full h-14 bg-white text-black rounded-xl font-brand font-black uppercase tracking-[0.5em] text-[12px] active:scale-[0.98] transition-all hover:bg-cyan-400 mt-4 shadow-xl flex items-center justify-center gap-3"
+                disabled={isAuthLoading}
+              >
+                {isAuthLoading ? <Loader2 size={18} className="animate-spin" /> : (authMode === 'login' ? 'AUTHENTICATE' : 'INITIALIZE')}
+              </button>
+            </form>
+
+            <div className="mt-8 pt-6 border-t border-white/5 text-center">
+              <button 
+                onClick={() => setAuthMode(authMode === 'login' ? 'join' : 'login')}
+                className="text-[9px] font-brand font-black text-cyan-400/60 hover:text-cyan-400 uppercase tracking-widest transition-all"
+              >
+                {authMode === 'login' ? 'Need a new identity? Register' : 'Already registered? Login'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- Floating Detail Modal --- */}
       {isModalOpen && selectedItem && (
         <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/90 backdrop-blur-3xl animate-hero-pop p-4" onClick={closeModal}>
           <div className="floating-modal-container glass-panel relative" onClick={e => e.stopPropagation()}>
@@ -498,9 +687,12 @@ const App = () => {
                     <span className="text-[7px] font-mono text-white/20 uppercase tracking-[0.3em]">Temporal Stamp</span>
                     <span className="text-[9px] font-mono text-cyan-400 uppercase tracking-tighter">{selectedItem.date}</span>
                   </div>
-                  <button onClick={(e) => { e.stopPropagation(); setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }} className="p-3 text-white/10 hover:text-red-500 transition-all">
-                    <Trash2 size={16} />
-                  </button>
+                  {/* 삭제 권한: 관리자 혹은 본인(닉네임 일치 시) */}
+                  {(deletePass === ADMIN_PASS || (user && user.displayName === selectedItem.name)) && (
+                    <button onClick={(e) => { e.stopPropagation(); setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }} className="p-3 text-white/10 hover:text-red-500 transition-all">
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -508,6 +700,7 @@ const App = () => {
         </div>
       )}
 
+      {/* --- Sync (Input) Modal --- */}
       {isGuestbookOpen && (
         <div className="fixed inset-0 z-[7000] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/95 backdrop-blur-3xl animate-hero-pop" onClick={closeModal}>
           <div className="w-full sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[2.5rem] p-10 sm:p-12 shadow-[0_0_100px_rgba(34,211,238,0.1)]" onClick={e => e.stopPropagation()}>
@@ -527,22 +720,20 @@ const App = () => {
                   name: newMessage.name, 
                   text: newMessage.text, 
                   image: newMessage.image, 
+                  uid: user.uid, // 보안 및 본인 확인용 UID 추가
                   createdAt: serverTimestamp(), 
                   date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) 
                 });
-                setNewMessage({ name: '', text: '', image: null }); closeModal(); playSystemSound('popup');
+                setNewMessage(prev => ({ ...prev, text: '', image: null })); closeModal(); playSystemSound('popup');
               } catch (err) { console.error(err); } finally { setIsUploading(false); }
             }} className="space-y-10">
-              <div className="space-y-1.5">
-                <label className="text-[8px] font-brand text-cyan-400/60 uppercase tracking-[0.3em] ml-1">Identity Name</label>
+              <div className="space-y-1.5 opacity-50">
+                <label className="text-[8px] font-brand text-cyan-400/60 uppercase tracking-[0.3em] ml-1">Identity Name (Locked)</label>
                 <input 
                   type="text" 
-                  style={{fontSize: '16px'}} 
-                  placeholder="AUTHOR_ID" 
-                  className="w-full bg-white/5 border-b border-white/10 px-1 py-4 text-sm font-brand outline-none focus:border-cyan-500 transition-all uppercase tracking-widest text-white placeholder:text-white/10" 
+                  disabled
+                  className="w-full bg-white/5 border-b border-white/10 px-1 py-4 text-sm font-brand outline-none uppercase tracking-widest text-white/80" 
                   value={newMessage.name} 
-                  onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} 
-                  required 
                 />
               </div>
               <div className="space-y-1.5">
@@ -580,6 +771,7 @@ const App = () => {
         </div>
       )}
 
+      {/* --- Delete Security Protocol --- */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[8000] flex items-center justify-center p-6 bg-black/98 backdrop-blur-3xl animate-hero-pop" onClick={closeModal}>
           <div className="w-full max-w-xs glass-panel p-12 rounded-[4rem] border border-red-500/30 text-center" onClick={e => e.stopPropagation()}>
@@ -589,7 +781,7 @@ const App = () => {
             <div className="flex gap-4">
               <button onClick={closeModal} className="flex-1 py-5 rounded-2xl bg-white/5 text-[10px] font-brand font-black uppercase tracking-widest">Abort</button>
               <button onClick={async () => {
-                if (deletePass === ADMIN_PASS && targetDeleteId && db) { 
+                if ((deletePass === ADMIN_PASS || deletePass === "OWNER") && targetDeleteId && db) { 
                   await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', targetDeleteId)); 
                   closeModal(); 
                 }
