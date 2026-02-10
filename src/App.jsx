@@ -20,10 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R3.9.4 | Pure Digital Matrix]
- * 1. 인터랙션: 모바일 엘라스틱 오버스크롤(Rubber-banding) 엔진 탑재
- * 2. 물리 로직: 터치 드래그 거리의 40% 저항 계수 적용 및 탄성 복원 구현
- * 3. 가독성 및 UI 유지: 이미지 Contain 모드 및 푸터 텍스트 밝기 상향 유지
+ * [Hyzen Labs. CTO Optimized - R3.9.5 | Pure Digital Matrix]
+ * 1. 진입 시퀀스: 데이터 노드 셔플 버스트(Shuffle Burst) 애니메이션 구현 (2.5초)
+ * 2. 인터랙션: 모바일 엘라스틱 오버스크롤(Rubber-banding) 및 탄성 복원 유지
+ * 3. 이미지 가시성: 상세 모달 'object-contain' 전체 가시성 유지
+ * 4. UI 최적화: 상세 팝업 하단 버튼 제거 및 푸터 가독성 강화
  */
 
 const ADMIN_PASS = "5733906";
@@ -101,6 +102,7 @@ const NeuralPulse = () => (
 const App = () => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [showMainTitle, setShowMainTitle] = useState(false);
+  const [isShuffling, setIsShuffling] = useState(true);
   const [selectedItem, setSelectedItem] = useState(null); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
@@ -152,6 +154,11 @@ const App = () => {
       setIsInitializing(false);
       playSystemSound('start');
       setTimeout(() => { setShowMainTitle(true); }, 500);
+      
+      // 진입 후 2.5초간 셔플 수행 후 정렬
+      setTimeout(() => {
+        setIsShuffling(false);
+      }, 2500);
     }, 4000);
 
     return () => { unsubscribe(); clearTimeout(timer); };
@@ -185,7 +192,6 @@ const App = () => {
   // --- Elastic Scroll Handlers ---
   const onTouchStart = (e) => {
     if (isModalOpen || isGuestbookOpen) return;
-    // 그리드가 상단에 있을 때만 드래그 효과 활성
     if (scrollRef.current && scrollRef.current.scrollTop === 0) {
       touchStartRef.current = e.touches[0].clientY;
       setIsDragging(true);
@@ -198,7 +204,6 @@ const App = () => {
     const diff = currentY - touchStartRef.current;
 
     if (diff > 0) {
-      // 마찰 계수 0.4 적용 (당길수록 더 무거워지는 느낌)
       const easedOffset = Math.pow(diff, 0.8) * 1.5;
       setDragOffset(easedOffset);
     } else {
@@ -263,9 +268,22 @@ const App = () => {
           background: #0a0a0a;
           border: 0.5px solid rgba(255,255,255,0.08);
           border-radius: 16px;
-          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
+        /* Shuffle Burst Animation */
+        @keyframes shuffleBurst {
+          0% { transform: scale(1) translate(0, 0) rotate(0deg); filter: blur(0px); opacity: 0.8; }
+          25% { transform: scale(1.1) translate(-20px, 30px) rotate(-10deg); filter: blur(3px); opacity: 0.5; }
+          50% { transform: scale(0.9) translate(40px, -20px) rotate(15deg); filter: blur(1px); opacity: 0.7; }
+          75% { transform: scale(1.15) translate(-30px, -40px) rotate(-8deg); filter: blur(2px); opacity: 0.4; }
+          100% { transform: scale(1) translate(0, 0) rotate(0deg); filter: blur(0px); opacity: 0.8; }
+        }
+        .animate-shuffle {
+          animation: shuffleBurst 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
+        }
+
+        /* Drift Animations */
         @keyframes driftA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-3px, -10px) rotate(1.5deg); } }
         @keyframes driftB { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(6px, -8px) rotate(-1.5deg); } }
         @keyframes driftC { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-2px, -12px); } }
@@ -335,7 +353,7 @@ const App = () => {
                  <div key={i} className="w-1.5 h-1.5 bg-cyan-400/30 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
                ))}
             </div>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v3.9.4 | GENE CORE</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v3.9.5 | GENE CORE</span>
           </div>
         </div>
       )}
@@ -399,7 +417,8 @@ const App = () => {
               {messages.length > 0 ? messages.map((item, idx) => (
                 <div 
                   key={item.id || idx} 
-                  className={`data-packet group packet-drift-${idx % 4}`}
+                  className={`data-packet group ${isShuffling ? 'animate-shuffle' : `packet-drift-${idx % 4}`}`}
+                  style={{ animationDelay: isShuffling ? `${idx * 0.05}s` : '0s' }}
                   onClick={() => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
                 >
                   <div className="absolute inset-0 overflow-hidden">
