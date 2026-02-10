@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R3.9.5 | Pure Digital Matrix]
- * 1. 진입 시퀀스: 데이터 노드 셔플 버스트(Shuffle Burst) 애니메이션 구현 (2.5초)
- * 2. 인터랙션: 모바일 엘라스틱 오버스크롤(Rubber-banding) 및 탄성 복원 유지
- * 3. 이미지 가시성: 상세 모달 'object-contain' 전체 가시성 유지
- * 4. UI 최적화: 상세 팝업 하단 버튼 제거 및 푸터 가독성 강화
+ * [Hyzen Labs. CTO Optimized - R3.9.8 | Macro Shuffle Edition]
+ * 1. 진입 시퀀스: 3~4배 스케일 변화를 포함한 매크로 셔플 버스트 구현
+ * 2. 시각적 안정화: 거대한 스케일 변화에도 눈이 편안하도록 투명도 및 블러 조율
+ * 3. 인터랙션: 모바일 엘라스틱 오버스크롤 및 탄성 복원 유지
+ * 4. 가독성 개선: 푸터 브랜드 텍스트 가시성 상향 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -115,12 +115,10 @@ const App = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState({ name: '', text: '', image: null });
 
-  // Elastic Scroll States
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const touchStartRef = useRef(null);
   const scrollRef = useRef(null);
-  
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -155,10 +153,9 @@ const App = () => {
       playSystemSound('start');
       setTimeout(() => { setShowMainTitle(true); }, 500);
       
-      // 진입 후 2.5초간 셔플 수행 후 정렬
       setTimeout(() => {
         setIsShuffling(false);
-      }, 2500);
+      }, 3500); // 셔플의 우아함을 감상하기 위해 3.5초로 유지
     }, 4000);
 
     return () => { unsubscribe(); clearTimeout(timer); };
@@ -189,7 +186,6 @@ const App = () => {
     }
   };
 
-  // --- Elastic Scroll Handlers ---
   const onTouchStart = (e) => {
     if (isModalOpen || isGuestbookOpen) return;
     if (scrollRef.current && scrollRef.current.scrollTop === 0) {
@@ -268,22 +264,22 @@ const App = () => {
           background: #0a0a0a;
           border: 0.5px solid rgba(255,255,255,0.08);
           border-radius: 16px;
-          transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+          z-index: 1;
         }
 
-        /* Shuffle Burst Animation */
-        @keyframes shuffleBurst {
-          0% { transform: scale(1) translate(0, 0) rotate(0deg); filter: blur(0px); opacity: 0.8; }
-          25% { transform: scale(1.1) translate(-20px, 30px) rotate(-10deg); filter: blur(3px); opacity: 0.5; }
-          50% { transform: scale(0.9) translate(40px, -20px) rotate(15deg); filter: blur(1px); opacity: 0.7; }
-          75% { transform: scale(1.15) translate(-30px, -40px) rotate(-8deg); filter: blur(2px); opacity: 0.4; }
-          100% { transform: scale(1) translate(0, 0) rotate(0deg); filter: blur(0px); opacity: 0.8; }
+        /* Macro Shuffle Burst Animation - 3~4x Scale (v3.9.8) */
+        @keyframes shuffleBurstMacro {
+          0% { transform: scale(1) translate(0, 0) rotate(0deg); opacity: 0.7; z-index: 1; filter: blur(0px); }
+          25% { transform: scale(3.2) translate(-15%, 25%) rotate(-6deg); opacity: 0.3; z-index: 50; filter: blur(2px); }
+          50% { transform: scale(0.6) translate(30%, -15%) rotate(10deg); opacity: 0.6; z-index: 1; filter: blur(0px); }
+          75% { transform: scale(3.8) translate(-25%, -30%) rotate(-4deg); opacity: 0.2; z-index: 50; filter: blur(3px); }
+          100% { transform: scale(1) translate(0, 0) rotate(0deg); opacity: 0.7; z-index: 1; filter: blur(0px); }
         }
         .animate-shuffle {
-          animation: shuffleBurst 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
+          animation: shuffleBurstMacro 1.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
         }
 
-        /* Drift Animations */
         @keyframes driftA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-3px, -10px) rotate(1.5deg); } }
         @keyframes driftB { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(6px, -8px) rotate(-1.5deg); } }
         @keyframes driftC { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-2px, -12px); } }
@@ -353,7 +349,7 @@ const App = () => {
                  <div key={i} className="w-1.5 h-1.5 bg-cyan-400/30 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
                ))}
             </div>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v3.9.5 | GENE CORE</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v3.9.8 | GENE CORE</span>
           </div>
         </div>
       )}
@@ -366,7 +362,6 @@ const App = () => {
           transition: isDragging ? 'none' : 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
       >
-        {/* --- Global Header --- */}
         <nav className="z-[100] px-8 pt-12 pb-2 flex justify-between items-start shrink-0">
           <div className="flex flex-col">
             <span className="font-brand text-[10px] tracking-[0.4em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
@@ -379,7 +374,6 @@ const App = () => {
           </div>
         </nav>
 
-        {/* --- Hero Section --- */}
         <section className="px-8 pt-4 mb-6 shrink-0 relative overflow-hidden">
           <div className={`transition-all duration-1200 ${showMainTitle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             <h1 className="text-[6.5vw] sm:text-[2.2rem] font-title tracking-[-0.04em] leading-[0.9] uppercase">
@@ -393,7 +387,6 @@ const App = () => {
           </div>
         </section>
 
-        {/* --- Digital Matrix Grid --- */}
         <main className="flex-1 overflow-hidden flex flex-col relative z-10">
           <div className="px-10 flex items-center justify-between mb-4 shrink-0">
             <div className="flex flex-col">
@@ -418,7 +411,7 @@ const App = () => {
                 <div 
                   key={item.id || idx} 
                   className={`data-packet group ${isShuffling ? 'animate-shuffle' : `packet-drift-${idx % 4}`}`}
-                  style={{ animationDelay: isShuffling ? `${idx * 0.05}s` : '0s' }}
+                  style={{ animationDelay: isShuffling ? `${idx * 0.1}s` : '0s' }}
                   onClick={() => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
                 >
                   <div className="absolute inset-0 overflow-hidden">
@@ -449,7 +442,6 @@ const App = () => {
         </main>
       </div>
 
-      {/* --- Footer --- */}
       <footer className="z-[100] px-10 py-6 flex justify-between items-end border-t border-white/5 bg-black/60 backdrop-blur-md shrink-0">
         <div className="flex flex-col gap-1.5">
           <span className="font-brand text-[9px] tracking-[0.8em] font-black uppercase text-white/40">HYZEN LABS. 2026</span>
@@ -466,15 +458,12 @@ const App = () => {
         </div>
       </footer>
 
-      {/* --- Floating Detail Modal --- */}
       {isModalOpen && selectedItem && (
         <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/90 backdrop-blur-3xl animate-hero-pop p-4" onClick={closeModal}>
           <div className="floating-modal-container glass-panel relative" onClick={e => e.stopPropagation()}>
-            
             <button onClick={closeModal} className="absolute top-5 right-5 z-[110] p-2 bg-black/50 hover:bg-white text-white hover:text-black rounded-full transition-all border border-white/10 backdrop-blur-md">
               <X size={18} />
             </button>
-
             <div className="h-[35vh] lg:h-auto lg:w-[50%] relative bg-black overflow-hidden border-b lg:border-b-0 lg:border-r border-white/10 flex items-center justify-center">
               {selectedItem.image ? (
                 <img src={selectedItem.image} className="w-full h-full object-contain animate-ken-burns" alt="" />
@@ -488,7 +477,6 @@ const App = () => {
                 <span className="text-cyan-400 font-brand text-[8px] font-black uppercase tracking-[0.4em] border-b border-cyan-400/30 pb-0.5">Linked Core</span>
               </div>
             </div>
-
             <div className="flex-1 p-6 lg:p-10 flex flex-col justify-between overflow-hidden">
               <div className="space-y-4">
                 <div>
@@ -497,7 +485,6 @@ const App = () => {
                     {selectedItem.name}
                   </h2>
                 </div>
-                
                 <div className="relative">
                   <div className="absolute -left-3.5 top-0 bottom-0 w-[1.5px] bg-cyan-500/40" />
                   <p className="text-xs lg:text-base font-light italic text-white/80 leading-relaxed font-sans line-clamp-5 lg:line-clamp-8">
@@ -505,7 +492,6 @@ const App = () => {
                   </p>
                 </div>
               </div>
-
               <div className="mt-6 pt-4 border-t border-white/5 flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
@@ -522,7 +508,6 @@ const App = () => {
         </div>
       )}
 
-      {/* --- Sync (Input) Modal --- */}
       {isGuestbookOpen && (
         <div className="fixed inset-0 z-[7000] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/95 backdrop-blur-3xl animate-hero-pop" onClick={closeModal}>
           <div className="w-full sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[2.5rem] p-10 sm:p-12 shadow-[0_0_100px_rgba(34,211,238,0.1)]" onClick={e => e.stopPropagation()}>
@@ -533,7 +518,6 @@ const App = () => {
               </div>
               <button onClick={closeModal} className="p-2.5 bg-white/5 rounded-full hover:bg-white/10 transition-all text-white/40"><X size={18} /></button>
             </div>
-            
             <form onSubmit={async (e) => {
               e.preventDefault(); if (!newMessage.name || !newMessage.text || isUploading) return;
               setIsUploading(true);
@@ -561,7 +545,6 @@ const App = () => {
                   required 
                 />
               </div>
-
               <div className="space-y-1.5">
                 <label className="text-[8px] font-brand text-cyan-400/60 uppercase tracking-[0.3em] ml-1">Your Narrative Data</label>
                 <textarea 
@@ -573,7 +556,6 @@ const App = () => {
                   required 
                 />
               </div>
-
               <div className="flex flex-col gap-3">
                 <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
                 <button type="button" onClick={() => fileInputRef.current?.click()} className={`h-16 flex items-center justify-center gap-4 rounded-3xl border transition-all ${newMessage.image ? 'border-cyan-500 text-cyan-400 bg-cyan-400/5' : 'border-white/10 text-white/30 hover:border-white/20'}`}>
@@ -581,13 +563,11 @@ const App = () => {
                   <span className="text-[9px] font-brand font-black uppercase tracking-widest">{newMessage.image ? "Visual Ready" : "Attach Image"}</span>
                 </button>
               </div>
-
               {newMessage.image && (
                 <div className="w-full h-32 rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl animate-hero-pop">
                   <img src={newMessage.image} className="w-full h-full object-cover" alt="Preview" />
                 </div>
               )}
-
               <button 
                 type="submit" 
                 className="w-full h-14 bg-white text-black rounded-2xl font-brand font-black uppercase tracking-[0.5em] text-[13px] active:scale-[0.98] disabled:opacity-50 shadow-xl transition-all hover:bg-cyan-400" 
@@ -600,7 +580,6 @@ const App = () => {
         </div>
       )}
 
-      {/* --- Delete Security Protocol --- */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[8000] flex items-center justify-center p-6 bg-black/98 backdrop-blur-3xl animate-hero-pop" onClick={closeModal}>
           <div className="w-full max-w-xs glass-panel p-12 rounded-[4rem] border border-red-500/30 text-center" onClick={e => e.stopPropagation()}>
