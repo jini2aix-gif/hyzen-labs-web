@@ -20,16 +20,17 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R3.9.0 | Pure Digital Matrix]
- * 1. 기능 정제: 동영상 지원 제거 및 이미지 중심의 고속 매트릭스 회귀
- * 2. 시각적 균형: 히어로 폰트 사이즈 최적화 및 버튼 크기 복구
- * 3. 팝업 고도화: 제로-스크롤 레이아웃 및 심미적 입력창 디자인 완성
+ * [Hyzen Labs. CTO Optimized - R3.9.1 | Pure Digital Matrix]
+ * 1. 이미지 최적화: 상세 모달 내 이미지 'Contain' 모드로 전체 가시성 확보
+ * 2. 인터페이스 간소화: 상세 팝업 하단 버튼 제거 및 상단 닫기 기능 강화
+ * 3. 메일 주소 업데이트: jini2aix@gmail.com 반영
+ * 4. 가독성 개선: 푸터 브랜드 텍스트 명도 상향
  */
 
 const ADMIN_PASS = "5733906";
 const FALLBACK_APP_ID = 'hyzen-labs-production';
 const YOUTUBE_URL = "Https://youtube.com/@hyzen-labs-ai";
-const EMAIL_ADDRESS = "jini2gene@gmail.com";
+const EMAIL_ADDRESS = "jini2aix@gmail.com";
 
 const getFirebaseConfig = () => {
   try {
@@ -235,10 +236,10 @@ const App = () => {
 
         @keyframes kenBurns {
           0% { transform: scale(1); }
-          50% { transform: scale(1.18); }
+          50% { transform: scale(1.1); }
           100% { transform: scale(1); }
         }
-        .animate-ken-burns { animation: kenBurns 15s ease-in-out infinite; }
+        .animate-ken-burns { animation: kenBurns 20s ease-in-out infinite; }
 
         @keyframes syncPulse { 0%, 100% { height: 30%; opacity: 0.3; } 50% { height: 100%; opacity: 1; } }
         @keyframes heroPop { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
@@ -291,7 +292,7 @@ const App = () => {
                  <div key={i} className="w-1.5 h-1.5 bg-cyan-400/30 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
                ))}
             </div>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v3.9.0 | GENE CORE</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v3.9.1 | GENE CORE</span>
           </div>
         </div>
       )}
@@ -309,7 +310,7 @@ const App = () => {
         </div>
       </nav>
 
-      {/* --- Hero Section (Refined Compact Size) --- */}
+      {/* --- Hero Section --- */}
       <section className="px-8 pt-4 mb-6 shrink-0 relative overflow-hidden">
         <div className={`transition-all duration-1200 ${showMainTitle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <h1 className="text-[6.5vw] sm:text-[2.2rem] font-title tracking-[-0.04em] leading-[0.9] uppercase">
@@ -380,7 +381,8 @@ const App = () => {
       {/* --- Footer (Restored Signature) --- */}
       <footer className="z-[100] px-10 py-6 flex justify-between items-end border-t border-white/5 bg-black/60 backdrop-blur-md shrink-0">
         <div className="flex flex-col gap-1.5">
-          <span className="font-brand text-[9px] tracking-[0.8em] font-black uppercase text-white/10">HYZEN LABS. 2026</span>
+          {/* 하단 텍스트 명도 조절: text-white/10 -> text-white/40 */}
+          <span className="font-brand text-[9px] tracking-[0.8em] font-black uppercase text-white/40">HYZEN LABS. 2026</span>
           <div className="flex items-center gap-2">
             <div className="w-1 h-1 rounded-full bg-white/20 animate-pulse" />
             <span className="text-[9px] font-brand tracking-[0.4em] text-white/40 uppercase">
@@ -394,7 +396,7 @@ const App = () => {
         </div>
       </footer>
 
-      {/* --- Floating Detail Modal (Compact & Zero-Scroll UX) --- */}
+      {/* --- Floating Detail Modal --- */}
       {isModalOpen && selectedItem && (
         <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/90 backdrop-blur-3xl animate-hero-pop p-4" onClick={closeModal}>
           <div className="floating-modal-container glass-panel relative" onClick={e => e.stopPropagation()}>
@@ -404,22 +406,22 @@ const App = () => {
               <X size={18} />
             </button>
 
-            {/* Media Canvas */}
-            <div className="h-[28vh] lg:h-auto lg:w-[50%] relative bg-black overflow-hidden border-b lg:border-b-0 lg:border-r border-white/10">
+            {/* Media Canvas - 사진 전체 가시성 위해 object-contain 적용 */}
+            <div className="h-[35vh] lg:h-auto lg:w-[50%] relative bg-black overflow-hidden border-b lg:border-b-0 lg:border-r border-white/10 flex items-center justify-center">
               {selectedItem.image ? (
-                <img src={selectedItem.image} className="w-full h-full object-cover animate-ken-burns" alt="" />
+                <img src={selectedItem.image} className="w-full h-full object-contain animate-ken-burns" alt="" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-white/5 bg-zinc-900">
                    <Fingerprint size={100} />
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
               <div className="absolute bottom-5 left-6">
                 <span className="text-cyan-400 font-brand text-[8px] font-black uppercase tracking-[0.4em] border-b border-cyan-400/30 pb-0.5">Linked Core</span>
               </div>
             </div>
 
-            {/* Narrative Content (Zero Scroll optimized font) */}
+            {/* Narrative Content */}
             <div className="flex-1 p-6 lg:p-10 flex flex-col justify-between overflow-hidden">
               <div className="space-y-4">
                 <div>
@@ -437,7 +439,7 @@ const App = () => {
                 </div>
               </div>
 
-              {/* Secure Close Action - Always visible */}
+              {/* Secure Info - 닫기 버튼 제거하고 정보와 삭제 기능만 유지 */}
               <div className="mt-6 pt-4 border-t border-white/5 flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
@@ -448,10 +450,6 @@ const App = () => {
                     <Trash2 size={16} />
                   </button>
                 </div>
-                
-                <button onClick={closeModal} className="w-full bg-white text-black py-3.5 rounded-xl font-brand text-[10px] font-black uppercase tracking-[0.1em] active:scale-[0.98] transition-all shadow-xl hover:bg-cyan-400">
-                  Secure Close
-                </button>
               </div>
             </div>
           </div>
