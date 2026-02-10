@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R3.9.9 | Pure Macro Shuffle Rollback]
- * 1. 롤백 완료: 로그인/회원가입 시스템 제거 및 익명 기반 직관적 접근 복원
- * 2. 진입 시퀀스: 3~4배 스케일 변화를 포함한 매크로 셔플 버스트 유지
+ * [Hyzen Labs. CTO Optimized - R4.0.1 | Image Tracking Edition]
+ * 1. 상세 모달 고도화: 이미지 풀-캔버스 렌더링 및 3초 정밀 트래킹 모션(Scan) 구현
+ * 2. 진입 시퀀스: 매크로 스케일 셔플(3~4배 변동) 및 안정화 연출 유지
  * 3. 인터랙션: 모바일 엘라스틱 오버스크롤 및 탄성 복원 엔진 유지
- * 4. 시각적 정제: 상세 모달 'object-contain' 및 푸터 텍스트 가시성 유지
+ * 4. 시각적 정제: 푸터 브랜드 텍스트 가독성 및 익명 접근성 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -299,6 +299,19 @@ const App = () => {
         }
         .animate-ken-burns { animation: kenBurns 20s ease-in-out infinite; }
 
+        /* New Image Tracking Motion (Scan) - 3 Seconds (v4.0.1) */
+        @keyframes imageFullScan {
+          0% { object-position: 0% 0%; transform: scale(1.3); filter: blur(4px) brightness(0.5); }
+          15% { filter: blur(0px) brightness(1); }
+          30% { object-position: 100% 0%; }
+          60% { object-position: 100% 100%; }
+          85% { object-position: 0% 100%; }
+          100% { object-position: 50% 50%; transform: scale(1); }
+        }
+        .animate-image-scan {
+          animation: imageFullScan 3s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+        }
+
         @keyframes syncPulse { 0%, 100% { height: 30%; opacity: 0.3; } 50% { height: 100%; opacity: 1; } }
         @keyframes heroPop { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
         .animate-hero-pop { animation: heroPop 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -350,7 +363,7 @@ const App = () => {
                  <div key={i} className="w-1.5 h-1.5 bg-cyan-400/30 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
                ))}
             </div>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v3.9.9 | MACRO PURE</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.0.1 | VISION CORE</span>
           </div>
         </div>
       )}
@@ -466,9 +479,15 @@ const App = () => {
             <button onClick={closeModal} className="absolute top-5 right-5 z-[110] p-2 bg-black/50 hover:bg-white text-white hover:text-black rounded-full transition-all border border-white/10 backdrop-blur-md">
               <X size={18} />
             </button>
+            
+            {/* Media Canvas - 풀-캔버스 및 3초 스캔 모션 적용 */}
             <div className="h-[35vh] lg:h-auto lg:w-[50%] relative bg-black overflow-hidden border-b lg:border-b-0 lg:border-r border-white/10 flex items-center justify-center">
               {selectedItem.image ? (
-                <img src={selectedItem.image} className="w-full h-full object-contain animate-ken-burns" alt="" />
+                <img 
+                  src={selectedItem.image} 
+                  className="w-full h-full object-cover animate-image-scan" 
+                  alt="" 
+                />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-white/5 bg-zinc-900">
                    <Fingerprint size={100} />
@@ -476,9 +495,10 @@ const App = () => {
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
               <div className="absolute bottom-5 left-6">
-                <span className="text-cyan-400 font-brand text-[8px] font-black uppercase tracking-[0.4em] border-b border-cyan-400/30 pb-0.5">Linked Core</span>
+                <span className="text-cyan-400 font-brand text-[8px] font-black uppercase tracking-[0.4em] border-b border-cyan-400/30 pb-0.5">Scanned Node</span>
               </div>
             </div>
+
             <div className="flex-1 p-6 lg:p-10 flex flex-col justify-between overflow-hidden">
               <div className="space-y-4">
                 <div>
