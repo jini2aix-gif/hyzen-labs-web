@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R4.0.1 | Image Tracking Edition]
- * 1. 상세 모달 고도화: 이미지 풀-캔버스 렌더링 및 3초 정밀 트래킹 모션(Scan) 구현
- * 2. 진입 시퀀스: 매크로 스케일 셔플(3~4배 변동) 및 안정화 연출 유지
- * 3. 인터랙션: 모바일 엘라스틱 오버스크롤 및 탄성 복원 엔진 유지
- * 4. 시각적 정제: 푸터 브랜드 텍스트 가독성 및 익명 접근성 유지
+ * [Hyzen Labs. CTO Optimized - R4.1.0 | Temporal Rotation Edition]
+ * 1. 시계열 데이터 확장: 방명록 저장 시 년, 월, 일 포함 (YYYY.MM.DD HH:mm)
+ * 2. 진입 시퀀스 변경: 매크로 셔플 -> 3초 개별 3D 회전(Individual Spin) 연출
+ * 3. 상세 모달 유지: 이미지 3초 정밀 트래킹 모션(Scan) 유지
+ * 4. 아키텍처: Founder GENE 전용 최적화 및 미래 지향적 UI 정제
  */
 
 const ADMIN_PASS = "5733906";
@@ -102,7 +102,7 @@ const NeuralPulse = () => (
 const App = () => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [showMainTitle, setShowMainTitle] = useState(false);
-  const [isShuffling, setIsShuffling] = useState(true);
+  const [isSpinning, setIsSpinning] = useState(true);
   const [selectedItem, setSelectedItem] = useState(null); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
@@ -154,7 +154,7 @@ const App = () => {
       setIsInitializing(false);
       playSystemSound('start');
       setTimeout(() => { setShowMainTitle(true); }, 500);
-      setTimeout(() => { setIsShuffling(false); }, 3500);
+      setTimeout(() => { setIsSpinning(false); }, 3000); // 3초 후 회전 중단
     }, 4000);
 
     return () => { unsubscribe(); clearTimeout(timer); };
@@ -270,15 +270,14 @@ const App = () => {
           z-index: 1;
         }
 
-        @keyframes shuffleBurstMacro {
-          0% { transform: scale(1) translate(0, 0) rotate(0deg); opacity: 0.7; z-index: 1; filter: blur(0px); }
-          25% { transform: scale(3.2) translate(-15%, 25%) rotate(-6deg); opacity: 0.3; z-index: 50; filter: blur(2px); }
-          50% { transform: scale(0.6) translate(30%, -15%) rotate(10deg); opacity: 0.6; z-index: 1; filter: blur(0px); }
-          75% { transform: scale(3.8) translate(-25%, -30%) rotate(-4deg); opacity: 0.2; z-index: 50; filter: blur(3px); }
-          100% { transform: scale(1) translate(0, 0) rotate(0deg); opacity: 0.7; z-index: 1; filter: blur(0px); }
+        /* [Update] Individual 3D Rotation Animation - 3s (v4.1.0) */
+        @keyframes individualSpin {
+          0% { transform: perspective(1000px) rotateY(180deg) scale(0.4); opacity: 0; }
+          60% { transform: perspective(1000px) rotateY(-15deg) scale(1.05); opacity: 0.8; }
+          100% { transform: perspective(1000px) rotateY(0deg) scale(1); opacity: 0.7; }
         }
-        .animate-shuffle {
-          animation: shuffleBurstMacro 1.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+        .animate-entry-spin {
+          animation: individualSpin 3s cubic-bezier(0.23, 1, 0.32, 1) forwards;
         }
 
         @keyframes driftA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-3px, -10px) rotate(1.5deg); } }
@@ -292,14 +291,6 @@ const App = () => {
 
         .data-packet:active { transform: scale(0.92) !important; border-color: #22d3ee; }
 
-        @keyframes kenBurns {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.1); }
-          100% { transform: scale(1); }
-        }
-        .animate-ken-burns { animation: kenBurns 20s ease-in-out infinite; }
-
-        /* New Image Tracking Motion (Scan) - 3 Seconds (v4.0.1) */
         @keyframes imageFullScan {
           0% { object-position: 0% 0%; transform: scale(1.3); filter: blur(4px) brightness(0.5); }
           15% { filter: blur(0px) brightness(1); }
@@ -363,7 +354,7 @@ const App = () => {
                  <div key={i} className="w-1.5 h-1.5 bg-cyan-400/30 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
                ))}
             </div>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.0.1 | VISION CORE</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.1.0 | TEMPORAL CORE</span>
           </div>
         </div>
       )}
@@ -424,8 +415,8 @@ const App = () => {
               {messages.length > 0 ? messages.map((item, idx) => (
                 <div 
                   key={item.id || idx} 
-                  className={`data-packet group ${isShuffling ? 'animate-shuffle' : `packet-drift-${idx % 4}`}`}
-                  style={{ animationDelay: isShuffling ? `${idx * 0.1}s` : '0s' }}
+                  className={`data-packet group ${isSpinning ? 'animate-entry-spin' : `packet-drift-${idx % 4}`}`}
+                  style={{ animationDelay: isSpinning ? `${idx * 0.08}s` : '0s' }}
                   onClick={() => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
                 >
                   <div className="absolute inset-0 overflow-hidden">
@@ -480,7 +471,6 @@ const App = () => {
               <X size={18} />
             </button>
             
-            {/* Media Canvas - 풀-캔버스 및 3초 스캔 모션 적용 */}
             <div className="h-[35vh] lg:h-auto lg:w-[50%] relative bg-black overflow-hidden border-b lg:border-b-0 lg:border-r border-white/10 flex items-center justify-center">
               {selectedItem.image ? (
                 <img 
@@ -518,6 +508,7 @@ const App = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
                     <span className="text-[7px] font-mono text-white/20 uppercase tracking-[0.3em]">Temporal Stamp</span>
+                    {/* [Update] Display full date and time */}
                     <span className="text-[9px] font-mono text-cyan-400 uppercase tracking-tighter">{selectedItem.date}</span>
                   </div>
                   <button onClick={(e) => { e.stopPropagation(); setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }} className="p-3 text-white/10 hover:text-red-500 transition-all">
@@ -546,12 +537,18 @@ const App = () => {
               setIsUploading(true);
               try {
                 const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+                
+                // [Update] Get full date (Year.Month.Day Time)
+                const now = new Date();
+                const fullDate = now.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '') + ' ' + 
+                                 now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+
                 await addDoc(q, { 
                   name: newMessage.name, 
                   text: newMessage.text, 
                   image: newMessage.image, 
                   createdAt: serverTimestamp(), 
-                  date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) 
+                  date: fullDate 
                 });
                 setNewMessage({ name: '', text: '', image: null }); closeModal(); playSystemSound('popup');
               } catch (err) { console.error(err); } finally { setIsUploading(false); }
