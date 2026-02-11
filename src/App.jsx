@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R4.3.0 | Quantum Synthesis Edition]
- * 1. 진입 시퀀스: 5초간의 '양자 합성(Quantum Synthesis)' 시퀀스 구현
- * 2. 에너지 스캔: 매트릭스를 가로지르는 광학 스위프(Light Sweep) 레이어 추가
- * 3. 글리치 마테리얼: 노이즈 상태에서 실체로 변하는 디지털 재구성 효과
- * 4. 시계열 데이터: YYYY.MM.DD HH:mm 포맷 유지
+ * [Hyzen Labs. CTO Optimized - R4.3.1 | Quantum Date Edition]
+ * 1. 시계열 데이터 강화: 상세 모달 내 연, 월, 일 포함 (YYYY.MM.DD HH:mm) 출력
+ * 2. 진입 시퀀스 유지: 5초간의 '양자 합성(Quantum Synthesis)' 시퀀스
+ * 3. 에너지 스캔: 매트릭스를 가로지르는 광학 스위프(Light Sweep) 레이어
+ * 4. 아키텍처: Founder GENE 전용 정밀 시간 기록 시스템 구축
  */
 
 const ADMIN_PASS = "5733906";
@@ -276,8 +276,6 @@ const App = () => {
           backface-visibility: hidden;
         }
 
-        /* [New] Quantum Synthesis Animation (v4.3.0) 
-           무의 상태에서 픽셀이 결합되며 실체화되는 연출 */
         @keyframes quantumSynthesis {
           0% { 
             transform: translateZ(-800px) translateY(100px) skewX(20deg) scale(1.5);
@@ -304,7 +302,6 @@ const App = () => {
           animation: quantumSynthesis 5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
         }
 
-        /* 에너지 스캔 바 (Light Sweep) */
         @keyframes energySweep {
           0% { transform: translateX(-150%) translateY(-150%) rotate(45deg); opacity: 0; }
           20% { opacity: 0.8; }
@@ -396,7 +393,7 @@ const App = () => {
                  <div key={i} className="w-1.5 h-1.5 bg-cyan-400/30 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
                ))}
             </div>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.3.0 | QUANTUM SYNTHESIS</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.3.1 | QUANTUM DATE</span>
           </div>
         </div>
       )}
@@ -453,7 +450,6 @@ const App = () => {
           </div>
 
           <div className="matrix-container">
-            {/* [New] Energy Sweep Overlay */}
             {isSynthesizing && <div className="energy-sweep-bar" />}
             
             <div className="matrix-grid" ref={scrollRef}>
@@ -462,7 +458,6 @@ const App = () => {
                   key={item.id || idx} 
                   className={`data-packet group ${isSynthesizing ? 'animate-quantum-synthesis' : `packet-drift-${idx % 4}`}`}
                   style={{ 
-                    /* 폭포수처럼 쏟아져 내려오는 합성 딜레이 설계 */
                     animationDelay: isSynthesizing ? `${idx * 0.02}s` : '0s',
                     opacity: isSynthesizing ? 0 : 0.7 
                   }}
@@ -557,6 +552,7 @@ const App = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
                     <span className="text-[7px] font-mono text-white/20 uppercase tracking-[0.3em]">Temporal Stamp</span>
+                    {/* [Updated] Display Full Date (YYYY.MM.DD HH:mm) */}
                     <span className="text-[9px] font-mono text-cyan-400 uppercase tracking-tighter">{selectedItem.date}</span>
                   </div>
                   <button onClick={(e) => { e.stopPropagation(); setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }} className="p-3 text-white/10 hover:text-red-500 transition-all">
@@ -585,16 +581,19 @@ const App = () => {
               setIsUploading(true);
               try {
                 const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+                
+                // [Logic Refined] Capture full Year.Month.Day Hour:Minute
                 const now = new Date();
-                const fullDate = now.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '') + ' ' + 
-                                 now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+                const dateString = now.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '');
+                const timeString = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+                const fullDateTime = `${dateString} ${timeString}`;
 
                 await addDoc(q, { 
                   name: newMessage.name, 
                   text: newMessage.text, 
                   image: newMessage.image, 
                   createdAt: serverTimestamp(), 
-                  date: fullDate 
+                  date: fullDateTime 
                 });
                 setNewMessage({ name: '', text: '', image: null }); closeModal(); playSystemSound('popup');
               } catch (err) { console.error(err); } finally { setIsUploading(false); }
