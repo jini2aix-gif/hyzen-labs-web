@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R4.1.2 | Top Spin Edition]
- * 1. 팽이 스핀 연출: 개별 노드가 Y축으로 1080도 고속 회전하며 안착하는 시퀀스 구현
- * 2. 물리 엔진 모사: 초기에 빠르고 끝에 부드럽게 멈추는 강력한 감속(Deceleration) 곡선 적용
- * 3. 시계열 데이터: YYYY.MM.DD HH:mm 포맷 완전 정착
- * 4. 아키텍처: Founder GENE 전용 하이테크 키네틱 UI 정제
+ * [Hyzen Labs. CTO Optimized - R4.1.3 | Smooth Spin Edition]
+ * 1. 스핀 제어: 초기 가속도를 완화하고 회전수를 720도로 조정하여 안정적인 팽이 효과 구현
+ * 2. 시퀀스 밸런스: 애니메이션 지속 시간을 2.4초로 연장하여 시각적 인지 품질 향상
+ * 3. 시계열 데이터: YYYY.MM.DD HH:mm 포맷 유지
+ * 4. 아키텍처: Founder GENE 전용 하이테크 키네틱 UI 최종 정제
  */
 
 const ADMIN_PASS = "5733906";
@@ -156,7 +156,7 @@ const App = () => {
       setTimeout(() => { 
         setShowMainTitle(true); 
         setIsSpinning(true);
-        setTimeout(() => { setIsSpinning(false); }, 3500); 
+        setTimeout(() => { setIsSpinning(false); }, 4000); 
       }, 500);
     }, 4000);
 
@@ -276,18 +276,18 @@ const App = () => {
           backface-visibility: hidden;
         }
 
-        /* [Update] Top Spin Animation (v4.1.2) 
-           Y축으로 3바퀴(1080도) 고속 회전하며 진입 후 안착 */
+        /* [Update] Smooth Top Spin Animation (v4.1.3) 
+           Y축으로 2바퀴(720도) 안정적인 회전 후 부드럽게 감속 */
         @keyframes topSpin {
           0% { 
-            transform: rotateY(1080deg) translateZ(500px) scale(0); 
+            transform: rotateY(720deg) translateZ(400px) scale(0); 
             opacity: 0; 
-            filter: blur(20px) brightness(2);
+            filter: blur(15px) brightness(1.5);
           }
-          70% {
-            transform: rotateY(-30deg) translateZ(50px) scale(1.1);
-            opacity: 0.9;
-            filter: blur(0px) brightness(1.2);
+          65% {
+            transform: rotateY(-20deg) translateZ(40px) scale(1.05);
+            opacity: 0.95;
+            filter: blur(0px) brightness(1.1);
           }
           100% { 
             transform: rotateY(0deg) translateZ(0) scale(1); 
@@ -296,7 +296,8 @@ const App = () => {
           }
         }
         .animate-top-spin {
-          animation: topSpin 1.8s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+          /* 초기 속도를 0.25로 늦추고 지속시간을 2.2초로 늘려 부드러운 시작 구현 */
+          animation: topSpin 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
         @keyframes driftA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-3px, -10px) rotate(1.5deg); } }
@@ -373,7 +374,7 @@ const App = () => {
                  <div key={i} className="w-1.5 h-1.5 bg-cyan-400/30 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
                ))}
             </div>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.1.2 | TOP SPIN</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.1.3 | SMOOTH SPIN</span>
           </div>
         </div>
       )}
@@ -436,7 +437,7 @@ const App = () => {
                   key={item.id || idx} 
                   className={`data-packet group ${isSpinning ? 'animate-top-spin' : `packet-drift-${idx % 4}`}`}
                   style={{ 
-                    animationDelay: isSpinning ? `${idx * 0.04}s` : '0s',
+                    animationDelay: isSpinning ? `${idx * 0.05}s` : '0s',
                     opacity: isSpinning ? 0 : 0.7 
                   }}
                   onClick={() => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
