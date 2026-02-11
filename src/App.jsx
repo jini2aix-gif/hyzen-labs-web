@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R4.1.1 | Visual Sync Edition]
- * 1. 애니메이션 동기화: 부트 시퀀스 종료 후 개별 3D 회전 트리거 (타이밍 이슈 해결)
- * 2. 3D 시각화 강화: perspective 및 preserve-3d 적용으로 입체감 극대화
- * 3. 시계열 데이터: YYYY.MM.DD HH:mm 포맷 유지
- * 4. 아키텍처: Founder GENE 전용 인터랙티브 시퀀스 정밀 조정
+ * [Hyzen Labs. CTO Optimized - R4.1.2 | Top Spin Edition]
+ * 1. 팽이 스핀 연출: 개별 노드가 Y축으로 1080도 고속 회전하며 안착하는 시퀀스 구현
+ * 2. 물리 엔진 모사: 초기에 빠르고 끝에 부드럽게 멈추는 강력한 감속(Deceleration) 곡선 적용
+ * 3. 시계열 데이터: YYYY.MM.DD HH:mm 포맷 완전 정착
+ * 4. 아키텍처: Founder GENE 전용 하이테크 키네틱 UI 정제
  */
 
 const ADMIN_PASS = "5733906";
@@ -102,7 +102,7 @@ const NeuralPulse = () => (
 const App = () => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [showMainTitle, setShowMainTitle] = useState(false);
-  const [isSpinning, setIsSpinning] = useState(false); // 초기값 false로 변경
+  const [isSpinning, setIsSpinning] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
@@ -153,11 +153,10 @@ const App = () => {
     const timer = setTimeout(() => {
       setIsInitializing(false);
       playSystemSound('start');
-      // [Fix] 로딩 화면 종료 후 제목과 회전 애니메이션 순차 실행
       setTimeout(() => { 
         setShowMainTitle(true); 
-        setIsSpinning(true); // 회전 시작
-        setTimeout(() => { setIsSpinning(false); }, 3500); // 3.5초 후 안정화
+        setIsSpinning(true);
+        setTimeout(() => { setIsSpinning(false); }, 3500); 
       }, 500);
     }, 4000);
 
@@ -246,7 +245,7 @@ const App = () => {
           box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
           overflow: hidden;
           flex: 1;
-          perspective: 2000px; /* 3D 효과 깊이감 증가 */
+          perspective: 1500px;
         }
 
         .matrix-grid {
@@ -277,14 +276,27 @@ const App = () => {
           backface-visibility: hidden;
         }
 
-        /* [Enhanced] Individual 3D Rotation Animation (v4.1.1) */
-        @keyframes individualSpin {
-          0% { transform: rotateY(180deg) translateZ(300px) scale(0.3); opacity: 0; filter: blur(10px); }
-          60% { transform: rotateY(-20deg) translateZ(50px) scale(1.05); opacity: 0.9; filter: blur(0px); }
-          100% { transform: rotateY(0deg) translateZ(0) scale(1); opacity: 0.7; filter: blur(0px); }
+        /* [Update] Top Spin Animation (v4.1.2) 
+           Y축으로 3바퀴(1080도) 고속 회전하며 진입 후 안착 */
+        @keyframes topSpin {
+          0% { 
+            transform: rotateY(1080deg) translateZ(500px) scale(0); 
+            opacity: 0; 
+            filter: blur(20px) brightness(2);
+          }
+          70% {
+            transform: rotateY(-30deg) translateZ(50px) scale(1.1);
+            opacity: 0.9;
+            filter: blur(0px) brightness(1.2);
+          }
+          100% { 
+            transform: rotateY(0deg) translateZ(0) scale(1); 
+            opacity: 0.7; 
+            filter: blur(0px) brightness(1);
+          }
         }
-        .animate-entry-spin {
-          animation: individualSpin 1.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        .animate-top-spin {
+          animation: topSpin 1.8s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
         }
 
         @keyframes driftA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-3px, -10px) rotate(1.5deg); } }
@@ -361,7 +373,7 @@ const App = () => {
                  <div key={i} className="w-1.5 h-1.5 bg-cyan-400/30 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
                ))}
             </div>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.1.1 | VISUAL SYNC</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.1.2 | TOP SPIN</span>
           </div>
         </div>
       )}
@@ -422,10 +434,10 @@ const App = () => {
               {messages.length > 0 ? messages.map((item, idx) => (
                 <div 
                   key={item.id || idx} 
-                  className={`data-packet group ${isSpinning ? 'animate-entry-spin' : `packet-drift-${idx % 4}`}`}
+                  className={`data-packet group ${isSpinning ? 'animate-top-spin' : `packet-drift-${idx % 4}`}`}
                   style={{ 
-                    animationDelay: isSpinning ? `${idx * 0.05}s` : '0s',
-                    opacity: isSpinning ? 0 : 0.7 // 애니메이션 시작 전 투명하게 유지
+                    animationDelay: isSpinning ? `${idx * 0.04}s` : '0s',
+                    opacity: isSpinning ? 0 : 0.7 
                   }}
                   onClick={() => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
                 >
