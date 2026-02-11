@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R4.1.0 | Temporal Rotation Edition]
- * 1. 시계열 데이터 확장: 방명록 저장 시 년, 월, 일 포함 (YYYY.MM.DD HH:mm)
- * 2. 진입 시퀀스 변경: 매크로 셔플 -> 3초 개별 3D 회전(Individual Spin) 연출
- * 3. 상세 모달 유지: 이미지 3초 정밀 트래킹 모션(Scan) 유지
- * 4. 아키텍처: Founder GENE 전용 최적화 및 미래 지향적 UI 정제
+ * [Hyzen Labs. CTO Optimized - R4.1.1 | Visual Sync Edition]
+ * 1. 애니메이션 동기화: 부트 시퀀스 종료 후 개별 3D 회전 트리거 (타이밍 이슈 해결)
+ * 2. 3D 시각화 강화: perspective 및 preserve-3d 적용으로 입체감 극대화
+ * 3. 시계열 데이터: YYYY.MM.DD HH:mm 포맷 유지
+ * 4. 아키텍처: Founder GENE 전용 인터랙티브 시퀀스 정밀 조정
  */
 
 const ADMIN_PASS = "5733906";
@@ -102,7 +102,7 @@ const NeuralPulse = () => (
 const App = () => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [showMainTitle, setShowMainTitle] = useState(false);
-  const [isSpinning, setIsSpinning] = useState(true);
+  const [isSpinning, setIsSpinning] = useState(false); // 초기값 false로 변경
   const [selectedItem, setSelectedItem] = useState(null); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
@@ -153,8 +153,12 @@ const App = () => {
     const timer = setTimeout(() => {
       setIsInitializing(false);
       playSystemSound('start');
-      setTimeout(() => { setShowMainTitle(true); }, 500);
-      setTimeout(() => { setIsSpinning(false); }, 3000); // 3초 후 회전 중단
+      // [Fix] 로딩 화면 종료 후 제목과 회전 애니메이션 순차 실행
+      setTimeout(() => { 
+        setShowMainTitle(true); 
+        setIsSpinning(true); // 회전 시작
+        setTimeout(() => { setIsSpinning(false); }, 3500); // 3.5초 후 안정화
+      }, 500);
     }, 4000);
 
     return () => { unsubscribe(); clearTimeout(timer); };
@@ -242,6 +246,7 @@ const App = () => {
           box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
           overflow: hidden;
           flex: 1;
+          perspective: 2000px; /* 3D 효과 깊이감 증가 */
         }
 
         .matrix-grid {
@@ -252,6 +257,7 @@ const App = () => {
           overflow-y: auto;
           scrollbar-width: none;
           padding: 10px;
+          transform-style: preserve-3d;
         }
         .matrix-grid::-webkit-scrollbar { display: none; }
         
@@ -268,16 +274,17 @@ const App = () => {
           border-radius: 16px;
           transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
           z-index: 1;
+          backface-visibility: hidden;
         }
 
-        /* [Update] Individual 3D Rotation Animation - 3s (v4.1.0) */
+        /* [Enhanced] Individual 3D Rotation Animation (v4.1.1) */
         @keyframes individualSpin {
-          0% { transform: perspective(1000px) rotateY(180deg) scale(0.4); opacity: 0; }
-          60% { transform: perspective(1000px) rotateY(-15deg) scale(1.05); opacity: 0.8; }
-          100% { transform: perspective(1000px) rotateY(0deg) scale(1); opacity: 0.7; }
+          0% { transform: rotateY(180deg) translateZ(300px) scale(0.3); opacity: 0; filter: blur(10px); }
+          60% { transform: rotateY(-20deg) translateZ(50px) scale(1.05); opacity: 0.9; filter: blur(0px); }
+          100% { transform: rotateY(0deg) translateZ(0) scale(1); opacity: 0.7; filter: blur(0px); }
         }
         .animate-entry-spin {
-          animation: individualSpin 3s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+          animation: individualSpin 1.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
         }
 
         @keyframes driftA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-3px, -10px) rotate(1.5deg); } }
@@ -354,7 +361,7 @@ const App = () => {
                  <div key={i} className="w-1.5 h-1.5 bg-cyan-400/30 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
                ))}
             </div>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.1.0 | TEMPORAL CORE</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.1.1 | VISUAL SYNC</span>
           </div>
         </div>
       )}
@@ -416,7 +423,10 @@ const App = () => {
                 <div 
                   key={item.id || idx} 
                   className={`data-packet group ${isSpinning ? 'animate-entry-spin' : `packet-drift-${idx % 4}`}`}
-                  style={{ animationDelay: isSpinning ? `${idx * 0.08}s` : '0s' }}
+                  style={{ 
+                    animationDelay: isSpinning ? `${idx * 0.05}s` : '0s',
+                    opacity: isSpinning ? 0 : 0.7 // 애니메이션 시작 전 투명하게 유지
+                  }}
                   onClick={() => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
                 >
                   <div className="absolute inset-0 overflow-hidden">
@@ -508,7 +518,6 @@ const App = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
                     <span className="text-[7px] font-mono text-white/20 uppercase tracking-[0.3em]">Temporal Stamp</span>
-                    {/* [Update] Display full date and time */}
                     <span className="text-[9px] font-mono text-cyan-400 uppercase tracking-tighter">{selectedItem.date}</span>
                   </div>
                   <button onClick={(e) => { e.stopPropagation(); setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }} className="p-3 text-white/10 hover:text-red-500 transition-all">
@@ -537,8 +546,6 @@ const App = () => {
               setIsUploading(true);
               try {
                 const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-                
-                // [Update] Get full date (Year.Month.Day Time)
                 const now = new Date();
                 const fullDate = now.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '') + ' ' + 
                                  now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
