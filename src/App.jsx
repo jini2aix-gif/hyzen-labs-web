@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R4.2.0 | Cloth Lift Edition]
- * 1. 진입 시퀀스 전면 개편: 회전(Spin) 제거, 5초간의 '보자기 리프팅' 효과 구현
- * 2. 물리적 모사: 밑에서 나무 막대로 밀어 올리는 듯한 Z축 중심의 텐션 애니메이션 적용
- * 3. 심도 최적화: Perspective 2000px 설정으로 리프팅 시의 입체감 극대화
- * 4. 시계열 데이터: YYYY.MM.DD HH:mm 포맷 완전 유지
+ * [Hyzen Labs. CTO Optimized - R4.3.0 | Quantum Synthesis Edition]
+ * 1. 진입 시퀀스: 5초간의 '양자 합성(Quantum Synthesis)' 시퀀스 구현
+ * 2. 에너지 스캔: 매트릭스를 가로지르는 광학 스위프(Light Sweep) 레이어 추가
+ * 3. 글리치 마테리얼: 노이즈 상태에서 실체로 변하는 디지털 재구성 효과
+ * 4. 시계열 데이터: YYYY.MM.DD HH:mm 포맷 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -102,7 +102,7 @@ const NeuralPulse = () => (
 const App = () => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [showMainTitle, setShowMainTitle] = useState(false);
-  const [isLifting, setIsLifting] = useState(false);
+  const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
@@ -155,9 +155,8 @@ const App = () => {
       playSystemSound('start');
       setTimeout(() => { 
         setShowMainTitle(true); 
-        setIsLifting(true);
-        // 5초간 효과 유지 후 안정화
-        setTimeout(() => { setIsLifting(false); }, 5000); 
+        setIsSynthesizing(true);
+        setTimeout(() => { setIsSynthesizing(false); }, 5000); 
       }, 500);
     }, 4000);
 
@@ -241,12 +240,12 @@ const App = () => {
           position: relative;
           margin: 0 10px 10px;
           border-radius: 24px;
-          background: rgba(0,0,0,0.4);
+          background: rgba(0,0,0,0.6);
           border: 1px solid rgba(255,255,255,0.05);
-          box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+          box-shadow: inset 0 0 50px rgba(0,0,0,1);
           overflow: hidden;
           flex: 1;
-          perspective: 2000px; /* 입체감 확보를 위한 깊이 설정 */
+          perspective: 3000px;
         }
 
         .matrix-grid {
@@ -277,33 +276,50 @@ const App = () => {
           backface-visibility: hidden;
         }
 
-        /* [Update] Cloth Lift Animation (v4.2.0)
-           보자기를 밑에서 나무 막대로 들어 올리는 물리적 질감 구현 (5초) */
-        @keyframes clothLift {
+        /* [New] Quantum Synthesis Animation (v4.3.0) 
+           무의 상태에서 픽셀이 결합되며 실체화되는 연출 */
+        @keyframes quantumSynthesis {
           0% { 
-            transform: translateY(150px) translateZ(-500px) rotateX(45deg); 
-            opacity: 0; 
-            filter: blur(20px);
+            transform: translateZ(-800px) translateY(100px) skewX(20deg) scale(1.5);
+            opacity: 0;
+            filter: blur(30px) brightness(3) contrast(2);
           }
-          40% {
-            /* 나무 막대로 정점을 찍으며 가장 높이 들려 올라가는 시점 */
-            transform: translateY(-40px) translateZ(150px) rotateX(-10deg);
-            opacity: 1;
-            filter: blur(0px);
+          30% {
+             transform: translateZ(-200px) translateY(-20px) skewX(-5deg) scale(1.1);
+             opacity: 0.3;
+             filter: blur(10px) brightness(2);
           }
-          70% {
-            /* 펼쳐지며 서서히 하강 */
-            transform: translateY(10px) translateZ(50px) rotateX(5deg);
-            opacity: 0.9;
+          60% {
+             transform: translateZ(50px) translateY(10px) skewX(0deg) scale(0.98);
+             opacity: 0.8;
+             filter: blur(2px) brightness(1.2);
           }
           100% { 
-            transform: translateY(0) translateZ(0) rotateX(0); 
+            transform: translateZ(0) translateY(0) skewX(0) scale(1);
             opacity: 0.7; 
-            filter: blur(0px);
+            filter: blur(0px) brightness(1);
           }
         }
-        .animate-cloth-lift {
-          animation: clothLift 5s cubic-bezier(0.2, 0, 0.2, 1) forwards;
+        .animate-quantum-synthesis {
+          animation: quantumSynthesis 5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+        }
+
+        /* 에너지 스캔 바 (Light Sweep) */
+        @keyframes energySweep {
+          0% { transform: translateX(-150%) translateY(-150%) rotate(45deg); opacity: 0; }
+          20% { opacity: 0.8; }
+          80% { opacity: 0.8; }
+          100% { transform: translateX(150%) translateY(150%) rotate(45deg); opacity: 0; }
+        }
+        .energy-sweep-bar {
+          position: absolute;
+          inset: -100%;
+          background: linear-gradient(to right, transparent, rgba(34, 211, 238, 0.2), white, rgba(34, 211, 238, 0.2), transparent);
+          width: 50%;
+          pointer-events: none;
+          z-index: 50;
+          filter: blur(40px);
+          animation: energySweep 5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
         }
 
         @keyframes driftA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-3px, -10px) rotate(1.5deg); } }
@@ -380,7 +396,7 @@ const App = () => {
                  <div key={i} className="w-1.5 h-1.5 bg-cyan-400/30 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
                ))}
             </div>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.2.0 | CLOTH LIFT</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.3.0 | QUANTUM SYNTHESIS</span>
           </div>
         </div>
       )}
@@ -437,15 +453,18 @@ const App = () => {
           </div>
 
           <div className="matrix-container">
+            {/* [New] Energy Sweep Overlay */}
+            {isSynthesizing && <div className="energy-sweep-bar" />}
+            
             <div className="matrix-grid" ref={scrollRef}>
               {messages.length > 0 ? messages.map((item, idx) => (
                 <div 
                   key={item.id || idx} 
-                  className={`data-packet group ${isLifting ? 'animate-cloth-lift' : `packet-drift-${idx % 4}`}`}
+                  className={`data-packet group ${isSynthesizing ? 'animate-quantum-synthesis' : `packet-drift-${idx % 4}`}`}
                   style={{ 
-                    /* 순차적으로 들려 올라가는 느낌을 위해 딜레이 미세 조정 */
-                    animationDelay: isLifting ? `${idx * 0.03}s` : '0s',
-                    opacity: isLifting ? 0 : 0.7 
+                    /* 폭포수처럼 쏟아져 내려오는 합성 딜레이 설계 */
+                    animationDelay: isSynthesizing ? `${idx * 0.02}s` : '0s',
+                    opacity: isSynthesizing ? 0 : 0.7 
                   }}
                   onClick={() => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
                 >
