@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R4.1.3 | Smooth Spin Edition]
- * 1. 스핀 제어: 초기 가속도를 완화하고 회전수를 720도로 조정하여 안정적인 팽이 효과 구현
- * 2. 시퀀스 밸런스: 애니메이션 지속 시간을 2.4초로 연장하여 시각적 인지 품질 향상
- * 3. 시계열 데이터: YYYY.MM.DD HH:mm 포맷 유지
- * 4. 아키텍처: Founder GENE 전용 하이테크 키네틱 UI 최종 정제
+ * [Hyzen Labs. CTO Optimized - R4.2.0 | Cloth Lift Edition]
+ * 1. 진입 시퀀스 전면 개편: 회전(Spin) 제거, 5초간의 '보자기 리프팅' 효과 구현
+ * 2. 물리적 모사: 밑에서 나무 막대로 밀어 올리는 듯한 Z축 중심의 텐션 애니메이션 적용
+ * 3. 심도 최적화: Perspective 2000px 설정으로 리프팅 시의 입체감 극대화
+ * 4. 시계열 데이터: YYYY.MM.DD HH:mm 포맷 완전 유지
  */
 
 const ADMIN_PASS = "5733906";
@@ -102,7 +102,7 @@ const NeuralPulse = () => (
 const App = () => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [showMainTitle, setShowMainTitle] = useState(false);
-  const [isSpinning, setIsSpinning] = useState(false);
+  const [isLifting, setIsLifting] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
@@ -155,8 +155,9 @@ const App = () => {
       playSystemSound('start');
       setTimeout(() => { 
         setShowMainTitle(true); 
-        setIsSpinning(true);
-        setTimeout(() => { setIsSpinning(false); }, 4000); 
+        setIsLifting(true);
+        // 5초간 효과 유지 후 안정화
+        setTimeout(() => { setIsLifting(false); }, 5000); 
       }, 500);
     }, 4000);
 
@@ -245,7 +246,7 @@ const App = () => {
           box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
           overflow: hidden;
           flex: 1;
-          perspective: 1500px;
+          perspective: 2000px; /* 입체감 확보를 위한 깊이 설정 */
         }
 
         .matrix-grid {
@@ -276,28 +277,33 @@ const App = () => {
           backface-visibility: hidden;
         }
 
-        /* [Update] Smooth Top Spin Animation (v4.1.3) 
-           Y축으로 2바퀴(720도) 안정적인 회전 후 부드럽게 감속 */
-        @keyframes topSpin {
+        /* [Update] Cloth Lift Animation (v4.2.0)
+           보자기를 밑에서 나무 막대로 들어 올리는 물리적 질감 구현 (5초) */
+        @keyframes clothLift {
           0% { 
-            transform: rotateY(720deg) translateZ(400px) scale(0); 
+            transform: translateY(150px) translateZ(-500px) rotateX(45deg); 
             opacity: 0; 
-            filter: blur(15px) brightness(1.5);
+            filter: blur(20px);
           }
-          65% {
-            transform: rotateY(-20deg) translateZ(40px) scale(1.05);
-            opacity: 0.95;
-            filter: blur(0px) brightness(1.1);
+          40% {
+            /* 나무 막대로 정점을 찍으며 가장 높이 들려 올라가는 시점 */
+            transform: translateY(-40px) translateZ(150px) rotateX(-10deg);
+            opacity: 1;
+            filter: blur(0px);
+          }
+          70% {
+            /* 펼쳐지며 서서히 하강 */
+            transform: translateY(10px) translateZ(50px) rotateX(5deg);
+            opacity: 0.9;
           }
           100% { 
-            transform: rotateY(0deg) translateZ(0) scale(1); 
+            transform: translateY(0) translateZ(0) rotateX(0); 
             opacity: 0.7; 
-            filter: blur(0px) brightness(1);
+            filter: blur(0px);
           }
         }
-        .animate-top-spin {
-          /* 초기 속도를 0.25로 늦추고 지속시간을 2.2초로 늘려 부드러운 시작 구현 */
-          animation: topSpin 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        .animate-cloth-lift {
+          animation: clothLift 5s cubic-bezier(0.2, 0, 0.2, 1) forwards;
         }
 
         @keyframes driftA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-3px, -10px) rotate(1.5deg); } }
@@ -374,7 +380,7 @@ const App = () => {
                  <div key={i} className="w-1.5 h-1.5 bg-cyan-400/30 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
                ))}
             </div>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.1.3 | SMOOTH SPIN</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.2.0 | CLOTH LIFT</span>
           </div>
         </div>
       )}
@@ -435,10 +441,11 @@ const App = () => {
               {messages.length > 0 ? messages.map((item, idx) => (
                 <div 
                   key={item.id || idx} 
-                  className={`data-packet group ${isSpinning ? 'animate-top-spin' : `packet-drift-${idx % 4}`}`}
+                  className={`data-packet group ${isLifting ? 'animate-cloth-lift' : `packet-drift-${idx % 4}`}`}
                   style={{ 
-                    animationDelay: isSpinning ? `${idx * 0.05}s` : '0s',
-                    opacity: isSpinning ? 0 : 0.7 
+                    /* 순차적으로 들려 올라가는 느낌을 위해 딜레이 미세 조정 */
+                    animationDelay: isLifting ? `${idx * 0.03}s` : '0s',
+                    opacity: isLifting ? 0 : 0.7 
                   }}
                   onClick={() => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
                 >
