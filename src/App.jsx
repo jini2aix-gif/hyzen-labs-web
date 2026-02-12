@@ -17,11 +17,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R4.8.4 | Stability & Balance Edition]
- * 1. 빌드 오류 수정: 중복된 default export 구문 제거 (Vercel 배포 안정성 확보)
- * 2. 레이아웃 최적화: 매트릭스 컨테이너 상/하/좌/우 10px 대칭 여백 유지
- * 3. 애니메이션 복구: 히어로 섹션 'NeuralPulse' 박동 모션 재활성화
- * 4. 퀀텀 사운드: 브리딩 모션에 동기화된 웅장한 오디오 엔진 및 무음 모드 대응 로직
+ * [Hyzen Labs. CTO Optimized - R4.8.6 | Elastic Matrix Edition]
+ * 1. 스프링 효과 복구: 모바일 스위핑 시 저항감을 주는 'Kinetic Elasticity' 로직 재삽입
+ * 2. 그리드 정밀 교정: 가로/세로 10px 간격의 완벽한 기하학적 균형 유지
+ * 3. 사운드 레이어링: 퀀텀 브리딩 및 글라스 스캐닝 사운드 동기화
+ * 4. 인터랙션 통합: 배경 스프링 효과와 모달 Swipe-to-Dismiss의 공존 설계
  */
 
 const ADMIN_PASS = "5733906";
@@ -46,6 +46,7 @@ const firebaseApp = firebaseConfig ? (getApps().length === 0 ? initializeApp(fir
 const auth = firebaseApp ? getAuth(firebaseApp) : null;
 const db = firebaseApp ? getFirestore(firebaseApp) : null;
 
+// --- Multi-Layer Sound Engine ---
 const playSystemSound = async (type) => {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -55,33 +56,36 @@ const playSystemSound = async (type) => {
       const masterGain = audioCtx.createGain();
       masterGain.connect(audioCtx.destination);
       masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-      masterGain.gain.linearRampToValueAtTime(0.25, audioCtx.currentTime + 1.2);
+      masterGain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 1.2);
       masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 3.0);
-
       const subOsc = audioCtx.createOscillator();
-      subOsc.type = 'sine';
-      subOsc.frequency.setValueAtTime(40, audioCtx.currentTime); 
-      
+      subOsc.type = 'sine'; subOsc.frequency.setValueAtTime(40, audioCtx.currentTime); 
       const mainOsc = audioCtx.createOscillator();
-      mainOsc.type = 'sawtooth';
-      mainOsc.frequency.setValueAtTime(55, audioCtx.currentTime);
-
+      mainOsc.type = 'sawtooth'; mainOsc.frequency.setValueAtTime(55, audioCtx.currentTime);
       const filter = audioCtx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(50, audioCtx.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 1.2);
+      filter.type = 'lowpass'; filter.frequency.setValueAtTime(50, audioCtx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 1.2);
       filter.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 2.8);
-      filter.Q.setValueAtTime(15, audioCtx.currentTime);
-
-      subOsc.connect(masterGain);
-      mainOsc.connect(filter);
-      filter.connect(masterGain);
-
-      subOsc.start();
-      mainOsc.start();
-      subOsc.stop(audioCtx.currentTime + 3.0);
-      mainOsc.stop(audioCtx.currentTime + 3.0);
-    } else if (type === 'start') {
+      subOsc.connect(masterGain); mainOsc.connect(filter); filter.connect(masterGain);
+      subOsc.start(); mainOsc.start();
+      subOsc.stop(audioCtx.currentTime + 3.0); mainOsc.stop(audioCtx.currentTime + 3.0);
+    } 
+    else if (type === 'glassSweep') {
+      const masterGain = audioCtx.createGain();
+      masterGain.connect(audioCtx.destination);
+      masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+      masterGain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.1);
+      masterGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.5);
+      const osc = audioCtx.createOscillator();
+      const filter = audioCtx.createBiquadFilter();
+      osc.type = 'triangle'; osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(2400, audioCtx.currentTime + 1.5);
+      filter.type = 'highpass'; filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
+      filter.Q.setValueAtTime(20, audioCtx.currentTime);
+      osc.connect(filter); filter.connect(masterGain);
+      osc.start(); osc.stop(audioCtx.currentTime + 2.5);
+    }
+    else if (type === 'start') {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.connect(gain); gain.connect(audioCtx.destination);
@@ -103,9 +107,7 @@ const playSystemSound = async (type) => {
       gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
       osc.start(); osc.stop(audioCtx.currentTime + 0.5);
     }
-  } catch (e) {
-    console.error("Audio Engine Error:", e);
-  }
+  } catch (e) {}
 };
 
 const compressImage = (file) => {
@@ -157,6 +159,13 @@ const App = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState({ name: '', text: '', image: null });
 
+  // Elastic Spring State
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const touchStartRef = useRef(null);
+  const scrollRef = useRef(null);
+
+  // Modal Swipe State
   const [modalDragY, setModalDragY] = useState(0);
   const [modalExitDir, setModalExitDir] = useState(null); 
   const modalTouchStartRef = useRef(null);
@@ -205,6 +214,7 @@ const App = () => {
       setTimeout(() => { 
         setShowMainTitle(true); 
         setIsSynthesizing(true);
+        playSystemSound('glassSweep');
         setTimeout(() => { setIsSynthesizing(false); }, 5000); 
       }, 500);
     }, 4500);
@@ -243,6 +253,35 @@ const App = () => {
     setDeletePass("");
   };
 
+  // --- Background Spring Logic ---
+  const handleBgTouchStart = (e) => {
+    if (isModalOpen || isGuestbookOpen) return;
+    if (scrollRef.current && scrollRef.current.scrollTop === 0) {
+      touchStartRef.current = e.touches[0].clientY;
+      setIsDragging(true);
+    }
+  };
+
+  const handleBgTouchMove = (e) => {
+    if (!touchStartRef.current || !isDragging) return;
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - touchStartRef.current;
+    if (diff > 0) {
+      const easedOffset = Math.pow(diff, 0.8) * 1.2;
+      setDragOffset(easedOffset);
+    } else {
+      setDragOffset(0);
+      setIsDragging(false);
+    }
+  };
+
+  const handleBgTouchEnd = () => {
+    touchStartRef.current = null;
+    setIsDragging(false);
+    setDragOffset(0);
+  };
+
+  // --- Modal Swipe Logic ---
   const handleModalTouchStart = (e) => {
     modalTouchStartRef.current = e.touches[0].clientY;
   };
@@ -286,6 +325,9 @@ const App = () => {
     <div 
       className="fixed inset-0 bg-[#020202] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col max-w-full" 
       style={{ height: 'calc(var(--vh, 1vh) * 100)' }}
+      onTouchStart={handleBgTouchStart}
+      onTouchMove={handleBgTouchMove}
+      onTouchEnd={handleBgTouchEnd}
     >
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] pointer-events-none z-[1] mix-blend-overlay" />
       <style>{`
@@ -295,7 +337,6 @@ const App = () => {
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); }
         
-        /* [R4.8.4] Balanced Matrix Container */
         .matrix-container {
           position: relative;
           margin: 10px; 
@@ -311,18 +352,18 @@ const App = () => {
           display: grid;
           grid-template-columns: repeat(5, 1fr);
           grid-auto-rows: minmax(min(14vh, 90px), 1fr);
-          gap: 12px;
+          gap: 10px;
           overflow-y: auto;
           scrollbar-width: none;
-          padding: 16px;
+          padding: 10px;
           z-index: 2;
           position: relative;
-          mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+          mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
         }
         .matrix-grid::-webkit-scrollbar { display: none; }
         
         @media (min-width: 1024px) {
-          .matrix-grid { grid-template-columns: repeat(12, 1fr); gap: 14px; padding: 28px; }
+          .matrix-grid { grid-template-columns: repeat(12, 1fr); gap: 10px; padding: 24px; }
         }
 
         @keyframes energySweep {
@@ -342,10 +383,7 @@ const App = () => {
           animation: energySweep 3s cubic-bezier(0.4, 0, 0.2, 1) 2;
         }
 
-        @keyframes syncPulse { 
-          0%, 100% { height: 30%; opacity: 0.3; } 
-          50% { height: 100%; opacity: 1; } 
-        }
+        @keyframes syncPulse { 0%, 100% { height: 30%; opacity: 0.3; } 50% { height: 100%; opacity: 1; } }
 
         @keyframes driftA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-3px, -10px) rotate(1.5deg); } }
         @keyframes driftB { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(6px, -8px) rotate(-1.5deg); } }
@@ -373,8 +411,6 @@ const App = () => {
           100% { transform: translateZ(0) translateY(0) skewX(0) scale(1); opacity: 0.7; filter: blur(0px) brightness(1); }
         }
         .animate-quantum-synthesis { animation: quantumSynthesis 5s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
-
-        .data-packet:active { transform: scale(0.92) !important; border-color: #22d3ee; }
 
         @keyframes imageFullScan {
           0% { object-position: 0% 0%; transform: scale(1.3); filter: blur(4px) brightness(0.5); }
@@ -411,12 +447,19 @@ const App = () => {
           </div>
           <div className="flex flex-col items-center gap-4 text-center">
             <span className="font-brand text-[10px] sm:text-[12px] tracking-[0.7em] text-cyan-400/80 font-black uppercase animate-hero-pop">Entering Hyzen Labs</span>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.8.4 | BUILD STABILITY</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.8.6 | ELASTIC MATRIX</span>
           </div>
         </div>
       )}
 
-      <div className="flex-1 flex flex-col relative">
+      {/* --- Main Content Wrap with Spring Transform --- */}
+      <div 
+        className="flex-1 flex flex-col relative"
+        style={{ 
+          transform: `translateY(${dragOffset}px)`,
+          transition: isDragging ? 'none' : 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)'
+        }}
+      >
         <nav className="z-[100] px-8 pt-12 pb-2 flex justify-between items-start shrink-0">
           <div className="flex flex-col">
             <span className="font-brand text-[10px] tracking-[0.4em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
@@ -456,7 +499,7 @@ const App = () => {
 
           <div className="matrix-container">
             {isSynthesizing && <div className="energy-sweep-layer" />}
-            <div className="matrix-grid">
+            <div className="matrix-grid" ref={scrollRef}>
               {messages.map((item, idx) => (
                 <div 
                   key={item.id || idx} 
@@ -485,6 +528,7 @@ const App = () => {
         <Sparkles size={10} className="text-white/10 animate-pulse mb-1" />
       </footer>
 
+      {/* --- Modals --- */}
       {isGuestbookOpen && (
         <div className="fixed inset-0 z-[7000] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-3xl" onClick={closeModal}>
           <div 
@@ -509,7 +553,6 @@ const App = () => {
               </div>
               <button onClick={closeModal} className="p-2.5 bg-white/5 rounded-full hover:bg-white/10 transition-all text-white/40 pointer-events-auto"><X size={18} /></button>
             </div>
-
             <form onSubmit={async (e) => {
               e.preventDefault(); if (!newMessage.name || !newMessage.text || isUploading) return;
               setIsUploading(true);
