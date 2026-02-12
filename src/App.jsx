@@ -17,11 +17,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R4.5.0 | Kinetic Restoration & Swipe Edition]
- * 1. 모션 복구: 양자 코어 숨쉬기, 패킷 유영(Drift), 이미지 스캔 애니메이션 전면 복구
- * 2. 제스처 결합: 기존의 유영 모션과 새로운 Swipe-to-Dismiss 로직의 완벽한 통합
- * 3. 시각적 깊이: 매트릭스 레이아웃 내 동적 레이어 및 블러 효과 최적화
- * 4. 아키텍처: Founder GENE 전용 고감도 인터랙션 시스템
+ * [Hyzen Labs. CTO Optimized - R4.6.0 | Full Scan Restoration]
+ * 1. 이미지 트래킹 복구: 4코너 전 영역을 훑는 오리지널 'Full Scan' 애니메이션 적용
+ * 2. 제스처 인터페이스 유지: 모달 상/하 스냅(Swipe-to-Dismiss) 로직 결합
+ * 3. 키네틱 시스템: 양자 코어 브리딩, 패킷 드리프트(Drift) 최적화 유지
+ * 4. 아키텍처: Founder GENE 전용 고성능 비주얼 알고리즘
  */
 
 const ADMIN_PASS = "5733906";
@@ -304,12 +304,16 @@ const App = () => {
 
         .data-packet:active { transform: scale(0.92) !important; border-color: #22d3ee; }
 
+        /* [Restored] Full 4-Corner Image Scan Animation */
         @keyframes imageFullScan {
           0% { object-position: 0% 0%; transform: scale(1.3); filter: blur(4px) brightness(0.5); }
           15% { filter: blur(0px) brightness(1); }
+          30% { object-position: 100% 0%; }
+          60% { object-position: 100% 100%; }
+          85% { object-position: 0% 100%; }
           100% { object-position: 50% 50%; transform: scale(1); }
         }
-        .animate-image-scan { animation: imageFullScan 3s cubic-bezier(0.65, 0, 0.35, 1) forwards; }
+        .animate-image-scan { animation: imageFullScan 3.5s cubic-bezier(0.65, 0, 0.35, 1) forwards; }
 
         @keyframes heroPop { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
         .animate-hero-pop { animation: heroPop 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -327,7 +331,7 @@ const App = () => {
         .modal-exit-down { transform: translateY(120vh) rotate(10deg) scale(0.8) !important; opacity: 0 !important; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important; }
       `}</style>
 
-      {/* --- Boot Sequence (Breathing Restored) --- */}
+      {/* --- Boot Sequence --- */}
       {isInitializing && (
         <div className="fixed inset-0 z-[10000] bg-[#010101] flex flex-col items-center justify-center p-8 overflow-hidden">
           <div className="absolute w-[600px] h-[600px] bg-cyan-500/10 blur-[180px] rounded-full animate-pulse pointer-events-none" />
@@ -337,7 +341,7 @@ const App = () => {
           </div>
           <div className="flex flex-col items-center gap-4 text-center">
             <span className="font-brand text-[10px] sm:text-[12px] tracking-[0.7em] text-cyan-400/80 font-black uppercase animate-hero-pop">Entering Hyzen Labs</span>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.5.0 | KINETIC RESTORATION</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.6.0 | FULL SCAN RESTORED</span>
           </div>
         </div>
       )}
@@ -412,7 +416,7 @@ const App = () => {
         <Sparkles size={10} className="text-white/10 animate-pulse mb-1" />
       </footer>
 
-      {/* --- Sync (Input) Modal with Swipe Logic --- */}
+      {/* --- Sync (Input) Modal --- */}
       {isGuestbookOpen && (
         <div className="fixed inset-0 z-[7000] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-3xl" onClick={closeModal}>
           <div 
@@ -477,7 +481,7 @@ const App = () => {
         </div>
       )}
 
-      {/* --- Detail Modal (Scan & Drift Restored) --- */}
+      {/* --- Detail Modal (Full 4-Corner Scan Restored) --- */}
       {isModalOpen && selectedItem && (
         <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-4" onClick={closeModal}>
           <div 
@@ -494,13 +498,30 @@ const App = () => {
             onTouchMove={handleModalTouchMove}
             onTouchEnd={handleModalTouchEnd}
           >
+            {/* Visual Section: Image with Tracking Logic */}
             <div className="h-[40vh] lg:h-[60vh] lg:w-1/2 bg-black relative overflow-hidden">
-              {selectedItem.image ? <img src={selectedItem.image} className="w-full h-full object-cover animate-image-scan" alt="" /> : <div className="w-full h-full flex items-center justify-center text-white/5"><Fingerprint size={100} /></div>}
+              {selectedItem.image ? (
+                <img 
+                  src={selectedItem.image} 
+                  className="w-full h-full object-cover animate-image-scan" 
+                  alt="" 
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-white/5">
+                  <Fingerprint size={100} />
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+              <div className="absolute bottom-6 left-6 flex items-center gap-2">
+                 <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
+                 <span className="text-cyan-400 font-brand text-[8px] font-black uppercase tracking-[0.4em]">Node Tracking Active</span>
+              </div>
             </div>
+
+            {/* Information Section */}
             <div className="flex-1 p-8 lg:p-12 flex flex-col justify-between">
               <div className="space-y-6">
-                <span className="text-cyan-400 font-brand text-[9px] font-black uppercase tracking-[0.3em] inline-block mb-1">Decoded Trace</span>
+                <span className="text-cyan-400 font-brand text-[9px] font-black uppercase tracking-[0.3em] inline-block mb-1">Identity Analysis</span>
                 <h2 className="text-3xl lg:text-5xl font-black font-title text-white uppercase tracking-tighter leading-none">{selectedItem.name}</h2>
                 <p className="text-sm lg:text-lg italic text-white/70 leading-relaxed font-sans">"{selectedItem.text}"</p>
               </div>
@@ -514,6 +535,8 @@ const App = () => {
                 </button>
               </div>
             </div>
+            
+            {/* Close Trigger */}
             <button onClick={closeModal} className="absolute top-6 right-6 p-2 bg-black/40 rounded-full border border-white/10 text-white/60 hover:text-white transition-all backdrop-blur-md">
               <X size={20} />
             </button>
