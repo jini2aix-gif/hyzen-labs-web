@@ -17,11 +17,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R4.7.0 | Quantum Ambience Edition]
- * 1. 바운더리 글라스 강화: 매트릭스 컨테이너 전체 영역에 듀얼 스윕 에너지 레이어 적용
- * 2. 웅장한 사운드 설계: 양자 코어 브리딩에 동기화된 저역대 앰비언스(Ambience) 사운드 구현
- * 3. 시각적 동역학: 스냅 인터페이스 및 4코너 풀 스캔 로직 유지
- * 4. 아키텍처: Founder GENE 전용 고감도 감각 동기화 시스템
+ * [Hyzen Labs. CTO Optimized - R4.8.0 | Quantum Fusion Edition]
+ * 1. 경계 없는 글라스: 매트릭스 컨테이너의 시각적 경계를 제거하고 배경과 유기적으로 통합
+ * 2. 브리딩 오디오 복구: 진입 시퀀스 시작과 동시에 웅장한 앰비언스 사운드 강제 동기화
+ * 3. 오디오 엔진 가속: 모바일 무음 모드 및 브라우저 차단 정책을 우회하기 위한 컨텍스트 리줌 로직 강화
+ * 4. 아키텍처: Founder GENE 전용 하이엔드 감각 동기화 시스템
  */
 
 const ADMIN_PASS = "5733906";
@@ -46,66 +46,71 @@ const firebaseApp = firebaseConfig ? (getApps().length === 0 ? initializeApp(fir
 const auth = firebaseApp ? getAuth(firebaseApp) : null;
 const db = firebaseApp ? getFirestore(firebaseApp) : null;
 
-// --- Sound Engine Optimization ---
-const playSystemSound = (type) => {
+// --- Enhanced Sound Engine for Mobile Silent Mode Support ---
+const playSystemSound = async (type) => {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
     if (type === 'quantumBreath') {
-      // 웅장한 저역대 앰비언스 사운드 (LFO + Filter Sweep)
       const masterGain = audioCtx.createGain();
       masterGain.connect(audioCtx.destination);
+      
+      // 웅장함을 위해 게인값 상향 및 부드러운 엔벨로프
       masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-      masterGain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 1.5);
+      masterGain.gain.linearRampToValueAtTime(0.25, audioCtx.currentTime + 1.2);
       masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 3.0);
 
-      const osc1 = audioCtx.createOscillator();
-      const osc2 = audioCtx.createOscillator();
-      const filter = audioCtx.createBiquadFilter();
-
-      osc1.type = 'sawtooth';
-      osc1.frequency.setValueAtTime(55, audioCtx.currentTime); // A1 note (Low frequency)
+      // Deep Sub Bass
+      const subOsc = audioCtx.createOscillator();
+      subOsc.type = 'sine';
+      subOsc.frequency.setValueAtTime(40, audioCtx.currentTime); 
       
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(55.5, audioCtx.currentTime); // Detuned for thickness
+      // Rich Texture
+      const mainOsc = audioCtx.createOscillator();
+      mainOsc.type = 'sawtooth';
+      mainOsc.frequency.setValueAtTime(55, audioCtx.currentTime);
 
+      const filter = audioCtx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(100, audioCtx.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 1.5);
-      filter.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 3.0);
-      filter.Q.setValueAtTime(10, audioCtx.currentTime);
+      filter.frequency.setValueAtTime(50, audioCtx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 1.2);
+      filter.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 2.8);
+      filter.Q.setValueAtTime(15, audioCtx.currentTime);
 
-      osc1.connect(filter);
-      osc2.connect(filter);
+      subOsc.connect(masterGain);
+      mainOsc.connect(filter);
       filter.connect(masterGain);
 
-      osc1.start();
-      osc2.start();
-      osc1.stop(audioCtx.currentTime + 3.0);
-      osc2.stop(audioCtx.currentTime + 3.0);
+      subOsc.start();
+      mainOsc.start();
+      subOsc.stop(audioCtx.currentTime + 3.0);
+      mainOsc.stop(audioCtx.currentTime + 3.0);
     } else if (type === 'start') {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.connect(gain); gain.connect(audioCtx.destination);
       osc.type = 'sine'; osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.8);
     } else if (type === 'popup') {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.type = 'triangle'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+      osc.type = 'triangle'; osc.frequency.setValueAtTime(660, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.15);
     } else if (type === 'dismiss') {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.type = 'sine'; osc.frequency.setValueAtTime(220, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+      osc.type = 'sine'; osc.frequency.setValueAtTime(110, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.5);
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error("Audio Engine Error:", e);
+  }
 };
 
 const compressImage = (file) => {
@@ -157,7 +162,6 @@ const App = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState({ name: '', text: '', image: null });
 
-  // Swipe State
   const [modalDragY, setModalDragY] = useState(0);
   const [modalExitDir, setModalExitDir] = useState(null); 
   const modalTouchStartRef = useRef(null);
@@ -172,7 +176,17 @@ const App = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Audio Context Unlock for Mobile/Silent Mode
+  const unlockAudio = useCallback(() => {
+    playSystemSound('quantumBreath');
+    window.removeEventListener('touchstart', unlockAudio);
+    window.removeEventListener('click', unlockAudio);
+  }, []);
+
   useEffect(() => {
+    window.addEventListener('touchstart', unlockAudio);
+    window.addEventListener('click', unlockAudio);
+
     const initAuth = async () => {
       if (!auth) return;
       try {
@@ -189,7 +203,7 @@ const App = () => {
       if (u) setCloudStatus('connected');
     });
 
-    // Boot Sequence Timer with Audio Sync
+    // Boot Sequence Control
     let soundInterval;
     const timer = setTimeout(() => {
       setIsInitializing(false);
@@ -200,9 +214,10 @@ const App = () => {
         setIsSynthesizing(true);
         setTimeout(() => { setIsSynthesizing(false); }, 5000); 
       }, 500);
-    }, 4000);
+    }, 4500);
 
-    // Play breathing sound during init
+    // Initial Breathing Sound Start
+    playSystemSound('quantumBreath');
     soundInterval = setInterval(() => {
       playSystemSound('quantumBreath');
     }, 3000);
@@ -211,8 +226,10 @@ const App = () => {
       unsubscribe(); 
       clearTimeout(timer); 
       clearInterval(soundInterval);
+      window.removeEventListener('touchstart', unlockAudio);
+      window.removeEventListener('click', unlockAudio);
     };
-  }, []);
+  }, [unlockAudio]);
 
   useEffect(() => {
     if (!user || !db) return;
@@ -286,55 +303,60 @@ const App = () => {
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); }
         
-        /* [Improved] Matrix Container Glass Effect */
+        /* [R4.8.0] Enhanced Seamless Matrix Container */
         .matrix-container {
           position: relative;
           margin: 0 10px 10px;
-          border-radius: 24px;
-          background: rgba(10, 10, 10, 0.4);
-          backdrop-filter: blur(15px);
-          border: 1px solid rgba(255,255,255,0.08);
-          box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
+          border-radius: 32px;
+          background: transparent; /* Remove solid bg to eliminate boundaries */
           overflow: hidden;
           flex: 1;
+          display: flex;
+          flex-direction: column;
         }
 
         .matrix-grid {
           display: grid;
           grid-template-columns: repeat(5, 1fr);
           grid-auto-rows: minmax(min(14vh, 90px), 1fr);
-          gap: 8px;
+          gap: 12px;
           overflow-y: auto;
           scrollbar-width: none;
-          padding: 10px;
+          padding: 16px;
           z-index: 2;
           position: relative;
+          mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
         }
         .matrix-grid::-webkit-scrollbar { display: none; }
         
         @media (min-width: 1024px) {
-          .matrix-grid { grid-template-columns: repeat(12, 1fr); gap: 10px; padding: 24px; }
+          .matrix-grid { grid-template-columns: repeat(12, 1fr); gap: 14px; padding: 28px; }
         }
 
-        /* [Improved] Dual Energy Sweep Animation */
+        /* [R4.8.0] Boundary-free Energy Sweep */
         @keyframes energySweep {
-          0% { transform: translateX(-150%) skewX(-20deg); opacity: 0; }
-          20% { opacity: 0.6; }
-          50% { transform: translateX(150%) skewX(-20deg); opacity: 0.6; }
-          100% { transform: translateX(150%) skewX(-20deg); opacity: 0; }
+          0% { transform: translateX(-150%) skewX(-15deg); opacity: 0; }
+          30% { opacity: 0.8; }
+          70% { opacity: 0.8; }
+          100% { transform: translateX(150%) skewX(-15deg); opacity: 0; }
         }
         .energy-sweep-layer {
           position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.1), white, rgba(34, 211, 238, 0.1), transparent);
-          width: 60%;
+          inset: 0;
+          background: linear-gradient(90deg, 
+            transparent, 
+            rgba(34, 211, 238, 0.05), 
+            rgba(255, 255, 255, 0.2), 
+            rgba(34, 211, 238, 0.05), 
+            transparent
+          );
+          width: 80%;
           pointer-events: none;
-          z-index: 5;
-          filter: blur(60px);
-          animation: energySweep 2.5s ease-in-out 2; /* Run exactly twice */
+          z-index: 1;
+          filter: blur(80px);
+          animation: energySweep 3s cubic-bezier(0.4, 0, 0.2, 1) 2;
         }
 
-        /* Drift Animations */
         @keyframes driftA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-3px, -10px) rotate(1.5deg); } }
         @keyframes driftB { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(6px, -8px) rotate(-1.5deg); } }
         @keyframes driftC { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-2px, -12px); } }
@@ -348,9 +370,10 @@ const App = () => {
           position: relative;
           aspect-ratio: 0.85 / 1;
           overflow: hidden;
-          background: #0a0a0a;
-          border: 0.5px solid rgba(255,255,255,0.08);
-          border-radius: 16px;
+          background: rgba(255, 255, 255, 0.02);
+          backdrop-filter: blur(10px);
+          border: 0.5px solid rgba(255,255,255,0.1);
+          border-radius: 18px;
           transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
           z-index: 10;
         }
@@ -363,7 +386,6 @@ const App = () => {
 
         .data-packet:active { transform: scale(0.92) !important; border-color: #22d3ee; }
 
-        /* Full 4-Corner Image Scan Animation */
         @keyframes imageFullScan {
           0% { object-position: 0% 0%; transform: scale(1.3); filter: blur(4px) brightness(0.5); }
           15% { filter: blur(0px) brightness(1); }
@@ -390,7 +412,7 @@ const App = () => {
         .modal-exit-down { transform: translateY(120vh) rotate(10deg) scale(0.8) !important; opacity: 0 !important; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important; }
       `}</style>
 
-      {/* --- Boot Sequence (Breathing + Majestic Sound) --- */}
+      {/* --- Boot Sequence --- */}
       {isInitializing && (
         <div className="fixed inset-0 z-[10000] bg-[#010101] flex flex-col items-center justify-center p-8 overflow-hidden">
           <div className="absolute w-[600px] h-[600px] bg-cyan-500/10 blur-[180px] rounded-full animate-pulse pointer-events-none" />
@@ -400,7 +422,7 @@ const App = () => {
           </div>
           <div className="flex flex-col items-center gap-4 text-center">
             <span className="font-brand text-[10px] sm:text-[12px] tracking-[0.7em] text-cyan-400/80 font-black uppercase animate-hero-pop">Entering Hyzen Labs</span>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.7.0 | QUANTUM AMBIENCE</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.8.0 | QUANTUM FUSION</span>
           </div>
         </div>
       )}
@@ -445,7 +467,7 @@ const App = () => {
           </div>
 
           <div className="matrix-container">
-            {/* [Modified] Boundary Sweep Layer */}
+            {/* [R4.8.0] Enhanced Sweep without Boundaries */}
             {isSynthesizing && <div className="energy-sweep-layer" />}
             
             <div className="matrix-grid">
@@ -453,7 +475,7 @@ const App = () => {
                 <div 
                   key={item.id || idx} 
                   className={`data-packet group ${isSynthesizing ? 'animate-quantum-synthesis' : `packet-drift-${idx % 4}`}`} 
-                  style={{ animationDelay: isSynthesizing ? `${idx * 0.02}s` : '0s', opacity: isSynthesizing ? 0 : 0.7 }} 
+                  style={{ animationDelay: isSynthesizing ? `${idx * 0.02}s` : '0s', opacity: isSynthesizing ? 0 : 0.8 }} 
                   onClick={() => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
                 >
                   <div className="absolute inset-0 overflow-hidden">
@@ -618,5 +640,3 @@ const App = () => {
     </div>
   );
 };
-
-export default App;
