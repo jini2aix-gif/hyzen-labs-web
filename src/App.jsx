@@ -17,11 +17,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R4.8.0 | Quantum Fusion Edition]
- * 1. 경계 없는 글라스: 매트릭스 컨테이너의 시각적 경계를 제거하고 배경과 유기적으로 통합
- * 2. 브리딩 오디오 복구: 진입 시퀀스 시작과 동시에 웅장한 앰비언스 사운드 강제 동기화
- * 3. 오디오 엔진 가속: 모바일 무음 모드 및 브라우저 차단 정책을 우회하기 위한 컨텍스트 리줌 로직 강화
- * 4. 아키텍처: Founder GENE 전용 하이엔드 감각 동기화 시스템
+ * [Hyzen Labs. CTO Optimized - R4.8.1 | Build Fix Edition]
+ * 1. 배포 오류 수정: Vercel/Vite 빌드 실패를 유발하던 missing default export 해결
+ * 2. 경계 없는 글라스: 매트릭스 컨테이너의 시각적 경계를 제거하고 배경과 유기적으로 통합
+ * 3. 브리딩 오디오: 진입 시퀀스 시작과 동시에 웅장한 앰비언스 사운드 강제 동기화
+ * 4. 오디오 엔진 가속: 모바일 무음 모드 우회를 위한 컨텍스트 리줌 로직 강화
  */
 
 const ADMIN_PASS = "5733906";
@@ -56,17 +56,14 @@ const playSystemSound = async (type) => {
       const masterGain = audioCtx.createGain();
       masterGain.connect(audioCtx.destination);
       
-      // 웅장함을 위해 게인값 상향 및 부드러운 엔벨로프
       masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
       masterGain.gain.linearRampToValueAtTime(0.25, audioCtx.currentTime + 1.2);
       masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 3.0);
 
-      // Deep Sub Bass
       const subOsc = audioCtx.createOscillator();
       subOsc.type = 'sine';
       subOsc.frequency.setValueAtTime(40, audioCtx.currentTime); 
       
-      // Rich Texture
       const mainOsc = audioCtx.createOscillator();
       mainOsc.type = 'sawtooth';
       mainOsc.frequency.setValueAtTime(55, audioCtx.currentTime);
@@ -176,7 +173,6 @@ const App = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Audio Context Unlock for Mobile/Silent Mode
   const unlockAudio = useCallback(() => {
     playSystemSound('quantumBreath');
     window.removeEventListener('touchstart', unlockAudio);
@@ -203,7 +199,6 @@ const App = () => {
       if (u) setCloudStatus('connected');
     });
 
-    // Boot Sequence Control
     let soundInterval;
     const timer = setTimeout(() => {
       setIsInitializing(false);
@@ -216,7 +211,6 @@ const App = () => {
       }, 500);
     }, 4500);
 
-    // Initial Breathing Sound Start
     playSystemSound('quantumBreath');
     soundInterval = setInterval(() => {
       playSystemSound('quantumBreath');
@@ -303,12 +297,11 @@ const App = () => {
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); }
         
-        /* [R4.8.0] Enhanced Seamless Matrix Container */
         .matrix-container {
           position: relative;
           margin: 0 10px 10px;
           border-radius: 32px;
-          background: transparent; /* Remove solid bg to eliminate boundaries */
+          background: transparent;
           overflow: hidden;
           flex: 1;
           display: flex;
@@ -333,7 +326,6 @@ const App = () => {
           .matrix-grid { grid-template-columns: repeat(12, 1fr); gap: 14px; padding: 28px; }
         }
 
-        /* [R4.8.0] Boundary-free Energy Sweep */
         @keyframes energySweep {
           0% { transform: translateX(-150%) skewX(-15deg); opacity: 0; }
           30% { opacity: 0.8; }
@@ -343,13 +335,7 @@ const App = () => {
         .energy-sweep-layer {
           position: absolute;
           inset: 0;
-          background: linear-gradient(90deg, 
-            transparent, 
-            rgba(34, 211, 238, 0.05), 
-            rgba(255, 255, 255, 0.2), 
-            rgba(34, 211, 238, 0.05), 
-            transparent
-          );
+          background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.05), rgba(255, 255, 255, 0.2), rgba(34, 211, 238, 0.05), transparent);
           width: 80%;
           pointer-events: none;
           z-index: 1;
@@ -412,7 +398,6 @@ const App = () => {
         .modal-exit-down { transform: translateY(120vh) rotate(10deg) scale(0.8) !important; opacity: 0 !important; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important; }
       `}</style>
 
-      {/* --- Boot Sequence --- */}
       {isInitializing && (
         <div className="fixed inset-0 z-[10000] bg-[#010101] flex flex-col items-center justify-center p-8 overflow-hidden">
           <div className="absolute w-[600px] h-[600px] bg-cyan-500/10 blur-[180px] rounded-full animate-pulse pointer-events-none" />
@@ -422,12 +407,11 @@ const App = () => {
           </div>
           <div className="flex flex-col items-center gap-4 text-center">
             <span className="font-brand text-[10px] sm:text-[12px] tracking-[0.7em] text-cyan-400/80 font-black uppercase animate-hero-pop">Entering Hyzen Labs</span>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.8.0 | QUANTUM FUSION</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.8.1 | BUILD FIX</span>
           </div>
         </div>
       )}
 
-      {/* --- Main Content --- */}
       <div className="flex-1 flex flex-col relative">
         <nav className="z-[100] px-8 pt-12 pb-2 flex justify-between items-start shrink-0">
           <div className="flex flex-col">
@@ -467,9 +451,7 @@ const App = () => {
           </div>
 
           <div className="matrix-container">
-            {/* [R4.8.0] Enhanced Sweep without Boundaries */}
             {isSynthesizing && <div className="energy-sweep-layer" />}
-            
             <div className="matrix-grid">
               {messages.map((item, idx) => (
                 <div 
@@ -499,7 +481,6 @@ const App = () => {
         <Sparkles size={10} className="text-white/10 animate-pulse mb-1" />
       </footer>
 
-      {/* --- Sync (Input) Modal --- */}
       {isGuestbookOpen && (
         <div className="fixed inset-0 z-[7000] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-3xl" onClick={closeModal}>
           <div 
@@ -534,7 +515,6 @@ const App = () => {
                 const dateString = now.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '');
                 const timeString = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
                 const fullDateTime = `${dateString} ${timeString}`;
-
                 await addDoc(q, { name: newMessage.name, text: newMessage.text, image: newMessage.image, createdAt: serverTimestamp(), date: fullDateTime });
                 setNewMessage({ name: '', text: '', image: null }); 
                 setModalExitDir('up');
@@ -564,7 +544,6 @@ const App = () => {
         </div>
       )}
 
-      {/* --- Detail Modal --- */}
       {isModalOpen && selectedItem && (
         <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-4" onClick={closeModal}>
           <div 
@@ -582,24 +561,13 @@ const App = () => {
             onTouchEnd={handleModalTouchEnd}
           >
             <div className="h-[40vh] lg:h-[60vh] lg:w-1/2 bg-black relative overflow-hidden">
-              {selectedItem.image ? (
-                <img 
-                  src={selectedItem.image} 
-                  className="w-full h-full object-cover animate-image-scan" 
-                  alt="" 
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-white/5">
-                  <Fingerprint size={100} />
-                </div>
-              )}
+              {selectedItem.image ? <img src={selectedItem.image} className="w-full h-full object-cover animate-image-scan" alt="" /> : <div className="w-full h-full flex items-center justify-center text-white/5"><Fingerprint size={100} /></div>}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
               <div className="absolute bottom-6 left-6 flex items-center gap-2">
                  <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
                  <span className="text-cyan-400 font-brand text-[8px] font-black uppercase tracking-[0.4em]">Node Tracking Active</span>
               </div>
             </div>
-
             <div className="flex-1 p-8 lg:p-12 flex flex-col justify-between">
               <div className="space-y-6">
                 <span className="text-cyan-400 font-brand text-[9px] font-black uppercase tracking-[0.3em] inline-block mb-1">Identity Analysis</span>
@@ -611,20 +579,14 @@ const App = () => {
                   <span className="text-[7px] font-mono text-white/30 uppercase tracking-[0.3em]">Temporal Stamp</span>
                   <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-tight">{selectedItem.date}</span>
                 </div>
-                <button onClick={() => { setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }} className="p-3 text-white/20 hover:text-red-500 transition-all">
-                  <Trash2 size={18} />
-                </button>
+                <button onClick={() => { setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }} className="p-3 text-white/20 hover:text-red-500 transition-all"><Trash2 size={18} /></button>
               </div>
             </div>
-            
-            <button onClick={closeModal} className="absolute top-6 right-6 p-2 bg-black/40 rounded-full border border-white/10 text-white/60 hover:text-white transition-all backdrop-blur-md">
-              <X size={20} />
-            </button>
+            <button onClick={closeModal} className="absolute top-6 right-6 p-2 bg-black/40 rounded-full border border-white/10 text-white/60 hover:text-white transition-all backdrop-blur-md"><X size={20} /></button>
           </div>
         </div>
       )}
 
-      {/* --- Delete Security --- */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[8000] flex items-center justify-center p-6 bg-black/98" onClick={closeModal}>
           <div className="w-full max-w-xs glass-panel p-10 rounded-[3rem] text-center border border-red-500/20" onClick={e => e.stopPropagation()}>
@@ -640,3 +602,5 @@ const App = () => {
     </div>
   );
 };
+
+export default App;
