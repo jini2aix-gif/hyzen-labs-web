@@ -17,11 +17,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R4.6.0 | Full Scan Restoration]
- * 1. 이미지 트래킹 복구: 4코너 전 영역을 훑는 오리지널 'Full Scan' 애니메이션 적용
- * 2. 제스처 인터페이스 유지: 모달 상/하 스냅(Swipe-to-Dismiss) 로직 결합
- * 3. 키네틱 시스템: 양자 코어 브리딩, 패킷 드리프트(Drift) 최적화 유지
- * 4. 아키텍처: Founder GENE 전용 고성능 비주얼 알고리즘
+ * [Hyzen Labs. CTO Optimized - R4.7.0 | Quantum Ambience Edition]
+ * 1. 바운더리 글라스 강화: 매트릭스 컨테이너 전체 영역에 듀얼 스윕 에너지 레이어 적용
+ * 2. 웅장한 사운드 설계: 양자 코어 브리딩에 동기화된 저역대 앰비언스(Ambience) 사운드 구현
+ * 3. 시각적 동역학: 스냅 인터페이스 및 4코너 풀 스캔 로직 유지
+ * 4. 아키텍처: Founder GENE 전용 고감도 감각 동기화 시스템
  */
 
 const ADMIN_PASS = "5733906";
@@ -46,21 +46,61 @@ const firebaseApp = firebaseConfig ? (getApps().length === 0 ? initializeApp(fir
 const auth = firebaseApp ? getAuth(firebaseApp) : null;
 const db = firebaseApp ? getFirestore(firebaseApp) : null;
 
+// --- Sound Engine Optimization ---
 const playSystemSound = (type) => {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    if (type === 'start') {
+    
+    if (type === 'quantumBreath') {
+      // 웅장한 저역대 앰비언스 사운드 (LFO + Filter Sweep)
+      const masterGain = audioCtx.createGain();
+      masterGain.connect(audioCtx.destination);
+      masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+      masterGain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 1.5);
+      masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 3.0);
+
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      const filter = audioCtx.createBiquadFilter();
+
+      osc1.type = 'sawtooth';
+      osc1.frequency.setValueAtTime(55, audioCtx.currentTime); // A1 note (Low frequency)
+      
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(55.5, audioCtx.currentTime); // Detuned for thickness
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(100, audioCtx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 1.5);
+      filter.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 3.0);
+      filter.Q.setValueAtTime(10, audioCtx.currentTime);
+
+      osc1.connect(filter);
+      osc2.connect(filter);
+      filter.connect(masterGain);
+
+      osc1.start();
+      osc2.start();
+      osc1.stop(audioCtx.currentTime + 3.0);
+      osc2.stop(audioCtx.currentTime + 3.0);
+    } else if (type === 'start') {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
       osc.type = 'sine'; osc.frequency.setValueAtTime(440, audioCtx.currentTime);
       gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
       osc.start(); osc.stop(audioCtx.currentTime + 0.5);
     } else if (type === 'popup') {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
       osc.type = 'triangle'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);
       gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
       osc.start(); osc.stop(audioCtx.currentTime + 0.1);
     } else if (type === 'dismiss') {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
       osc.type = 'sine'; osc.frequency.setValueAtTime(220, audioCtx.currentTime);
       gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
       osc.start(); osc.stop(audioCtx.currentTime + 0.3);
@@ -149,9 +189,12 @@ const App = () => {
       if (u) setCloudStatus('connected');
     });
 
+    // Boot Sequence Timer with Audio Sync
+    let soundInterval;
     const timer = setTimeout(() => {
       setIsInitializing(false);
       playSystemSound('start');
+      clearInterval(soundInterval);
       setTimeout(() => { 
         setShowMainTitle(true); 
         setIsSynthesizing(true);
@@ -159,7 +202,16 @@ const App = () => {
       }, 500);
     }, 4000);
 
-    return () => { unsubscribe(); clearTimeout(timer); };
+    // Play breathing sound during init
+    soundInterval = setInterval(() => {
+      playSystemSound('quantumBreath');
+    }, 3000);
+
+    return () => { 
+      unsubscribe(); 
+      clearTimeout(timer); 
+      clearInterval(soundInterval);
+    };
   }, []);
 
   useEffect(() => {
@@ -234,13 +286,15 @@ const App = () => {
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); }
         
+        /* [Improved] Matrix Container Glass Effect */
         .matrix-container {
           position: relative;
           margin: 0 10px 10px;
           border-radius: 24px;
-          background: rgba(0,0,0,0.6);
-          border: 1px solid rgba(255,255,255,0.05);
-          box-shadow: inset 0 0 50px rgba(0,0,0,1);
+          background: rgba(10, 10, 10, 0.4);
+          backdrop-filter: blur(15px);
+          border: 1px solid rgba(255,255,255,0.08);
+          box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
           overflow: hidden;
           flex: 1;
         }
@@ -253,11 +307,31 @@ const App = () => {
           overflow-y: auto;
           scrollbar-width: none;
           padding: 10px;
+          z-index: 2;
+          position: relative;
         }
         .matrix-grid::-webkit-scrollbar { display: none; }
         
         @media (min-width: 1024px) {
           .matrix-grid { grid-template-columns: repeat(12, 1fr); gap: 10px; padding: 24px; }
+        }
+
+        /* [Improved] Dual Energy Sweep Animation */
+        @keyframes energySweep {
+          0% { transform: translateX(-150%) skewX(-20deg); opacity: 0; }
+          20% { opacity: 0.6; }
+          50% { transform: translateX(150%) skewX(-20deg); opacity: 0.6; }
+          100% { transform: translateX(150%) skewX(-20deg); opacity: 0; }
+        }
+        .energy-sweep-layer {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.1), white, rgba(34, 211, 238, 0.1), transparent);
+          width: 60%;
+          pointer-events: none;
+          z-index: 5;
+          filter: blur(60px);
+          animation: energySweep 2.5s ease-in-out 2; /* Run exactly twice */
         }
 
         /* Drift Animations */
@@ -278,7 +352,7 @@ const App = () => {
           border: 0.5px solid rgba(255,255,255,0.08);
           border-radius: 16px;
           transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
-          z-index: 1;
+          z-index: 10;
         }
 
         @keyframes quantumSynthesis {
@@ -287,24 +361,9 @@ const App = () => {
         }
         .animate-quantum-synthesis { animation: quantumSynthesis 5s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
 
-        @keyframes energySweep {
-          0% { transform: translateX(-150%) translateY(-150%) rotate(45deg); opacity: 0; }
-          100% { transform: translateX(150%) translateY(150%) rotate(45deg); opacity: 0; }
-        }
-        .energy-sweep-bar {
-          position: absolute;
-          inset: -100%;
-          background: linear-gradient(to right, transparent, rgba(34, 211, 238, 0.2), white, rgba(34, 211, 238, 0.2), transparent);
-          width: 50%;
-          pointer-events: none;
-          z-index: 50;
-          filter: blur(40px);
-          animation: energySweep 5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-        }
-
         .data-packet:active { transform: scale(0.92) !important; border-color: #22d3ee; }
 
-        /* [Restored] Full 4-Corner Image Scan Animation */
+        /* Full 4-Corner Image Scan Animation */
         @keyframes imageFullScan {
           0% { object-position: 0% 0%; transform: scale(1.3); filter: blur(4px) brightness(0.5); }
           15% { filter: blur(0px) brightness(1); }
@@ -331,7 +390,7 @@ const App = () => {
         .modal-exit-down { transform: translateY(120vh) rotate(10deg) scale(0.8) !important; opacity: 0 !important; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important; }
       `}</style>
 
-      {/* --- Boot Sequence --- */}
+      {/* --- Boot Sequence (Breathing + Majestic Sound) --- */}
       {isInitializing && (
         <div className="fixed inset-0 z-[10000] bg-[#010101] flex flex-col items-center justify-center p-8 overflow-hidden">
           <div className="absolute w-[600px] h-[600px] bg-cyan-500/10 blur-[180px] rounded-full animate-pulse pointer-events-none" />
@@ -341,7 +400,7 @@ const App = () => {
           </div>
           <div className="flex flex-col items-center gap-4 text-center">
             <span className="font-brand text-[10px] sm:text-[12px] tracking-[0.7em] text-cyan-400/80 font-black uppercase animate-hero-pop">Entering Hyzen Labs</span>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.6.0 | FULL SCAN RESTORED</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.7.0 | QUANTUM AMBIENCE</span>
           </div>
         </div>
       )}
@@ -386,7 +445,9 @@ const App = () => {
           </div>
 
           <div className="matrix-container">
-            {isSynthesizing && <div className="energy-sweep-bar" />}
+            {/* [Modified] Boundary Sweep Layer */}
+            {isSynthesizing && <div className="energy-sweep-layer" />}
+            
             <div className="matrix-grid">
               {messages.map((item, idx) => (
                 <div 
@@ -481,7 +542,7 @@ const App = () => {
         </div>
       )}
 
-      {/* --- Detail Modal (Full 4-Corner Scan Restored) --- */}
+      {/* --- Detail Modal --- */}
       {isModalOpen && selectedItem && (
         <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-4" onClick={closeModal}>
           <div 
@@ -498,7 +559,6 @@ const App = () => {
             onTouchMove={handleModalTouchMove}
             onTouchEnd={handleModalTouchEnd}
           >
-            {/* Visual Section: Image with Tracking Logic */}
             <div className="h-[40vh] lg:h-[60vh] lg:w-1/2 bg-black relative overflow-hidden">
               {selectedItem.image ? (
                 <img 
@@ -518,7 +578,6 @@ const App = () => {
               </div>
             </div>
 
-            {/* Information Section */}
             <div className="flex-1 p-8 lg:p-12 flex flex-col justify-between">
               <div className="space-y-6">
                 <span className="text-cyan-400 font-brand text-[9px] font-black uppercase tracking-[0.3em] inline-block mb-1">Identity Analysis</span>
@@ -536,7 +595,6 @@ const App = () => {
               </div>
             </div>
             
-            {/* Close Trigger */}
             <button onClick={closeModal} className="absolute top-6 right-6 p-2 bg-black/40 rounded-full border border-white/10 text-white/60 hover:text-white transition-all backdrop-blur-md">
               <X size={20} />
             </button>
