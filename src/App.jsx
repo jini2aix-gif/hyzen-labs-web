@@ -17,11 +17,11 @@ import {
 } from 'lucide-react';
 
 /**
- * [Hyzen Labs. CTO Optimized - R4.8.1 | Build Fix Edition]
- * 1. 배포 오류 수정: Vercel/Vite 빌드 실패를 유발하던 missing default export 해결
- * 2. 경계 없는 글라스: 매트릭스 컨테이너의 시각적 경계를 제거하고 배경과 유기적으로 통합
- * 3. 브리딩 오디오: 진입 시퀀스 시작과 동시에 웅장한 앰비언스 사운드 강제 동기화
- * 4. 오디오 엔진 가속: 모바일 무음 모드 우회를 위한 컨텍스트 리줌 로직 강화
+ * [Hyzen Labs. CTO Optimized - R4.8.4 | Stability & Balance Edition]
+ * 1. 빌드 오류 수정: 중복된 default export 구문 제거 (Vercel 배포 안정성 확보)
+ * 2. 레이아웃 최적화: 매트릭스 컨테이너 상/하/좌/우 10px 대칭 여백 유지
+ * 3. 애니메이션 복구: 히어로 섹션 'NeuralPulse' 박동 모션 재활성화
+ * 4. 퀀텀 사운드: 브리딩 모션에 동기화된 웅장한 오디오 엔진 및 무음 모드 대응 로직
  */
 
 const ADMIN_PASS = "5733906";
@@ -46,7 +46,6 @@ const firebaseApp = firebaseConfig ? (getApps().length === 0 ? initializeApp(fir
 const auth = firebaseApp ? getAuth(firebaseApp) : null;
 const db = firebaseApp ? getFirestore(firebaseApp) : null;
 
-// --- Enhanced Sound Engine for Mobile Silent Mode Support ---
 const playSystemSound = async (type) => {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -55,7 +54,6 @@ const playSystemSound = async (type) => {
     if (type === 'quantumBreath') {
       const masterGain = audioCtx.createGain();
       masterGain.connect(audioCtx.destination);
-      
       masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
       masterGain.gain.linearRampToValueAtTime(0.25, audioCtx.currentTime + 1.2);
       masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 3.0);
@@ -297,9 +295,10 @@ const App = () => {
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); }
         
+        /* [R4.8.4] Balanced Matrix Container */
         .matrix-container {
           position: relative;
-          margin: 0 10px 10px;
+          margin: 10px; 
           border-radius: 32px;
           background: transparent;
           overflow: hidden;
@@ -341,6 +340,11 @@ const App = () => {
           z-index: 1;
           filter: blur(80px);
           animation: energySweep 3s cubic-bezier(0.4, 0, 0.2, 1) 2;
+        }
+
+        @keyframes syncPulse { 
+          0%, 100% { height: 30%; opacity: 0.3; } 
+          50% { height: 100%; opacity: 1; } 
         }
 
         @keyframes driftA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-3px, -10px) rotate(1.5deg); } }
@@ -407,7 +411,7 @@ const App = () => {
           </div>
           <div className="flex flex-col items-center gap-4 text-center">
             <span className="font-brand text-[10px] sm:text-[12px] tracking-[0.7em] text-cyan-400/80 font-black uppercase animate-hero-pop">Entering Hyzen Labs</span>
-            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.8.1 | BUILD FIX</span>
+            <span className="text-[7px] font-mono opacity-20 uppercase tracking-[0.4em] mt-1">v4.8.4 | BUILD STABILITY</span>
           </div>
         </div>
       )}
