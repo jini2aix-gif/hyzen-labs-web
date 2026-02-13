@@ -102,7 +102,7 @@ const App = () => {
           playSystemSound('sparkle'); // "Ting!" (Refreshing sound)
         }, 2000);
 
-        setTimeout(() => { setIsSynthesizing(false); }, 7000);
+        setTimeout(() => { setIsSynthesizing(false); }, 3500);
       }, 500);
     }, 4500);
 
@@ -252,7 +252,7 @@ const App = () => {
           pointer-events: none;
           z-index: 1;
           filter: blur(80px);
-          animation: energySweep 2.5s ease-in-out 1;
+          animation: energySweep 1.2s ease-in-out 1;
         }
 
         @keyframes syncPulse { 0%, 100% { height: 30%; opacity: 0.3; } 50% { height: 100%; opacity: 1; } }
@@ -286,7 +286,7 @@ const App = () => {
           0% { transform: translateZ(-800px) translateY(100px) skewX(20deg) scale(1.5); opacity: 0; filter: blur(30px) brightness(3) contrast(2); }
           100% { transform: translateZ(0) translateY(0) skewX(0) scale(1); opacity: 0.7; filter: blur(0px) brightness(1); }
         }
-        .animate-quantum-synthesis { animation: quantumSynthesis 5s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
+        .animate-quantum-synthesis { animation: quantumSynthesis 1.5s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
 
         @keyframes imageFullScan {
           0% { object-position: 0% 0%; transform: scale(1.3); filter: blur(4px) brightness(0.5); }
