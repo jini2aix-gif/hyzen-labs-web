@@ -8,6 +8,11 @@ const ADMIN_PASS = "5733906";
 const AdminAuthModal = ({ isOpen, onClose, targetDeleteId }) => {
     const [deletePass, setDeletePass] = useState("");
 
+    // Reset password when modal opens
+    React.useEffect(() => {
+        if (isOpen) setDeletePass("");
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const handleDelete = async () => {
