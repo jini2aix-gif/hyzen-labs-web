@@ -93,11 +93,16 @@ const App = () => {
 
         setTimeout(() => {
           setCurrentSection('guestbook');
-          setIsSynthesizing(true); // Start effect here upon return
           playSystemSound('click');
         }, 2200);
 
-        setTimeout(() => { setIsSynthesizing(false); }, 7500);
+        // Delayed Effect Start (Wait 0.8s after landing)
+        setTimeout(() => {
+          setIsSynthesizing(true);
+          playSystemSound('glassSweep'); // Optional: Play sound with effect
+        }, 3000);
+
+        setTimeout(() => { setIsSynthesizing(false); }, 8000);
       }, 500);
     }, 4500);
 
