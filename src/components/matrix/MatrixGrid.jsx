@@ -49,20 +49,32 @@ const MatrixGrid = forwardRef(({
     };
 
     // Determine Animation Direction
+    // Determine Animation Direction
     const prevSectionRef = React.useRef(currentSection);
+    const prevPageRef = React.useRef(currentPage);
     const [animClass, setAnimClass] = React.useState('');
 
     React.useEffect(() => {
+        // Section Switch Animation
         if (prevSectionRef.current !== currentSection) {
-            // "Sticky" Page Turn Effect
             if (currentSection === 'portfolio') {
                 setAnimClass('animate-page-turn-right');
             } else {
                 setAnimClass('animate-page-turn-left');
             }
             prevSectionRef.current = currentSection;
+            // Page reset is handled in the other useEffect
         }
-    }, [currentSection]);
+        // Page Switch Animation
+        else if (prevPageRef.current !== currentPage) {
+            if (currentPage > prevPageRef.current) {
+                setAnimClass('animate-page-turn-right');
+            } else {
+                setAnimClass('animate-page-turn-left');
+            }
+            prevPageRef.current = currentPage;
+        }
+    }, [currentSection, currentPage]);
 
     const currentItems = messages.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
@@ -80,14 +92,14 @@ const MatrixGrid = forwardRef(({
                     onClick={() => onSectionChange('portfolio')}
                     className={`text-[9px] font-brand font-black tracking-[0.2em] transition-all ${currentSection === 'portfolio' ? 'text-red-500 scale-105' : 'text-white/20 hover:text-white/50'}`}
                 >
-                    HYZEN.TV
+                    PORTFOLIO
                 </button>
             </div>
 
             {isSynthesizing && <div className="energy-sweep-layer" />}
 
             <div
-                key={currentSection}
+                key={`${currentSection}-${currentPage}`}
                 className={`grid grid-cols-4 gap-1 p-1 flex-1 content-start w-full transform-style-3d ${animClass}`}
                 ref={ref || scrollRef}
             >
