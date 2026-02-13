@@ -4,7 +4,7 @@ import { User } from 'lucide-react';
 const MatrixGrid = forwardRef(({
     messages,
     currentSection,
-    onSectionChange,
+    onSwitchSection,
     isSynthesizing,
     onItemClick,
     scrollRef
@@ -44,14 +44,14 @@ const MatrixGrid = forwardRef(({
             if (currentPage < totalPages - 1) {
                 setCurrentPage(prev => prev + 1);
             } else if (currentSection === 'guestbook') {
-                onSectionChange('portfolio');
+                onSwitchSection('portfolio');
             }
         }
         if (isRightSwipe) {
             if (currentPage > 0) {
                 setCurrentPage(prev => prev - 1);
             } else if (currentSection === 'portfolio') {
-                onSectionChange('guestbook');
+                onSwitchSection('guestbook');
             }
         }
     };
@@ -93,13 +93,13 @@ const MatrixGrid = forwardRef(({
             {/* Section Tabs */}
             <div className="flex items-center gap-6 px-4 py-3 border-b border-white/5 bg-black/20 backdrop-blur-sm z-10 sticky top-0 shrink-0">
                 <button
-                    onClick={() => onSectionChange('guestbook')}
+                    onClick={() => onSwitchSection('guestbook')}
                     className={`text-[9px] font-brand font-black tracking-[0.2em] transition-all ${currentSection === 'guestbook' ? 'text-cyan-400 scale-105' : 'text-white/20 hover:text-white/50'}`}
                 >
                     GUESTBOOK
                 </button>
                 <button
-                    onClick={() => onSectionChange('portfolio')}
+                    onClick={() => onSwitchSection('portfolio')}
                     className={`text-[9px] font-brand font-black tracking-[0.2em] transition-all ${currentSection === 'portfolio' ? 'text-red-500 scale-105' : 'text-white/20 hover:text-white/50'}`}
                 >
                     PORTFOLIO

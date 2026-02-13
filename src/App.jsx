@@ -288,7 +288,7 @@ const App = () => {
             ref={scrollRef}
             messages={currentSection === 'guestbook' ? messages : videos}
             currentSection={currentSection}
-            onSectionChange={handleSectionChange}
+            onSwitchSection={handleSectionChange}
             isSynthesizing={isSynthesizing}
             onItemClick={handleItemClick}
           />
