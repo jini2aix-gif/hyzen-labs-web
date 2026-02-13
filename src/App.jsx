@@ -48,9 +48,7 @@ const App = () => {
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const touchStartRef = useRef(null);
-  const scrollRef = useRef(null); // Keep for generic reference if needed, but primarily use specific refs
-  const guestbookRef = useRef(null);
-  const portfolioRef = useRef(null);
+  const scrollRef = useRef(null);
 
   // Modal Swipe State
   const [modalDragY, setModalDragY] = useState(0);
@@ -62,11 +60,7 @@ const App = () => {
   // --- Background Spring Logic ---
   const handleBgTouchStart = (e) => {
     if (isModalOpen || isGuestbookOpen) return;
-
-    // Determine active ref based on section
-    const activeRef = currentSection === 'guestbook' ? guestbookRef : portfolioRef;
-
-    if (activeRef.current && activeRef.current.scrollTop === 0) {
+    if (scrollRef.current && scrollRef.current.scrollTop === 0) {
       touchStartRef.current = e.touches[0].clientY;
       setIsDragging(true);
     }
@@ -290,35 +284,14 @@ const App = () => {
             </button>
           </div>
 
-          <div className="relative flex-1 w-full h-full">
-            {/* Guestbook Grid Layer */}
-            <div
-              className={`absolute inset-0 transition-opacity duration-0 ${currentSection === 'guestbook' ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 z-0 pointer-events-none'}`}
-            >
-              <MatrixGrid
-                ref={guestbookRef} // Pass specific ref
-                messages={messages}
-                currentSection={currentSection}
-                onSectionChange={handleSectionChange}
-                isSynthesizing={isSynthesizing}
-                onItemClick={handleItemClick}
-              />
-            </div>
-
-            {/* Portfolio Grid Layer */}
-            <div
-              className={`absolute inset-0 transition-opacity duration-0 ${currentSection === 'portfolio' ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 z-0 pointer-events-none'}`}
-            >
-              <MatrixGrid
-                ref={portfolioRef} // Pass specific ref
-                messages={videos}
-                currentSection={currentSection}
-                onSectionChange={handleSectionChange}
-                isSynthesizing={isSynthesizing}
-                onItemClick={handleItemClick}
-              />
-            </div>
-          </div>
+          <MatrixGrid
+            ref={scrollRef}
+            messages={currentSection === 'guestbook' ? messages : videos}
+            currentSection={currentSection}
+            onSectionChange={handleSectionChange}
+            isSynthesizing={isSynthesizing}
+            onItemClick={handleItemClick}
+          />
         </main>
       </div>
       <footer className="fixed bottom-0 left-0 right-0 z-[200] px-6 py-4 md:px-10 md:py-6 flex justify-between items-start border-t border-white/5 bg-black/90 backdrop-blur-md">
