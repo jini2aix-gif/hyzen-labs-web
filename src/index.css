@@ -10,32 +10,34 @@
 
 @keyframes slideInRight {
   0% {
-    transform: translateX(100%);
+    transform: translate3d(100%, 0, 0);
     opacity: 0;
   }
 
   100% {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
     opacity: 1;
   }
 }
 
 @keyframes slideInLeft {
   0% {
-    transform: translateX(-100%);
+    transform: translate3d(-100%, 0, 0);
     opacity: 0;
   }
 
   100% {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
     opacity: 1;
   }
 }
 
 .animate-slide-in-right {
+  will-change: transform, opacity;
   animation: slideInRight 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 .animate-slide-in-left {
+  will-change: transform, opacity;
   animation: slideInLeft 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
