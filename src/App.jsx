@@ -328,7 +328,7 @@ const App = () => {
 
       {/* --- Main Content Wrap with Spring Transform --- */}
       <div
-        className="flex-1 flex flex-col relative"
+        className="flex-1 flex flex-col relative pb-28"
         style={{
           transform: `translateY(${dragOffset}px)`,
           transition: isDragging ? 'none' : 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)'
@@ -370,58 +370,56 @@ const App = () => {
             onItemClick={(item) => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
           />
         </main>
+        <footer className="fixed bottom-0 left-0 right-0 z-[200] px-6 py-4 md:px-10 md:py-6 flex justify-between items-start border-t border-white/5 bg-black/90 backdrop-blur-md">
+          <div className="flex flex-col gap-1">
+            <span className="font-brand text-[9px] tracking-[0.8em] font-black uppercase text-white/40">HYZEN LABS. 2026</span>
+            <span className="text-[9px] font-brand tracking-[0.4em] text-white/40 uppercase">Founder Gene</span>
+          </div>
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="text-[8px] font-brand tracking-[0.2em] text-white/20 uppercase">VISITORS</span>
+            <span className="text-[10px] font-mono text-cyan-500/80 tracking-widest pr-0.5">
+              {visitorCount.toLocaleString()}
+            </span>
+          </div>
+        </footer>
+
+        {/* --- Modals --- */}
+        <GuestbookModal
+          isOpen={isGuestbookOpen}
+          onClose={closeModal}
+          modalExitDir={modalExitDir}
+          modalDragY={modalDragY}
+          handleModalTouchStart={handleModalTouchStart}
+          handleModalTouchMove={handleModalTouchMove}
+          handleModalTouchEnd={handleModalTouchEnd}
+          playSystemSound={playSystemSound}
+          setModalExitDir={setModalExitDir}
+          newMessage={newMessage}
+          setNewMessage={setNewMessage}
+          isUploading={isUploading}
+          setIsUploading={setIsUploading}
+          compressImage={compressImage}
+        />
+
+        <DetailModal
+          isOpen={isModalOpen}
+          selectedItem={selectedItem}
+          onClose={closeModal}
+          onDeleteRequest={() => { setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }}
+          modalExitDir={modalExitDir}
+          modalDragY={modalDragY}
+          handleModalTouchStart={handleModalTouchStart}
+          handleModalTouchMove={handleModalTouchMove}
+          handleModalTouchEnd={handleModalTouchEnd}
+        />
+
+        <AdminAuthModal
+          isOpen={isDeleteModalOpen}
+          onClose={closeModal}
+          targetDeleteId={targetDeleteId}
+        />
       </div>
-
-      <footer className="z-[100] px-6 py-4 md:px-10 md:py-6 flex justify-between items-start border-t border-white/5 bg-black/60 backdrop-blur-md shrink-0">
-        <div className="flex flex-col gap-1">
-          <span className="font-brand text-[9px] tracking-[0.8em] font-black uppercase text-white/40">HYZEN LABS. 2026</span>
-          <span className="text-[9px] font-brand tracking-[0.4em] text-white/40 uppercase">Founder Gene</span>
-        </div>
-        <div className="flex flex-col items-end gap-0.5">
-          <span className="text-[8px] font-brand tracking-[0.2em] text-white/20 uppercase">VISITORS</span>
-          <span className="text-[10px] font-mono text-cyan-500/80 tracking-widest pr-0.5">
-            {visitorCount.toLocaleString()}
-          </span>
-        </div>
-      </footer>
-
-      {/* --- Modals --- */}
-      <GuestbookModal
-        isOpen={isGuestbookOpen}
-        onClose={closeModal}
-        modalExitDir={modalExitDir}
-        modalDragY={modalDragY}
-        handleModalTouchStart={handleModalTouchStart}
-        handleModalTouchMove={handleModalTouchMove}
-        handleModalTouchEnd={handleModalTouchEnd}
-        playSystemSound={playSystemSound}
-        setModalExitDir={setModalExitDir}
-        newMessage={newMessage}
-        setNewMessage={setNewMessage}
-        isUploading={isUploading}
-        setIsUploading={setIsUploading}
-        compressImage={compressImage}
-      />
-
-      <DetailModal
-        isOpen={isModalOpen}
-        selectedItem={selectedItem}
-        onClose={closeModal}
-        onDeleteRequest={() => { setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }}
-        modalExitDir={modalExitDir}
-        modalDragY={modalDragY}
-        handleModalTouchStart={handleModalTouchStart}
-        handleModalTouchMove={handleModalTouchMove}
-        handleModalTouchEnd={handleModalTouchEnd}
-      />
-
-      <AdminAuthModal
-        isOpen={isDeleteModalOpen}
-        onClose={closeModal}
-        targetDeleteId={targetDeleteId}
-      />
-    </div>
-  );
+      );
 };
 
-export default App;
+      export default App;
