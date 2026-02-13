@@ -252,7 +252,7 @@ const App = () => {
           pointer-events: none;
           z-index: 1;
           filter: blur(80px);
-          animation: energySweep 3s cubic-bezier(0.4, 0, 0.2, 1) 2;
+          animation: energySweep 3s cubic-bezier(0.4, 0, 0.2, 1) 1;
         }
 
         @keyframes syncPulse { 0%, 100% { height: 30%; opacity: 0.3; } 50% { height: 100%; opacity: 1; } }
