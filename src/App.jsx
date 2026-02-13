@@ -84,6 +84,18 @@ const App = () => {
         setShowMainTitle(true);
         setIsSynthesizing(true);
         playSystemSound('glassSweep');
+
+        // Intro Sequence: Guestbook -> Portfolio -> Guestbook
+        setTimeout(() => {
+          setCurrentSection('portfolio');
+          playSystemSound('click');
+        }, 1200);
+
+        setTimeout(() => {
+          setCurrentSection('guestbook');
+          playSystemSound('click');
+        }, 2200);
+
         setTimeout(() => { setIsSynthesizing(false); }, 5000);
       }, 500);
     }, 4500);
