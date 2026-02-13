@@ -12,12 +12,15 @@ import NeuralPulse from './components/ui/NeuralPulse';
 import { useSystemSound } from './hooks/useSystemSound';
 import { useFirebase } from './hooks/useFirebase';
 import { useVisitorCount } from './hooks/useVisitorCount';
+import { useYouTube } from './hooks/useYouTube';
 import { compressImage } from './utils/image';
 
 const App = () => {
   const { playSystemSound } = useSystemSound();
-  const visitorCount = useVisitorCount(); // Hook moved here
+  const visitorCount = useVisitorCount();
   const { user, cloudStatus, db, appId } = useFirebase();
+  const { videos } = useYouTube();
+  const [currentSection, setCurrentSection] = useState('guestbook');
 
 
 
