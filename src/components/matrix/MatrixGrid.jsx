@@ -54,10 +54,11 @@ const MatrixGrid = forwardRef(({
 
     React.useEffect(() => {
         if (prevSectionRef.current !== currentSection) {
+            // "Sticky" Page Turn Effect
             if (currentSection === 'portfolio') {
-                setAnimClass('animate-slide-right');
+                setAnimClass('animate-page-turn-right');
             } else {
-                setAnimClass('animate-slide-left');
+                setAnimClass('animate-page-turn-left');
             }
             prevSectionRef.current = currentSection;
         }
@@ -66,7 +67,7 @@ const MatrixGrid = forwardRef(({
     const currentItems = messages.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
     return (
-        <div className="matrix-container flex flex-col h-full relative" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+        <div className="matrix-container flex flex-col h-full relative matrix-perspective" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
             {/* Section Tabs */}
             <div className="flex items-center gap-6 px-4 py-3 border-b border-white/5 bg-black/20 backdrop-blur-sm z-10 sticky top-0 shrink-0">
                 <button
@@ -87,7 +88,7 @@ const MatrixGrid = forwardRef(({
 
             <div
                 key={currentSection}
-                className={`grid grid-cols-4 gap-1 p-1 flex-1 content-start w-full ${animClass}`}
+                className={`grid grid-cols-4 gap-1 p-1 flex-1 content-start w-full transform-style-3d ${animClass}`}
                 ref={ref || scrollRef}
             >
                 {currentItems.map((item, idx) => (
