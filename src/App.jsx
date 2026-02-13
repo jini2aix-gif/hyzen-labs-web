@@ -89,20 +89,20 @@ const App = () => {
         setTimeout(() => {
           setCurrentSection('portfolio');
           playSystemSound('swipe'); // "Whoosh"
-        }, 1200);
+        }, 800);
 
         setTimeout(() => {
           setCurrentSection('guestbook');
           playSystemSound('swipe'); // "Whoosh"
-        }, 2200);
+        }, 1500);
 
-        // Delayed Effect Start (Wait 0.8s after landing)
+        // Delayed Effect Start (Wait 0.5s after landing)
         setTimeout(() => {
           setIsSynthesizing(true);
           playSystemSound('sparkle'); // "Ting!" (Refreshing sound)
-        }, 3000);
+        }, 2000);
 
-        setTimeout(() => { setIsSynthesizing(false); }, 8000);
+        setTimeout(() => { setIsSynthesizing(false); }, 7000);
       }, 500);
     }, 4500);
 
