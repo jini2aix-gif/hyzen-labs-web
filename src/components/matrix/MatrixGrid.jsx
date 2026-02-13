@@ -107,7 +107,7 @@ const MatrixGrid = forwardRef(({
                     <div
                         key={item.id || idx}
                         className={`data-packet group aspect-square relative overflow-hidden bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-all cursor-pointer 
-                        ${isSynthesizing ? 'animate-quantum-synthesis' : (currentSection === 'portfolio' ? '' : `packet-drift-${idx % 4}`)}`}
+                        ${isSynthesizing ? 'animate-quantum-synthesis' : `packet-drift-${idx % 4}`}`}
                         style={{ animationDelay: isSynthesizing ? `${idx * 0.02}s` : '0s', opacity: isSynthesizing ? 0 : 0.8 }}
                         onClick={() => onItemClick(item)}
                     >
