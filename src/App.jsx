@@ -332,7 +332,7 @@ const App = () => {
         </section>
 
         <main className="flex-1 overflow-hidden flex flex-col relative z-10">
-          <div className="px-10 flex items-center justify-between mb-4 shrink-0">
+          <div className="px-4 flex items-center justify-between mb-2 shrink-0">
             <div className="flex flex-col">
               <h2 className="text-[11px] font-brand font-black text-white uppercase tracking-[0.2em]">Digital Stack</h2>
               <span className="text-[7px] font-mono text-white/20 uppercase tracking-widest">Nodes: {messages.length} Units</span>
