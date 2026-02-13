@@ -1,163 +1,41 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, serverTimestamp } from 'firebase/firestore';
-import { 
-  X, 
-  Camera, 
-  Trash2, 
-  Lock, 
-  Cloud,
-  Loader2,
-  Fingerprint,
-  Mail,
-  Youtube,
-  User,
-  Sparkles
-} from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { collection, onSnapshot, query } from 'firebase/firestore';
+import { Fingerprint, Sparkles } from 'lucide-react';
 
-/**
- * [Hyzen Labs. CTO Optimized - R4.8.6 | Elastic Matrix Edition]
- * 1. 스프링 효과 복구: 모바일 스위핑 시 저항감을 주는 'Kinetic Elasticity' 로직 재삽입
- * 2. 그리드 정밀 교정: 가로/세로 10px 간격의 완벽한 기하학적 균형 유지
- * 3. 사운드 레이어링: 퀀텀 브리딩 및 글라스 스캐닝 사운드 동기화
- * 4. 인터랙션 통합: 배경 스프링 효과와 모달 Swipe-to-Dismiss의 공존 설계
- */
+import Header from './components/layout/Header';
+import MatrixGrid from './components/matrix/MatrixGrid';
+import GuestbookModal from './components/modals/GuestbookModal';
+import DetailModal from './components/modals/DetailModal';
+import AdminAuthModal from './components/modals/AdminAuthModal';
+import NeuralPulse from './components/ui/NeuralPulse';
 
-const ADMIN_PASS = "5733906";
-const FALLBACK_APP_ID = 'hyzen-labs-production';
-const YOUTUBE_URL = "Https://youtube.com/@hyzen-labs-ai";
-const EMAIL_ADDRESS = "jini2aix@gmail.com";
-
-const getFirebaseConfig = () => {
-  try {
-    if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-      return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
-    }
-    const viteEnv = import.meta.env?.VITE_FIREBASE_CONFIG;
-    if (viteEnv) return typeof viteEnv === 'string' ? JSON.parse(viteEnv) : viteEnv;
-  } catch (e) {}
-  return null;
-};
-
-const firebaseConfig = getFirebaseConfig();
-const appId = typeof __app_id !== 'undefined' ? __app_id : FALLBACK_APP_ID;
-const firebaseApp = firebaseConfig ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]) : null;
-const auth = firebaseApp ? getAuth(firebaseApp) : null;
-const db = firebaseApp ? getFirestore(firebaseApp) : null;
-
-// --- Multi-Layer Sound Engine ---
-const playSystemSound = async (type) => {
-  try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
-
-    if (type === 'quantumBreath') {
-      const masterGain = audioCtx.createGain();
-      masterGain.connect(audioCtx.destination);
-      masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-      masterGain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 1.2);
-      masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 3.0);
-      const subOsc = audioCtx.createOscillator();
-      subOsc.type = 'sine'; subOsc.frequency.setValueAtTime(40, audioCtx.currentTime); 
-      const mainOsc = audioCtx.createOscillator();
-      mainOsc.type = 'sawtooth'; mainOsc.frequency.setValueAtTime(55, audioCtx.currentTime);
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'lowpass'; filter.frequency.setValueAtTime(50, audioCtx.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 1.2);
-      filter.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 2.8);
-      subOsc.connect(masterGain); mainOsc.connect(filter); filter.connect(masterGain);
-      subOsc.start(); mainOsc.start();
-      subOsc.stop(audioCtx.currentTime + 3.0); mainOsc.stop(audioCtx.currentTime + 3.0);
-    } 
-    else if (type === 'glassSweep') {
-      const masterGain = audioCtx.createGain();
-      masterGain.connect(audioCtx.destination);
-      masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-      masterGain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.1);
-      masterGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.5);
-      const osc = audioCtx.createOscillator();
-      const filter = audioCtx.createBiquadFilter();
-      osc.type = 'triangle'; osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(2400, audioCtx.currentTime + 1.5);
-      filter.type = 'highpass'; filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
-      filter.Q.setValueAtTime(20, audioCtx.currentTime);
-      osc.connect(filter); filter.connect(masterGain);
-      osc.start(); osc.stop(audioCtx.currentTime + 2.5);
-    }
-    else if (type === 'start') {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.type = 'sine'; osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.08, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.8);
-    } else if (type === 'popup') {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.type = 'triangle'; osc.frequency.setValueAtTime(660, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.15);
-    } else if (type === 'dismiss') {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.type = 'sine'; osc.frequency.setValueAtTime(110, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-    }
-  } catch (e) {}
-};
-
-const compressImage = (file) => {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target.result;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_SIDE = 1000;
-        let width = img.width; let height = img.height;
-        if (width > height) { if (width > MAX_SIDE) { height *= MAX_SIDE / width; width = MAX_SIDE; } }
-        else { if (height > MAX_SIDE) { width *= MAX_SIDE / height; height = MAX_SIDE; } }
-        canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.6));
-      };
-    };
-  });
-};
-
-const NeuralPulse = () => (
-  <div className="inline-flex items-center gap-1 h-full px-1">
-    <div className="flex items-end gap-[1.2px] h-3.5">
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="w-[1.8px] bg-cyan-400/80 rounded-full" style={{ height: '100%', animation: `syncPulse ${1 + i * 0.2}s ease-in-out infinite`, animationDelay: `${i * 0.15}s` }} />
-      ))}
-    </div>
-    <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-  </div>
-);
+import { useSystemSound } from './hooks/useSystemSound';
+import { useFirebase } from './hooks/useFirebase';
+import { compressImage } from './utils/image';
 
 const App = () => {
+  const { playSystemSound } = useSystemSound();
+  const { user, cloudStatus, db, appId } = useFirebase();
+
+  // App State
   const [isInitializing, setIsInitializing] = useState(true);
   const [showMainTitle, setShowMainTitle] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null); 
+
+  // Data State
+  const [messages, setMessages] = useState([]);
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  
   const [targetDeleteId, setTargetDeleteId] = useState(null);
-  const [deletePass, setDeletePass] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
-  const [cloudStatus, setCloudStatus] = useState('disconnected');
-  const [user, setUser] = useState(null);
-  const [messages, setMessages] = useState([]);
+
+
+  // Guestbook Form State
   const [newMessage, setNewMessage] = useState({ name: '', text: '', image: null });
+  const [isUploading, setIsUploading] = useState(false);
 
   // Elastic Spring State
   const [dragOffset, setDragOffset] = useState(0);
@@ -167,7 +45,7 @@ const App = () => {
 
   // Modal Swipe State
   const [modalDragY, setModalDragY] = useState(0);
-  const [modalExitDir, setModalExitDir] = useState(null); 
+  const [modalExitDir, setModalExitDir] = useState(null);
   const modalTouchStartRef = useRef(null);
 
   useEffect(() => {
@@ -184,38 +62,22 @@ const App = () => {
     playSystemSound('quantumBreath');
     window.removeEventListener('touchstart', unlockAudio);
     window.removeEventListener('click', unlockAudio);
-  }, []);
+  }, [playSystemSound]);
 
   useEffect(() => {
     window.addEventListener('touchstart', unlockAudio);
     window.addEventListener('click', unlockAudio);
-
-    const initAuth = async () => {
-      if (!auth) return;
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (err) { setCloudStatus('error'); }
-    };
-    initAuth();
-    const unsubscribe = onAuthStateChanged(auth, u => {
-      setUser(u);
-      if (u) setCloudStatus('connected');
-    });
 
     let soundInterval;
     const timer = setTimeout(() => {
       setIsInitializing(false);
       playSystemSound('start');
       clearInterval(soundInterval);
-      setTimeout(() => { 
-        setShowMainTitle(true); 
+      setTimeout(() => {
+        setShowMainTitle(true);
         setIsSynthesizing(true);
         playSystemSound('glassSweep');
-        setTimeout(() => { setIsSynthesizing(false); }, 5000); 
+        setTimeout(() => { setIsSynthesizing(false); }, 5000);
       }, 500);
     }, 4500);
 
@@ -224,33 +86,31 @@ const App = () => {
       playSystemSound('quantumBreath');
     }, 3000);
 
-    return () => { 
-      unsubscribe(); 
-      clearTimeout(timer); 
+    return () => {
+      clearTimeout(timer);
       clearInterval(soundInterval);
       window.removeEventListener('touchstart', unlockAudio);
       window.removeEventListener('click', unlockAudio);
     };
-  }, [unlockAudio]);
+  }, [unlockAudio, playSystemSound]);
 
   useEffect(() => {
-    if (!user || !db) return;
+    if (!user || !db || !appId) return;
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data(), type: 'trace' }));
-      setMessages(msgs.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
+      setMessages(msgs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
     });
     return () => unsubscribe();
-  }, [user, appId]);
+  }, [user, db, appId]);
 
-  const closeModal = () => { 
+  const closeModal = () => {
     setModalExitDir(null);
     setModalDragY(0);
-    setIsModalOpen(false); 
-    setIsGuestbookOpen(false); 
-    setIsDeleteModalOpen(false); 
-    setSelectedItem(null); 
-    setDeletePass("");
+    setIsModalOpen(false);
+    setIsGuestbookOpen(false);
+    setIsDeleteModalOpen(false);
+    setSelectedItem(null);
   };
 
   // --- Background Spring Logic ---
@@ -309,21 +169,9 @@ const App = () => {
     modalTouchStartRef.current = null;
   };
 
-  const handleImageChange = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setIsUploading(true);
-      const compressed = await compressImage(file);
-      setNewMessage(prev => ({ ...prev, image: compressed }));
-      setIsUploading(false);
-    }
-  };
-
-  const fileInputRef = useRef(null);
-
   return (
-    <div 
-      className="fixed inset-0 bg-[#020202] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col max-w-full" 
+    <div
+      className="fixed inset-0 bg-[#020202] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col max-w-full"
       style={{ height: 'calc(var(--vh, 1vh) * 100)' }}
       onTouchStart={handleBgTouchStart}
       onTouchMove={handleBgTouchMove}
@@ -388,6 +236,7 @@ const App = () => {
         @keyframes driftA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-3px, -10px) rotate(1.5deg); } }
         @keyframes driftB { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(6px, -8px) rotate(-1.5deg); } }
         @keyframes driftC { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-2px, -12px); } }
+        @keyframes driftD { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(2px, -5px); } }
 
         .packet-drift-0 { animation: driftA 3s ease-in-out infinite; }
         .packet-drift-1 { animation: driftB 3.5s ease-in-out infinite; }
@@ -453,24 +302,14 @@ const App = () => {
       )}
 
       {/* --- Main Content Wrap with Spring Transform --- */}
-      <div 
+      <div
         className="flex-1 flex flex-col relative"
-        style={{ 
+        style={{
           transform: `translateY(${dragOffset}px)`,
           transition: isDragging ? 'none' : 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
       >
-        <nav className="z-[100] px-8 pt-12 pb-2 flex justify-between items-start shrink-0">
-          <div className="flex flex-col">
-            <span className="font-brand text-[10px] tracking-[0.4em] text-cyan-400 font-black uppercase">Hyzen Labs.</span>
-            <span className="text-[7px] opacity-20 uppercase tracking-[0.2em] font-brand mt-1">Digital Matrix Ecosystem</span>
-          </div>
-          <div className="flex items-center gap-4">
-             <a href={`mailto:${EMAIL_ADDRESS}`} className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/30 hover:text-cyan-400 transition-all"><Mail size={14} /></a>
-             <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-white/30 hover:text-red-500 transition-all"><Youtube size={14} /></a>
-             <div className="w-8 h-8 rounded-lg glass-panel flex items-center justify-center"><Cloud size={14} className={cloudStatus === 'connected' ? 'text-cyan-400' : 'text-amber-500'} /></div>
-          </div>
-        </nav>
+        <Header cloudStatus={cloudStatus} />
 
         <section className="px-8 pt-4 mb-6 shrink-0 relative overflow-hidden">
           <div className={`transition-all duration-1200 ${showMainTitle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
@@ -497,26 +336,12 @@ const App = () => {
             </button>
           </div>
 
-          <div className="matrix-container">
-            {isSynthesizing && <div className="energy-sweep-layer" />}
-            <div className="matrix-grid" ref={scrollRef}>
-              {messages.map((item, idx) => (
-                <div 
-                  key={item.id || idx} 
-                  className={`data-packet group ${isSynthesizing ? 'animate-quantum-synthesis' : `packet-drift-${idx % 4}`}`} 
-                  style={{ animationDelay: isSynthesizing ? `${idx * 0.02}s` : '0s', opacity: isSynthesizing ? 0 : 0.8 }} 
-                  onClick={() => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
-                >
-                  <div className="absolute inset-0 overflow-hidden">
-                    {item.image ? <img src={item.image} className="absolute inset-0 w-full h-full object-cover opacity-50 brightness-75 group-hover:opacity-100 transition-all" alt="" /> : <div className="absolute inset-0 bg-zinc-900/40 flex items-center justify-center"><User size={18} className="text-white/10" /></div>}
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/90 to-transparent">
-                    <span className="block text-[6.5px] font-brand font-black text-cyan-400/80 truncate uppercase tracking-tight">{item.name || 'ANON'}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <MatrixGrid
+            ref={scrollRef}
+            messages={messages}
+            isSynthesizing={isSynthesizing}
+            onItemClick={(item) => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
+          />
         </main>
       </div>
 
@@ -529,123 +354,40 @@ const App = () => {
       </footer>
 
       {/* --- Modals --- */}
-      {isGuestbookOpen && (
-        <div className="fixed inset-0 z-[7000] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-3xl" onClick={closeModal}>
-          <div 
-            className={`w-full sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[2.5rem] p-10 sm:p-12 shadow-[0_0_100px_rgba(34,211,238,0.1)] relative cursor-grab active:cursor-grabbing transition-all duration-300
-              ${modalExitDir === 'up' ? 'modal-exit-up' : ''} 
-              ${modalExitDir === 'down' ? 'modal-exit-down' : ''}
-            `}
-            style={{ 
-              transform: modalExitDir ? undefined : `translateY(${modalDragY}px) scale(${1 - Math.abs(modalDragY) / 2000})`,
-              opacity: modalExitDir ? undefined : 1 - Math.abs(modalDragY) / 800
-            }}
-            onClick={e => e.stopPropagation()}
-            onTouchStart={handleModalTouchStart}
-            onTouchMove={handleModalTouchMove}
-            onTouchEnd={handleModalTouchEnd}
-          >
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/10 rounded-full" />
-            <div className="flex justify-between items-center mb-10 pointer-events-none">
-              <div className="flex flex-col gap-1.5">
-                <h2 className="text-xl font-black font-brand uppercase tracking-tight text-white">New Trace</h2>
-                <span className="text-[7px] font-mono text-cyan-400/60 uppercase tracking-[0.4em]">Swipe Up/Down to Dismiss</span>
-              </div>
-              <button onClick={closeModal} className="p-2.5 bg-white/5 rounded-full hover:bg-white/10 transition-all text-white/40 pointer-events-auto"><X size={18} /></button>
-            </div>
-            <form onSubmit={async (e) => {
-              e.preventDefault(); if (!newMessage.name || !newMessage.text || isUploading) return;
-              setIsUploading(true);
-              try {
-                const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-                const now = new Date();
-                const dateString = now.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '');
-                const timeString = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
-                const fullDateTime = `${dateString} ${timeString}`;
-                await addDoc(q, { name: newMessage.name, text: newMessage.text, image: newMessage.image, createdAt: serverTimestamp(), date: fullDateTime });
-                setNewMessage({ name: '', text: '', image: null }); 
-                setModalExitDir('up');
-                setTimeout(closeModal, 400);
-                playSystemSound('popup');
-              } catch (err) { console.error(err); } finally { setIsUploading(false); }
-            }} className="space-y-10">
-              <div className="space-y-1.5">
-                <label className="text-[8px] font-brand text-cyan-400/60 uppercase tracking-[0.3em] ml-1">Identity Name</label>
-                <input type="text" placeholder="AUTHOR_ID" className="w-full bg-white/5 border-b border-white/10 px-1 py-4 text-sm font-brand outline-none focus:border-cyan-500 transition-all uppercase tracking-widest text-white placeholder:text-white/10" value={newMessage.name} onChange={e => setNewMessage({...newMessage, name: e.target.value.toUpperCase()})} required />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[8px] font-brand text-cyan-400/60 uppercase tracking-[0.3em] ml-1">Narrative Data</label>
-                <textarea placeholder="ENTER FRAGMENTED THOUGHTS..." className="w-full h-24 bg-white/5 border-b border-white/10 px-1 py-4 text-sm font-title outline-none focus:border-cyan-500 resize-none transition-all text-white/90 placeholder:text-white/10" value={newMessage.text} onChange={e => setNewMessage({...newMessage, text: e.target.value})} required />
-              </div>
-              <div className="flex flex-col gap-3">
-                <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
-                <button type="button" onClick={() => fileInputRef.current?.click()} className={`h-16 flex items-center justify-center gap-4 rounded-3xl border transition-all ${newMessage.image ? 'border-cyan-500 text-cyan-400 bg-cyan-400/5' : 'border-white/10 text-white/30 hover:border-white/20'}`}>
-                  {isUploading ? <Loader2 size={20} className="animate-spin" /> : <Camera size={20} />}
-                  <span className="text-[9px] font-brand font-black uppercase tracking-widest">{newMessage.image ? "Visual Ready" : "Attach Image"}</span>
-                </button>
-              </div>
-              {newMessage.image && <div className="w-full h-32 rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl"><img src={newMessage.image} className="w-full h-full object-cover" alt="Preview" /></div>}
-              <button type="submit" className="w-full h-14 bg-white text-black rounded-2xl font-brand font-black uppercase tracking-[0.5em] text-[13px] active:scale-[0.98] disabled:opacity-50 shadow-xl transition-all hover:bg-cyan-400" disabled={isUploading}>{isUploading ? "Syncing..." : "SYNC"}</button>
-            </form>
-          </div>
-        </div>
-      )}
+      <GuestbookModal
+        isOpen={isGuestbookOpen}
+        onClose={closeModal}
+        modalExitDir={modalExitDir}
+        modalDragY={modalDragY}
+        handleModalTouchStart={handleModalTouchStart}
+        handleModalTouchMove={handleModalTouchMove}
+        handleModalTouchEnd={handleModalTouchEnd}
+        playSystemSound={playSystemSound}
+        setModalExitDir={setModalExitDir}
+        newMessage={newMessage}
+        setNewMessage={setNewMessage}
+        isUploading={isUploading}
+        setIsUploading={setIsUploading}
+        compressImage={compressImage}
+      />
 
-      {isModalOpen && selectedItem && (
-        <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-4" onClick={closeModal}>
-          <div 
-            className={`w-full max-w-4xl glass-panel relative rounded-[2rem] overflow-hidden flex flex-col lg:flex-row transition-all duration-300
-              ${modalExitDir === 'up' ? 'modal-exit-up' : ''} 
-              ${modalExitDir === 'down' ? 'modal-exit-down' : ''}
-            `}
-            style={{ 
-              transform: modalExitDir ? undefined : `translateY(${modalDragY}px) scale(${1 - Math.abs(modalDragY) / 3000})`,
-              opacity: modalExitDir ? undefined : 1 - Math.abs(modalDragY) / 1000
-            }}
-            onClick={e => e.stopPropagation()}
-            onTouchStart={handleModalTouchStart}
-            onTouchMove={handleModalTouchMove}
-            onTouchEnd={handleModalTouchEnd}
-          >
-            <div className="h-[40vh] lg:h-[60vh] lg:w-1/2 bg-black relative overflow-hidden">
-              {selectedItem.image ? <img src={selectedItem.image} className="w-full h-full object-cover animate-image-scan" alt="" /> : <div className="w-full h-full flex items-center justify-center text-white/5"><Fingerprint size={100} /></div>}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
-              <div className="absolute bottom-6 left-6 flex items-center gap-2">
-                 <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
-                 <span className="text-cyan-400 font-brand text-[8px] font-black uppercase tracking-[0.4em]">Node Tracking Active</span>
-              </div>
-            </div>
-            <div className="flex-1 p-8 lg:p-12 flex flex-col justify-between">
-              <div className="space-y-6">
-                <span className="text-cyan-400 font-brand text-[9px] font-black uppercase tracking-[0.3em] inline-block mb-1">Identity Analysis</span>
-                <h2 className="text-3xl lg:text-5xl font-black font-title text-white uppercase tracking-tighter leading-none">{selectedItem.name}</h2>
-                <p className="text-sm lg:text-lg italic text-white/70 leading-relaxed font-sans">"{selectedItem.text}"</p>
-              </div>
-              <div className="mt-8 pt-6 border-t border-white/5 flex justify-between items-center">
-                <div className="flex flex-col">
-                  <span className="text-[7px] font-mono text-white/30 uppercase tracking-[0.3em]">Temporal Stamp</span>
-                  <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-tight">{selectedItem.date}</span>
-                </div>
-                <button onClick={() => { setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }} className="p-3 text-white/20 hover:text-red-500 transition-all"><Trash2 size={18} /></button>
-              </div>
-            </div>
-            <button onClick={closeModal} className="absolute top-6 right-6 p-2 bg-black/40 rounded-full border border-white/10 text-white/60 hover:text-white transition-all backdrop-blur-md"><X size={20} /></button>
-          </div>
-        </div>
-      )}
+      <DetailModal
+        isOpen={isModalOpen}
+        selectedItem={selectedItem}
+        onClose={closeModal}
+        onDeleteRequest={() => { setTargetDeleteId(selectedItem.id); setIsDeleteModalOpen(true); }}
+        modalExitDir={modalExitDir}
+        modalDragY={modalDragY}
+        handleModalTouchStart={handleModalTouchStart}
+        handleModalTouchMove={handleModalTouchMove}
+        handleModalTouchEnd={handleModalTouchEnd}
+      />
 
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-[8000] flex items-center justify-center p-6 bg-black/98" onClick={closeModal}>
-          <div className="w-full max-w-xs glass-panel p-10 rounded-[3rem] text-center border border-red-500/20" onClick={e => e.stopPropagation()}>
-            <Lock size={40} className="text-red-500 mx-auto mb-6" />
-            <input type="password" placeholder="PASSCODE" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center mb-8 outline-none focus:border-red-500 text-white font-brand tracking-widest" value={deletePass} onChange={(e) => setDeletePass(e.target.value)} />
-            <div className="flex gap-3">
-              <button onClick={closeModal} className="flex-1 py-4 rounded-xl bg-white/5 text-[9px] font-brand font-black uppercase">Abort</button>
-              <button onClick={async () => { if (deletePass === ADMIN_PASS && targetDeleteId && db) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', targetDeleteId)); closeModal(); } }} className="flex-1 py-4 rounded-xl bg-red-500 text-black font-brand font-black text-[9px] uppercase">Erase</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AdminAuthModal
+        isOpen={isDeleteModalOpen}
+        onClose={closeModal}
+        targetDeleteId={targetDeleteId}
+      />
     </div>
   );
 };
