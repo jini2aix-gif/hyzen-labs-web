@@ -342,7 +342,9 @@ const App = () => {
 
           <MatrixGrid
             ref={scrollRef}
-            messages={messages}
+            messages={currentSection === 'guestbook' ? messages : videos}
+            currentSection={currentSection}
+            onSectionChange={(section) => { setCurrentSection(section); playSystemSound('click'); }}
             isSynthesizing={isSynthesizing}
             onItemClick={(item) => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
           />
