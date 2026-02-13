@@ -3,7 +3,7 @@ import { collection, onSnapshot, query } from 'firebase/firestore';
 import { Fingerprint, Sparkles } from 'lucide-react';
 
 import Header from './components/layout/Header';
-import MatrixGrid from './components/matrix/MatrixGrid';
+import HyzenMatrix from './components/matrix/HyzenMatrix';
 import GuestbookModal from './components/modals/GuestbookModal';
 import DetailModal from './components/modals/DetailModal';
 import AdminAuthModal from './components/modals/AdminAuthModal';
@@ -284,7 +284,7 @@ const App = () => {
             </button>
           </div>
 
-          <MatrixGrid
+          <HyzenMatrix
             ref={scrollRef}
             messages={currentSection === 'guestbook' ? messages : videos}
             currentSection={currentSection}
