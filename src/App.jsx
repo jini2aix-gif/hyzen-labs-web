@@ -11,11 +11,14 @@ import NeuralPulse from './components/ui/NeuralPulse';
 
 import { useSystemSound } from './hooks/useSystemSound';
 import { useFirebase } from './hooks/useFirebase';
-import { compressImage } from './utils/image';
+import { useVisitorCount } from './hooks/useVisitorCount';
 
 const App = () => {
   const { playSystemSound } = useSystemSound();
+  const visitorCount = useVisitorCount(); // Hook moved here
   const { user, cloudStatus, db, appId } = useFirebase();
+
+
 
   // App State
   const [isInitializing, setIsInitializing] = useState(true);
@@ -349,6 +352,9 @@ const App = () => {
         <div className="flex flex-col gap-1.5">
           <span className="font-brand text-[9px] tracking-[0.8em] font-black uppercase text-white/40">HYZEN LABS. 2026</span>
           <span className="text-[9px] font-brand tracking-[0.4em] text-white/40 uppercase">Founder Gene</span>
+          <span className="text-[9px] font-brand tracking-[0.4em] text-white/20 uppercase mt-1">
+            VISITORS: {visitorCount.toLocaleString()}
+          </span>
         </div>
         <Sparkles size={10} className="text-white/10 animate-pulse mb-1" />
       </footer>
