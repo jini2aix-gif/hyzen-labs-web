@@ -196,8 +196,7 @@ const App = () => {
 
   return (
     <div
-      className="fixed inset-0 bg-[#020202] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col max-w-full"
-      style={{ height: 'calc(var(--vh, 1vh) * 100)' }}
+      className="fixed inset-0 h-[100dvh] bg-[#020202] text-white selection:bg-cyan-500/30 overflow-hidden font-sans flex flex-col max-w-full"
       onTouchStart={handleBgTouchStart}
       onTouchMove={handleBgTouchMove}
       onTouchEnd={handleBgTouchEnd}

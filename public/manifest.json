@@ -1,0 +1,22 @@
+{
+    "name": "Hyzen Labs",
+    "short_name": "Hyzen Labs",
+    "description": "ME, REALITY, AND AI - The Portfolio of Hyzen Labs",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/pwa-icon.png",
+            "type": "image/png",
+            "sizes": "512x512"
+        },
+        {
+            "src": "/pwa-icon.png",
+            "type": "image/png",
+            "sizes": "192x192"
+        }
+    ]
+}

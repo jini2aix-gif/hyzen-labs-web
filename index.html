@@ -18,6 +18,22 @@
       </div>
     </div>
     
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="/pwa-icon.png">
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('SW registered: ', registration);
+            })
+            .catch(registrationError => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
     <!-- 진입점 스크립트: 경로가 반드시 /src/main.jsx 인지 확인하세요 -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
