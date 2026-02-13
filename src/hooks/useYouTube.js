@@ -50,14 +50,9 @@ export const useYouTube = () => {
                 }
 
                 // 2. Fetch video details (contentDetails, statistics) using IDs
-                const controller2 = new AbortController();
-                const timeoutId2 = setTimeout(() => controller2.abort(), 5000);
-
                 const videosResponse = await fetch(
-                    `https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&part=snippet,statistics&id=${videoIds}`,
-                    { signal: controller2.signal }
+                    `https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&part=snippet,statistics&id=${videoIds}`
                 );
-                clearTimeout(timeoutId2);
 
                 if (!videosResponse.ok) throw new Error('Failed to fetch video details');
                 const videosData = await videosResponse.json();
