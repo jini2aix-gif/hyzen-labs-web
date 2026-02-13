@@ -89,12 +89,12 @@ const App = () => {
         setTimeout(() => {
           setCurrentSection('portfolio');
           playSystemSound('swipe'); // "Whoosh"
-        }, 800);
+        }, 600);
 
         setTimeout(() => {
           setCurrentSection('guestbook');
           playSystemSound('swipe'); // "Whoosh"
-        }, 1500);
+        }, 1100);
 
         // Delayed Effect Start (Wait 0.5s after landing)
         setTimeout(() => {
@@ -207,7 +207,7 @@ const App = () => {
         .font-brand { font-family: 'Orbitron', sans-serif; }
         .font-title { font-family: 'Michroma', sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
-        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glass-panel { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(40px); border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
         
         .matrix-container {
           position: relative;
@@ -271,10 +271,13 @@ const App = () => {
           position: relative;
           aspect-ratio: 0.85 / 1;
           overflow: hidden;
-          background: rgba(255, 255, 255, 0.02);
-          backdrop-filter: blur(10px);
-          border: 0.5px solid rgba(255,255,255,0.1);
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,0.15);
+          box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
           border-radius: 18px;
+
           transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
           z-index: 10;
         }
