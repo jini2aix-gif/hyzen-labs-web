@@ -48,6 +48,21 @@ const MatrixGrid = forwardRef(({
         }
     };
 
+    // Determine Animation Direction
+    const prevSectionRef = React.useRef(currentSection);
+    const [animClass, setAnimClass] = React.useState('');
+
+    React.useEffect(() => {
+        if (prevSectionRef.current !== currentSection) {
+            if (currentSection === 'portfolio') {
+                setAnimClass('animate-slide-right');
+            } else {
+                setAnimClass('animate-slide-left');
+            }
+            prevSectionRef.current = currentSection;
+        }
+    }, [currentSection]);
+
     const currentItems = messages.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
     return (
@@ -70,11 +85,16 @@ const MatrixGrid = forwardRef(({
 
             {isSynthesizing && <div className="energy-sweep-layer" />}
 
-            <div className="grid grid-cols-4 gap-1 p-1 flex-1 content-start w-full" ref={ref || scrollRef}>
+            <div
+                key={currentSection}
+                className={`grid grid-cols-4 gap-1 p-1 flex-1 content-start w-full ${animClass}`}
+                ref={ref || scrollRef}
+            >
                 {currentItems.map((item, idx) => (
                     <div
                         key={item.id || idx}
-                        className={`data-packet group aspect-square relative overflow-hidden bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-all cursor-pointer ${isSynthesizing ? 'animate-quantum-synthesis' : `packet-drift-${idx % 4}`}`}
+                        className={`data-packet group aspect-square relative overflow-hidden bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-all cursor-pointer 
+                        ${isSynthesizing ? 'animate-quantum-synthesis' : (currentSection === 'portfolio' ? '' : `packet-drift-${idx % 4}`)}`}
                         style={{ animationDelay: isSynthesizing ? `${idx * 0.02}s` : '0s', opacity: isSynthesizing ? 0 : 0.8 }}
                         onClick={() => onItemClick(item)}
                     >
