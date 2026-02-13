@@ -125,6 +125,7 @@ const MatrixGrid = forwardRef(({
                             {(item.image || item.thumbnail) ? (
                                 <img
                                     src={item.image || item.thumbnail}
+                                    loading="lazy"
                                     className={`w-full h-full object-cover opacity-90 brightness-110 group-hover:opacity-100 transition-all duration-500 ${currentSection === 'portfolio' ? 'group-hover:scale-110' : ''}`}
                                     alt=""
                                 />

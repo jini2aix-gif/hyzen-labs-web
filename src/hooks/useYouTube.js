@@ -30,9 +30,14 @@ export const useYouTube = () => {
 
             try {
                 // 1. Search for videos to get IDs
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+
                 const searchResponse = await fetch(
-                    `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=id&order=date&maxResults=50&type=video`
+                    `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=id&order=date&maxResults=50&type=video`,
+                    { signal: controller.signal }
                 );
+                clearTimeout(timeoutId);
 
                 if (!searchResponse.ok) throw new Error('Failed to fetch video IDs');
                 const searchData = await searchResponse.json();
@@ -45,9 +50,14 @@ export const useYouTube = () => {
                 }
 
                 // 2. Fetch video details (contentDetails, statistics) using IDs
+                const controller2 = new AbortController();
+                const timeoutId2 = setTimeout(() => controller2.abort(), 5000);
+
                 const videosResponse = await fetch(
-                    `https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&part=snippet,statistics&id=${videoIds}`
+                    `https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&part=snippet,statistics&id=${videoIds}`,
+                    { signal: controller2.signal }
                 );
+                clearTimeout(timeoutId2);
 
                 if (!videosResponse.ok) throw new Error('Failed to fetch video details');
                 const videosData = await videosResponse.json();
