@@ -350,12 +350,17 @@ const App = () => {
       </div>
 
       <footer className="z-[100] px-10 py-6 flex justify-between items-end border-t border-white/5 bg-black/60 backdrop-blur-md shrink-0">
-        <div className="flex flex-col gap-1.5">
-          <span className="font-brand text-[9px] tracking-[0.8em] font-black uppercase text-white/40">HYZEN LABS. 2026</span>
-          <span className="text-[9px] font-brand tracking-[0.4em] text-white/40 uppercase">Founder Gene</span>
-          <span className="text-[9px] font-brand tracking-[0.4em] text-white/20 uppercase mt-1">
-            VISITORS: {visitorCount.toLocaleString()}
-          </span>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <span className="font-brand text-[9px] tracking-[0.8em] font-black uppercase text-white/40">HYZEN LABS. 2026</span>
+            <span className="text-[9px] font-brand tracking-[0.4em] text-white/40 uppercase">Founder Gene</span>
+          </div>
+          <div className="flex flex-col items-start gap-0.5">
+            <span className="text-[8px] font-brand tracking-[0.2em] text-white/20 uppercase">VISITORS</span>
+            <span className="text-[10px] font-mono text-cyan-500/80 tracking-widest pl-0.5">
+              {visitorCount.toLocaleString()}
+            </span>
+          </div>
         </div>
         <Sparkles size={10} className="text-white/10 animate-pulse mb-1" />
       </footer>
