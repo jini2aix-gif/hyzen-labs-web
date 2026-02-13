@@ -29,25 +29,38 @@ export const useYouTube = () => {
             }
 
             try {
-                const response = await fetch(
-                    `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=15&type=video`
+                // 1. Search for videos to get IDs
+                const searchResponse = await fetch(
+                    `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=id&order=date&maxResults=50&type=video`
                 );
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error("YouTube API Error:", errorData);
-                    throw new Error('Failed to fetch videos');
+                if (!searchResponse.ok) throw new Error('Failed to fetch video IDs');
+                const searchData = await searchResponse.json();
+                const videoIds = searchData.items.map(item => item.id.videoId).join(',');
+
+                if (!videoIds) {
+                    setVideos([]);
+                    setLoading(false);
+                    return;
                 }
 
-                const data = await response.json();
+                // 2. Fetch video details (contentDetails, statistics) using IDs
+                const videosResponse = await fetch(
+                    `https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&part=snippet,statistics&id=${videoIds}`
+                );
 
-                const formattedVideos = data.items.map(item => ({
-                    id: item.id.videoId,
+                if (!videosResponse.ok) throw new Error('Failed to fetch video details');
+                const videosData = await videosResponse.json();
+
+                const formattedVideos = videosData.items.map(item => ({
+                    id: item.id,
                     title: item.snippet.title,
                     description: item.snippet.description,
                     thumbnail: item.snippet.thumbnails.high.url,
                     publishedAt: item.snippet.publishedAt,
-                    type: 'youtube' // Identifier for MatrixGrid
+                    views: item.statistics.viewCount,
+                    likes: item.statistics.likeCount,
+                    type: 'youtube'
                 }));
 
                 setVideos(formattedVideos);

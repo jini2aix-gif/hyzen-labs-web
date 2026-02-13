@@ -9,8 +9,49 @@ const MatrixGrid = forwardRef(({
     onItemClick,
     scrollRef
 }, ref) => {
+    // Pagination State
+    const [currentPage, setCurrentPage] = React.useState(0);
+    const itemsPerPage = 8; // 2 rows of 4 items or similar
+    // Filter messages based on section if needed, but App.jsx handles passing correct array
+    const totalPages = Math.ceil(messages.length / itemsPerPage);
+
+    // Swipe State
+    const touchStart = React.useRef(null);
+    const touchEnd = React.useRef(null);
+
+    // Reset page when section changes
+    React.useEffect(() => {
+        setCurrentPage(0);
+    }, [currentSection]);
+
+    // Swipe Handlers
+    const onTouchStart = (e) => {
+        touchEnd.current = null;
+        touchStart.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchMove = (e) => {
+        touchEnd.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchEnd = () => {
+        if (!touchStart.current || !touchEnd.current) return;
+        const distance = touchStart.current - touchEnd.current;
+        const isLeftSwipe = distance > 50;
+        const isRightSwipe = distance < -50;
+
+        if (isLeftSwipe && currentPage < totalPages - 1) {
+            setCurrentPage(prev => prev + 1);
+        }
+        if (isRightSwipe && currentPage > 0) {
+            setCurrentPage(prev => prev - 1);
+        }
+    };
+
+    const currentItems = messages.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+
     return (
-        <div className="matrix-container flex flex-col">
+        <div className="matrix-container flex flex-col h-full relative" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
             {/* Section Tabs */}
             <div className="flex items-center gap-6 px-4 py-3 border-b border-white/5 bg-black/20 backdrop-blur-sm z-10 sticky top-0 shrink-0">
                 <button
@@ -29,36 +70,43 @@ const MatrixGrid = forwardRef(({
 
             {isSynthesizing && <div className="energy-sweep-layer" />}
 
-            <div className="matrix-grid flex-1" ref={ref || scrollRef}>
-                {messages.map((item, idx) => (
+            <div className="matrix-grid flex-1 content-start" ref={ref || scrollRef}>
+                {currentItems.map((item, idx) => (
                     <div
                         key={item.id || idx}
-                        className={`data-packet group ${isSynthesizing ? 'animate-quantum-synthesis' : `packet-drift-${idx % 4}`}`}
+                        className={`data-packet group aspect-square relative overflow-hidden bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-all cursor-pointer ${isSynthesizing ? 'animate-quantum-synthesis' : `packet-drift-${idx % 4}`}`}
                         style={{ animationDelay: isSynthesizing ? `${idx * 0.02}s` : '0s', opacity: isSynthesizing ? 0 : 0.8 }}
                         onClick={() => onItemClick(item)}
                     >
-                        <div className="absolute inset-0 overflow-hidden">
+                        {/* Image / Thumbnail */}
+                        <div className="absolute inset-0">
                             {(item.image || item.thumbnail) ? (
                                 <img
                                     src={item.image || item.thumbnail}
-                                    className={`absolute inset-0 w-full h-full object-cover opacity-60 brightness-75 group-hover:opacity-100 transition-all duration-500 ${currentSection === 'portfolio' ? 'group-hover:scale-110' : ''}`}
+                                    className={`w-full h-full object-cover opacity-60 brightness-75 group-hover:opacity-100 transition-all duration-500 ${currentSection === 'portfolio' ? 'group-hover:scale-110' : ''}`}
                                     alt=""
                                 />
                             ) : (
-                                <div className="absolute inset-0 bg-zinc-900/40 flex items-center justify-center">
-                                    <User size={18} className="text-white/10" />
-                                </div>
-                            )}
-
-                            {/* Play Icon Overlay for Video */}
-                            {currentSection === 'portfolio' && (
-                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                    <div className="w-8 h-8 rounded-full bg-red-600/90 flex items-center justify-center blur-[1px] group-hover:blur-0 transition-all">
-                                        <div className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[8px] border-l-white border-b-[4px] border-b-transparent ml-0.5" />
-                                    </div>
+                                <div className="w-full h-full flex items-center justify-center text-white/10">
+                                    <User size={18} />
                                 </div>
                             )}
                         </div>
+
+                        {/* Video Stats Overlay (Hover) */}
+                        {currentSection === 'portfolio' && (
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-2 transition-opacity duration-300">
+                                <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center">
+                                    <div className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[8px] border-l-white border-b-[4px] border-b-transparent ml-0.5" />
+                                </div>
+                                <div className="flex gap-3 text-[10px] font-mono text-white/80">
+                                    <span className="flex items-center gap-1">👁 {parseInt(item.views || 0).toLocaleString()}</span>
+                                    <span className="flex items-center gap-1">♥ {parseInt(item.likes || 0).toLocaleString()}</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Title Overlay */}
                         <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
                             <span className={`block text-[8px] font-brand font-black truncate uppercase tracking-tight ${currentSection === 'portfolio' ? 'text-white/90' : 'text-cyan-400/80'}`}>
                                 {item.title || item.name || 'ANON'}
@@ -67,6 +115,23 @@ const MatrixGrid = forwardRef(({
                     </div>
                 ))}
             </div>
+
+            {/* Pagination Indicators */}
+            {totalPages > 1 && (
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center gap-2 pointer-events-none">
+                    <span className="text-[8px] font-brand font-black text-white/30 tracking-widest">
+                        PAGE {String(currentPage + 1).padStart(2, '0')} / {String(totalPages).padStart(2, '0')}
+                    </span>
+                    <div className="flex gap-1">
+                        {Array.from({ length: totalPages }).map((_, i) => (
+                            <div
+                                key={i}
+                                className={`h-0.5 rounded-full transition-all duration-300 ${i === currentPage ? (currentSection === 'portfolio' ? 'w-4 bg-red-500' : 'w-4 bg-cyan-400') : 'w-1 bg-white/20'}`}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 });
