@@ -40,11 +40,19 @@ const MatrixGrid = forwardRef(({
         const isLeftSwipe = distance > 50;
         const isRightSwipe = distance < -50;
 
-        if (isLeftSwipe && currentPage < totalPages - 1) {
-            setCurrentPage(prev => prev + 1);
+        if (isLeftSwipe) {
+            if (currentPage < totalPages - 1) {
+                setCurrentPage(prev => prev + 1);
+            } else if (currentSection === 'guestbook') {
+                onSectionChange('portfolio');
+            }
         }
-        if (isRightSwipe && currentPage > 0) {
-            setCurrentPage(prev => prev - 1);
+        if (isRightSwipe) {
+            if (currentPage > 0) {
+                setCurrentPage(prev => prev - 1);
+            } else if (currentSection === 'portfolio') {
+                onSectionChange('guestbook');
+            }
         }
     };
 
