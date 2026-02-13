@@ -372,7 +372,7 @@ const App = () => {
         </main>
       </div>
 
-      <footer className="z-[100] px-10 py-6 flex justify-between items-start border-t border-white/5 bg-black/60 backdrop-blur-md shrink-0">
+      <footer className="z-[100] px-6 py-4 md:px-10 md:py-6 flex justify-between items-start border-t border-white/5 bg-black/60 backdrop-blur-md shrink-0">
         <div className="flex flex-col gap-1">
           <span className="font-brand text-[9px] tracking-[0.8em] font-black uppercase text-white/40">HYZEN LABS. 2026</span>
           <span className="text-[9px] font-brand tracking-[0.4em] text-white/40 uppercase">Founder Gene</span>

@@ -100,7 +100,7 @@ const MatrixGrid = forwardRef(({
 
             <div
                 key={`${currentSection}-${currentPage}`}
-                className={`grid grid-cols-4 grid-rows-[repeat(3,minmax(0,1fr))] gap-2 p-2 pb-24 h-full w-full content-stretch transform-style-3d ${animClass}`}
+                className={`grid grid-cols-4 grid-rows-[repeat(3,minmax(0,1fr))] gap-2 p-2 pb-16 flex-1 min-h-0 w-full content-stretch transform-style-3d ${animClass}`}
                 ref={ref || scrollRef}
             >
                 {currentItems.map((item, idx) => (
