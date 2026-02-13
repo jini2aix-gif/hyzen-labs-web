@@ -240,9 +240,9 @@ const App = () => {
 
         @keyframes energySweep {
           0% { transform: translateX(-150%) skewX(-15deg); opacity: 0; }
-          30% { opacity: 0.8; }
-          70% { opacity: 0.8; }
-          100% { transform: translateX(150%) skewX(-15deg); opacity: 0; }
+          20% { opacity: 1; }
+          80% { opacity: 1; }
+          100% { transform: translateX(200%) skewX(-15deg); opacity: 0; }
         }
         .energy-sweep-layer {
           position: absolute;
@@ -252,7 +252,7 @@ const App = () => {
           pointer-events: none;
           z-index: 1;
           filter: blur(80px);
-          animation: energySweep 3s cubic-bezier(0.4, 0, 0.2, 1) 1;
+          animation: energySweep 2.5s ease-in-out 1;
         }
 
         @keyframes syncPulse { 0%, 100% { height: 30%; opacity: 0.3; } 50% { height: 100%; opacity: 1; } }
