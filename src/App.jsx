@@ -83,7 +83,7 @@ const App = () => {
       setTimeout(() => {
         setShowMainTitle(true);
         // setIsSynthesizing(true); // Removed from here: delaying effect
-        playSystemSound('glassSweep');
+        // playSystemSound('glassSweep'); // Removed per user request
 
         // Intro Sequence: Guestbook -> Portfolio -> Guestbook
         setTimeout(() => {
