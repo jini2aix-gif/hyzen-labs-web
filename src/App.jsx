@@ -82,7 +82,7 @@ const App = () => {
       clearInterval(soundInterval);
       setTimeout(() => {
         setShowMainTitle(true);
-        setIsSynthesizing(true);
+        // setIsSynthesizing(true); // Removed from here: delaying effect
         playSystemSound('glassSweep');
 
         // Intro Sequence: Guestbook -> Portfolio -> Guestbook
@@ -93,10 +93,11 @@ const App = () => {
 
         setTimeout(() => {
           setCurrentSection('guestbook');
+          setIsSynthesizing(true); // Start effect here upon return
           playSystemSound('click');
         }, 2200);
 
-        setTimeout(() => { setIsSynthesizing(false); }, 5000);
+        setTimeout(() => { setIsSynthesizing(false); }, 7500);
       }, 500);
     }, 4500);
 
