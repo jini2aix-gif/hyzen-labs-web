@@ -252,7 +252,8 @@ const App = () => {
           pointer-events: none;
           z-index: 1;
           filter: blur(80px);
-          animation: energySweep 1.2s ease-in-out 1;
+          opacity: 0;
+          animation: energySweep 1.2s ease-in-out 1 forwards;
         }
 
         @keyframes syncPulse { 0%, 100% { height: 30%; opacity: 0.3; } 50% { height: 100%; opacity: 1; } }
