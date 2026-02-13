@@ -17,7 +17,7 @@ const Header = ({ cloudStatus }) => {
             </div>
             <div className="flex items-center gap-4">
                 <div className="flex flex-col items-end mr-4">
-                    <span className="text-[8px] font-mono text-cyan-400/50 tracking-widest">SYS.TRAFFIC</span>
+                    <span className="text-[8px] font-mono text-cyan-400/50 tracking-widest">VISITORS</span>
                     <span className="text-[10px] font-brand text-cyan-400 font-bold tracking-widest">
                         {visitorCount.toLocaleString().padStart(6, '0')}
                     </span>
