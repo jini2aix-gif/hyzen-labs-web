@@ -58,9 +58,9 @@ const MatrixGrid = forwardRef(({
         // Section Switch Animation
         if (prevSectionRef.current !== currentSection) {
             if (currentSection === 'portfolio') {
-                setAnimClass('animate-page-turn-right');
+                setAnimClass('animate-slide-in-right');
             } else {
-                setAnimClass('animate-page-turn-left');
+                setAnimClass('animate-slide-in-left');
             }
             prevSectionRef.current = currentSection;
             // Page reset is handled in the other useEffect
@@ -68,9 +68,9 @@ const MatrixGrid = forwardRef(({
         // Page Switch Animation
         else if (prevPageRef.current !== currentPage) {
             if (currentPage > prevPageRef.current) {
-                setAnimClass('animate-page-turn-right');
+                setAnimClass('animate-slide-in-right');
             } else {
-                setAnimClass('animate-page-turn-left');
+                setAnimClass('animate-slide-in-left');
             }
             prevPageRef.current = currentPage;
         }
