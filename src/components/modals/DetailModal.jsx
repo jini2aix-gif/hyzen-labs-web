@@ -30,7 +30,6 @@ const DetailModal = ({
                 onTouchMove={handleModalTouchMove}
                 onTouchEnd={handleModalTouchEnd}
             >
-            >
                 {/* Media Section (Left/Top) */}
                 <div className="h-[40vh] lg:h-[60vh] lg:w-1/2 bg-black relative overflow-hidden group">
                     {selectedItem.type === 'youtube' ? (
