@@ -100,7 +100,7 @@ const MatrixGrid = forwardRef(({
 
             <div
                 key={`${currentSection}-${currentPage}`}
-                className={`grid grid-cols-4 grid-rows-[repeat(3,minmax(0,1fr))] gap-2 p-2 pb-16 flex-1 min-h-0 w-full content-stretch transform-style-3d ${animClass}`}
+                className={`grid grid-cols-4 grid-rows-[repeat(3,minmax(0,1fr))] gap-1.5 p-2 pb-32 flex-1 min-h-0 w-full content-stretch transform-style-3d ${animClass}`}
                 ref={ref || scrollRef}
             >
                 {currentItems.map((item, idx) => (
@@ -147,7 +147,7 @@ const MatrixGrid = forwardRef(({
 
             {/* Pagination Indicators */}
             {totalPages > 1 && (
-                <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center gap-2 pointer-events-none">
+                <div className="absolute bottom-10 left-0 right-0 flex justify-center items-center gap-2 pointer-events-none">
                     <span className="text-[8px] font-brand font-black text-white/30 tracking-widest">
                         PAGE {String(currentPage + 1).padStart(2, '0')} / {String(totalPages).padStart(2, '0')}
                     </span>
