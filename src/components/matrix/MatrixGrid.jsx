@@ -70,7 +70,7 @@ const MatrixGrid = forwardRef(({
 
             {isSynthesizing && <div className="energy-sweep-layer" />}
 
-            <div className="grid grid-cols-3 md:grid-cols-4 gap-1 p-1 flex-1 content-start w-full" ref={ref || scrollRef}>
+            <div className="grid grid-cols-4 gap-1 p-1 flex-1 content-start w-full" ref={ref || scrollRef}>
                 {currentItems.map((item, idx) => (
                     <div
                         key={item.id || idx}

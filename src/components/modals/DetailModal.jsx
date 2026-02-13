@@ -31,7 +31,7 @@ const DetailModal = ({
                 onTouchEnd={handleModalTouchEnd}
             >
                 {/* Media Section (Left/Top) */}
-                <div className="h-[40vh] lg:h-[60vh] lg:w-1/2 bg-black relative overflow-hidden group">
+                <div className="h-[50vh] lg:h-[60vh] lg:w-1/2 bg-black relative overflow-hidden group">
                     {selectedItem.type === 'youtube' ? (
                         <iframe
                             className="w-full h-full"
@@ -54,12 +54,12 @@ const DetailModal = ({
                 </div>
 
                 {/* Content Section (Right/Bottom) */}
-                <div className="flex-1 p-8 lg:p-12 flex flex-col justify-between">
-                    <div className="space-y-6">
+                <div className="flex-1 p-6 lg:p-12 flex flex-col justify-between">
+                    <div className="space-y-4">
                         <span className={`font-brand text-[9px] font-black uppercase tracking-[0.3em] inline-block mb-1 ${selectedItem.type === 'youtube' ? 'text-red-500' : 'text-cyan-400'}`}>
                             {selectedItem.type === 'youtube' ? 'Hyzen.TV Stream' : 'Identity Analysis'}
                         </span>
-                        <h2 className="text-2xl lg:text-4xl font-black font-title text-white uppercase tracking-tighter leading-tight line-clamp-2">
+                        <h2 className="text-xl lg:text-3xl font-black font-title text-white uppercase tracking-tighter leading-tight line-clamp-1">
                             {selectedItem.title || selectedItem.name}
                         </h2>
 
@@ -75,7 +75,7 @@ const DetailModal = ({
                             </div>
                         )}
                         <p className="text-xs lg:text-sm italic text-white/70 leading-relaxed font-sans max-h-[150px] overflow-y-auto scrollbar-hide">
-                            "{selectedItem.description || selectedItem.text}"
+                            {selectedItem.description || selectedItem.text}
                         </p>
                     </div>
                     <div className="mt-8 pt-6 border-t border-white/5 flex justify-between items-center">
