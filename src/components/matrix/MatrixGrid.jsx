@@ -11,7 +11,7 @@ const MatrixGrid = forwardRef(({
 }, ref) => {
     // Pagination State
     const [currentPage, setCurrentPage] = React.useState(0);
-    const itemsPerPage = 16; // 4x4 Grid for balanced sizing
+    const itemsPerPage = 12; // 4 cols x 3 rows = 12 items (No scroll, max 3 vertical)
     // Filter messages based on section if needed, but App.jsx handles passing correct array
     const totalPages = Math.ceil(messages.length / itemsPerPage);
 
@@ -103,7 +103,7 @@ const MatrixGrid = forwardRef(({
                             {(item.image || item.thumbnail) ? (
                                 <img
                                     src={item.image || item.thumbnail}
-                                    className={`w-full h-full object-cover opacity-60 brightness-75 group-hover:opacity-100 transition-all duration-500 ${currentSection === 'portfolio' ? 'group-hover:scale-110' : ''}`}
+                                    className={`w-full h-full object-cover opacity-90 brightness-110 group-hover:opacity-100 transition-all duration-500 ${currentSection === 'portfolio' ? 'group-hover:scale-110' : ''}`}
                                     alt=""
                                 />
                             ) : (
