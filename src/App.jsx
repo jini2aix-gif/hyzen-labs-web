@@ -48,112 +48,25 @@ const App = () => {
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const touchStartRef = useRef(null);
-  const scrollRef = useRef(null);
+  const scrollRef = useRef(null); // Keep for generic reference if needed, but primarily use specific refs
+  const guestbookRef = useRef(null);
+  const portfolioRef = useRef(null);
 
   // Modal Swipe State
   const [modalDragY, setModalDragY] = useState(0);
   const [modalExitDir, setModalExitDir] = useState(null);
   const modalTouchStartRef = useRef(null);
 
-  useEffect(() => {
-    const handleResize = () => {
-      const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const unlockAudio = useCallback(() => {
-    playSystemSound('quantumBreath');
-    window.removeEventListener('touchstart', unlockAudio);
-    window.removeEventListener('click', unlockAudio);
-  }, [playSystemSound]);
-
-  useEffect(() => {
-    window.addEventListener('touchstart', unlockAudio);
-    window.addEventListener('click', unlockAudio);
-
-    let soundInterval;
-    const timer = setTimeout(() => {
-      setIsInitializing(false);
-      playSystemSound('start');
-      clearInterval(soundInterval);
-      setTimeout(() => {
-        setShowMainTitle(true);
-        // setIsSynthesizing(true); // Removed from here: delaying effect
-        // playSystemSound('glassSweep'); // Removed per user request
-
-        // Intro Sequence: Guestbook -> Portfolio -> Guestbook
-        setTimeout(() => {
-          setCurrentSection('portfolio');
-          playSystemSound('swipe'); // "Whoosh"
-        }, 800);
-
-        setTimeout(() => {
-          setCurrentSection('guestbook');
-          playSystemSound('swipe'); // "Whoosh"
-        }, 1500);
-
-        // Delayed Effect Start (Wait 0.5s after landing)
-        setTimeout(() => {
-          setIsSynthesizing(true);
-          playSystemSound('sparkle'); // "Ting!" (Refreshing sound)
-        }, 2000);
-
-        setTimeout(() => { setIsSynthesizing(false); }, 3500);
-      }, 500);
-    }, 4500);
-
-    playSystemSound('quantumBreath');
-    soundInterval = setInterval(() => {
-      playSystemSound('quantumBreath');
-    }, 3000);
-
-    return () => {
-      clearTimeout(timer);
-      clearInterval(soundInterval);
-      window.removeEventListener('touchstart', unlockAudio);
-      window.removeEventListener('click', unlockAudio);
-    };
-  }, [unlockAudio, playSystemSound]);
-
-  useEffect(() => {
-    if (!user || !db || !appId) return;
-    const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data(), type: 'trace' }));
-      setMessages(msgs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
-    });
-    return () => unsubscribe();
-  }, [user, db, appId]);
-
-  const closeModal = useCallback(() => {
-    setModalExitDir(null);
-    setModalDragY(0);
-    setIsModalOpen(false);
-    setIsGuestbookOpen(false);
-    setIsDeleteModalOpen(false);
-    setSelectedItem(null);
-  }, []);
-
-
-  const handleSectionChange = useCallback((section) => {
-    setCurrentSection(section);
-    playSystemSound('click');
-  }, [playSystemSound]);
-
-  const handleItemClick = useCallback((item) => {
-    setSelectedItem(item);
-    setIsModalOpen(true);
-    playSystemSound('popup');
-  }, [playSystemSound]);
+  // ... (existing effects) ...
 
   // --- Background Spring Logic ---
   const handleBgTouchStart = (e) => {
     if (isModalOpen || isGuestbookOpen) return;
-    if (scrollRef.current && scrollRef.current.scrollTop === 0) {
+
+    // Determine active ref based on section
+    const activeRef = currentSection === 'guestbook' ? guestbookRef : portfolioRef;
+
+    if (activeRef.current && activeRef.current.scrollTop === 0) {
       touchStartRef.current = e.touches[0].clientY;
       setIsDragging(true);
     }
@@ -377,14 +290,35 @@ const App = () => {
             </button>
           </div>
 
-          <MatrixGrid
-            ref={scrollRef}
-            messages={currentSection === 'guestbook' ? messages : videos}
-            currentSection={currentSection}
-            onSectionChange={handleSectionChange}
-            isSynthesizing={isSynthesizing}
-            onItemClick={handleItemClick}
-          />
+          <div className="relative flex-1 w-full h-full">
+            {/* Guestbook Grid Layer */}
+            <div
+              className={`absolute inset-0 transition-opacity duration-0 ${currentSection === 'guestbook' ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 z-0 pointer-events-none'}`}
+            >
+              <MatrixGrid
+                ref={guestbookRef} // Pass specific ref
+                messages={messages}
+                currentSection={currentSection}
+                onSectionChange={handleSectionChange}
+                isSynthesizing={isSynthesizing}
+                onItemClick={handleItemClick}
+              />
+            </div>
+
+            {/* Portfolio Grid Layer */}
+            <div
+              className={`absolute inset-0 transition-opacity duration-0 ${currentSection === 'portfolio' ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 z-0 pointer-events-none'}`}
+            >
+              <MatrixGrid
+                ref={portfolioRef} // Pass specific ref
+                messages={videos}
+                currentSection={currentSection}
+                onSectionChange={handleSectionChange}
+                isSynthesizing={isSynthesizing}
+                onItemClick={handleItemClick}
+              />
+            </div>
+          </div>
         </main>
       </div>
       <footer className="fixed bottom-0 left-0 right-0 z-[200] px-6 py-4 md:px-10 md:py-6 flex justify-between items-start border-t border-white/5 bg-black/90 backdrop-blur-md">
