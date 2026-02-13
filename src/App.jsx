@@ -293,6 +293,7 @@ const App = () => {
 
           transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
           z-index: 10;
+          will-change: transform;
         }
 
         @keyframes quantumSynthesis {

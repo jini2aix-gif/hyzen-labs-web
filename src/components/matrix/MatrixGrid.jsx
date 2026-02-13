@@ -63,24 +63,26 @@ const MatrixGrid = forwardRef(({
     const [animClass, setAnimClass] = React.useState('');
 
     React.useEffect(() => {
-        // Section Switch Animation
+        let newAnimClass = '';
+
+        // Section Switch
         if (prevSectionRef.current !== currentSection) {
-            if (currentSection === 'portfolio') {
-                setAnimClass('animate-slide-in-right');
-            } else {
-                setAnimClass('animate-slide-in-left');
-            }
+            newAnimClass = currentSection === 'portfolio' ? 'animate-slide-in-right' : 'animate-slide-in-left';
             prevSectionRef.current = currentSection;
-            // Page reset is handled in the other useEffect
         }
-        // Page Switch Animation
+        // Page Switch
         else if (prevPageRef.current !== currentPage) {
-            if (currentPage > prevPageRef.current) {
-                setAnimClass('animate-slide-in-right');
-            } else {
-                setAnimClass('animate-slide-in-left');
-            }
+            newAnimClass = currentPage > prevPageRef.current ? 'animate-slide-in-right' : 'animate-slide-in-left';
             prevPageRef.current = currentPage;
+        }
+
+        if (newAnimClass) {
+            setAnimClass(''); // Reset animation
+            // Short delay to allow DOM to register the class removal, triggering a reflow for restart
+            const timer = setTimeout(() => {
+                setAnimClass(newAnimClass);
+            }, 50);
+            return () => clearTimeout(timer);
         }
     }, [currentSection, currentPage]);
 
@@ -107,7 +109,6 @@ const MatrixGrid = forwardRef(({
             {isSynthesizing && <div className="energy-sweep-layer" />}
 
             <div
-                key={`${currentSection}-${currentPage}`}
                 className={`grid grid-cols-4 grid-rows-[repeat(3,minmax(0,1fr))] gap-1.5 p-2 pb-32 flex-1 min-h-0 w-full content-stretch transform-style-3d ${animClass}`}
                 ref={ref || scrollRef}
             >
