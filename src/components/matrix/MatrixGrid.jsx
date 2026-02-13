@@ -11,7 +11,7 @@ const MatrixGrid = forwardRef(({
 }, ref) => {
     // Pagination State
     const [currentPage, setCurrentPage] = React.useState(0);
-    const itemsPerPage = 8; // 2 rows of 4 items or similar
+    const itemsPerPage = 20; // Increased to fill larger screens (4x5 or 5x4)
     // Filter messages based on section if needed, but App.jsx handles passing correct array
     const totalPages = Math.ceil(messages.length / itemsPerPage);
 
@@ -70,7 +70,7 @@ const MatrixGrid = forwardRef(({
 
             {isSynthesizing && <div className="energy-sweep-layer" />}
 
-            <div className="matrix-grid flex-1 content-start" ref={ref || scrollRef}>
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 p-1 flex-1 content-start w-full" ref={ref || scrollRef}>
                 {currentItems.map((item, idx) => (
                     <div
                         key={item.id || idx}
@@ -95,11 +95,11 @@ const MatrixGrid = forwardRef(({
 
                         {/* Video Stats Overlay (Hover) */}
                         {currentSection === 'portfolio' && (
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-2 transition-opacity duration-300">
-                                <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center">
-                                    <div className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[8px] border-l-white border-b-[4px] border-b-transparent ml-0.5" />
+                            <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-2 transition-all duration-300 z-20 backdrop-blur-[2px]">
+                                <div className="w-10 h-10 rounded-full bg-red-600/90 flex items-center justify-center shadow-lg shadow-red-900/50">
+                                    <div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[10px] border-l-white border-b-[5px] border-b-transparent ml-1" />
                                 </div>
-                                <div className="flex gap-3 text-[10px] font-mono text-white/80">
+                                <div className="flex gap-3 text-[11px] font-mono font-bold text-white tracking-wider drop-shadow-md">
                                     <span className="flex items-center gap-1">👁 {parseInt(item.views || 0).toLocaleString()}</span>
                                     <span className="flex items-center gap-1">♥ {parseInt(item.likes || 0).toLocaleString()}</span>
                                 </div>

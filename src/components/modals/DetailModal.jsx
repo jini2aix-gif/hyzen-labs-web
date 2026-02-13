@@ -62,7 +62,7 @@ const DetailModal = ({
                         <h2 className="text-2xl lg:text-4xl font-black font-title text-white uppercase tracking-tighter leading-tight line-clamp-2">
                             {selectedItem.title || selectedItem.name}
                         </h2>
-                        <p className="text-sm lg:text-base italic text-white/70 leading-relaxed font-sans max-h-[150px] overflow-y-auto scrollbar-hide">
+                        <p className="text-xs lg:text-sm italic text-white/70 leading-relaxed font-sans max-h-[150px] overflow-y-auto scrollbar-hide">
                             "{selectedItem.description || selectedItem.text}"
                         </p>
                     </div>
