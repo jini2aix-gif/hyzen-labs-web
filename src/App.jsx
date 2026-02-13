@@ -89,12 +89,12 @@ const App = () => {
         setTimeout(() => {
           setCurrentSection('portfolio');
           playSystemSound('swipe'); // "Whoosh"
-        }, 600);
+        }, 800);
 
         setTimeout(() => {
           setCurrentSection('guestbook');
           playSystemSound('swipe'); // "Whoosh"
-        }, 1100);
+        }, 1500);
 
         // Delayed Effect Start (Wait 0.5s after landing)
         setTimeout(() => {
