@@ -129,14 +129,26 @@ const App = () => {
     return () => unsubscribe();
   }, [user, db, appId]);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setModalExitDir(null);
     setModalDragY(0);
     setIsModalOpen(false);
     setIsGuestbookOpen(false);
     setIsDeleteModalOpen(false);
     setSelectedItem(null);
-  };
+  }, []);
+
+
+  const handleSectionChange = useCallback((section) => {
+    setCurrentSection(section);
+    playSystemSound('click');
+  }, [playSystemSound]);
+
+  const handleItemClick = useCallback((item) => {
+    setSelectedItem(item);
+    setIsModalOpen(true);
+    playSystemSound('popup');
+  }, [playSystemSound]);
 
   // --- Background Spring Logic ---
   const handleBgTouchStart = (e) => {
@@ -368,9 +380,9 @@ const App = () => {
             ref={scrollRef}
             messages={currentSection === 'guestbook' ? messages : videos}
             currentSection={currentSection}
-            onSectionChange={(section) => { setCurrentSection(section); playSystemSound('click'); }}
+            onSectionChange={handleSectionChange}
             isSynthesizing={isSynthesizing}
-            onItemClick={(item) => { setSelectedItem(item); setIsModalOpen(true); playSystemSound('popup'); }}
+            onItemClick={handleItemClick}
           />
         </main>
       </div>

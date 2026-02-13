@@ -99,4 +99,4 @@ const GuestbookModal = ({
     );
 };
 
-export default GuestbookModal;
+export default React.memo(GuestbookModal);

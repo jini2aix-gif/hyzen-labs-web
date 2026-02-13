@@ -96,4 +96,4 @@ const DetailModal = ({
     );
 };
 
-export default DetailModal;
+export default React.memo(DetailModal);

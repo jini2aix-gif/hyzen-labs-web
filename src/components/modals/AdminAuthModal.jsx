@@ -38,4 +38,4 @@ const AdminAuthModal = ({ isOpen, onClose, targetDeleteId }) => {
     );
 };
 
-export default AdminAuthModal;
+export default React.memo(AdminAuthModal);

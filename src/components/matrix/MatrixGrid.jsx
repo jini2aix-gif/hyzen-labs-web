@@ -173,4 +173,4 @@ const MatrixGrid = forwardRef(({
     );
 });
 
-export default MatrixGrid;
+export default React.memo(MatrixGrid);
