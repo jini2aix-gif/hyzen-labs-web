@@ -85,6 +85,17 @@ export const useSystemSound = () => {
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
                 noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
                 noise.start();
+            } else if (type === 'sparkle') {
+                const osc1 = audioCtx.createOscillator();
+                const osc2 = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc1.connect(gain); osc2.connect(gain); gain.connect(audioCtx.destination);
+                osc1.type = 'sine'; osc1.frequency.setValueAtTime(1500, audioCtx.currentTime);
+                osc2.type = 'sine'; osc2.frequency.setValueAtTime(2000, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+                osc1.start(); osc1.stop(audioCtx.currentTime + 0.5);
+                osc2.start(); osc2.stop(audioCtx.currentTime + 0.5);
             }
         } catch (e) { }
     }, []);

@@ -88,18 +88,18 @@ const App = () => {
         // Intro Sequence: Guestbook -> Portfolio -> Guestbook
         setTimeout(() => {
           setCurrentSection('portfolio');
-          playSystemSound('click');
+          playSystemSound('swipe'); // "Whoosh"
         }, 1200);
 
         setTimeout(() => {
           setCurrentSection('guestbook');
-          playSystemSound('click');
+          playSystemSound('swipe'); // "Whoosh"
         }, 2200);
 
         // Delayed Effect Start (Wait 0.8s after landing)
         setTimeout(() => {
           setIsSynthesizing(true);
-          playSystemSound('glassSweep'); // Optional: Play sound with effect
+          playSystemSound('sparkle'); // "Ting!" (Refreshing sound)
         }, 3000);
 
         setTimeout(() => { setIsSynthesizing(false); }, 8000);
