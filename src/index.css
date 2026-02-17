@@ -1,43 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* 3D Page Turn Animation */
-.matrix-perspective {
-  perspective: 2000px;
-  transform-style: preserve-3d;
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --accent-color: #000000;
+  --secondary-color: #666666;
 }
 
-@keyframes slideInRight {
-  0% {
-    transform: translate3d(100%, 0, 0);
+body {
+  margin: 0;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+/* Custom Scrollbar for Webkit */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 20px;
+}
+
+/* Typography Utilities */
+.font-brand {
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.font-tech {
+  font-family: 'Rajdhani', sans-serif;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
     opacity: 0;
+    transform: translateY(10px);
   }
 
-  100% {
-    transform: translate3d(0, 0, 0);
+  to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes slideInLeft {
-  0% {
-    transform: translate3d(-100%, 0, 0);
-    opacity: 0;
-  }
-
-  100% {
-    transform: translate3d(0, 0, 0);
-    opacity: 1;
-  }
-}
-
-.animate-slide-in-right {
-  will-change: transform, opacity;
-  animation: slideInRight 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-
-.animate-slide-in-left {
-  will-change: transform, opacity;
-  animation: slideInLeft 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+.animate-fade-in {
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

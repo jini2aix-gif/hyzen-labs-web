@@ -5,7 +5,7 @@ import { User } from 'lucide-react';
 const MatrixGrid = forwardRef(({
     messages,
     currentSection,
-    onSwitchSection,
+    onSectionChange,
     isSynthesizing,
     onItemClick,
     scrollRef
@@ -41,23 +41,14 @@ const MatrixGrid = forwardRef(({
         const isLeftSwipe = distance > 50;
         const isRightSwipe = distance < -50;
 
-        if (isLeftSwipe) {
-            if (currentPage < totalPages - 1) {
-                setCurrentPage(prev => prev + 1);
-            } else if (currentSection === 'guestbook') {
-                onSwitchSection('portfolio');
-            }
+        if (isLeftSwipe && currentPage < totalPages - 1) {
+            setCurrentPage(prev => prev + 1);
         }
-        if (isRightSwipe) {
-            if (currentPage > 0) {
-                setCurrentPage(prev => prev - 1);
-            } else if (currentSection === 'portfolio') {
-                onSwitchSection('guestbook');
-            }
+        if (isRightSwipe && currentPage > 0) {
+            setCurrentPage(prev => prev - 1);
         }
     };
 
-    // Determine Animation Direction
     // Determine Animation Direction
     const prevSectionRef = React.useRef(currentSection);
     const prevPageRef = React.useRef(currentPage);
@@ -91,19 +82,12 @@ const MatrixGrid = forwardRef(({
 
     return (
         <div className="matrix-container flex flex-col h-full relative matrix-perspective" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
-            {/* Section Tabs */}
+            {/* Section Tabs - REMOVED PORTFOLIO */}
             <div className="flex items-center gap-6 px-4 py-3 border-b border-white/5 bg-black/20 backdrop-blur-sm z-10 sticky top-0 shrink-0">
                 <button
-                    onClick={() => onSwitchSection('guestbook')}
-                    className={`text-[9px] font-brand font-black tracking-[0.2em] transition-all ${currentSection === 'guestbook' ? 'text-cyan-400 scale-105' : 'text-white/20 hover:text-white/50'}`}
+                    className={`text-[9px] font-brand font-black tracking-[0.2em] transition-all text-cyan-400 scale-105`}
                 >
                     GUESTBOOK
-                </button>
-                <button
-                    onClick={() => onSwitchSection('portfolio')}
-                    className={`text-[9px] font-brand font-black tracking-[0.2em] transition-all ${currentSection === 'portfolio' ? 'text-red-500 scale-105' : 'text-white/20 hover:text-white/50'}`}
-                >
-                    PORTFOLIO
                 </button>
             </div>
 
@@ -127,7 +111,7 @@ const MatrixGrid = forwardRef(({
                                 <img
                                     src={item.image || item.thumbnail}
                                     loading="lazy"
-                                    className={`w-full h-full object-cover opacity-90 brightness-110 group-hover:opacity-100 transition-all duration-500 ${currentSection === 'portfolio' ? 'group-hover:scale-110' : ''}`}
+                                    className={`w-full h-full object-cover opacity-90 brightness-110 group-hover:opacity-100 transition-all duration-500`}
                                     alt=""
                                 />
                             ) : (
@@ -137,18 +121,9 @@ const MatrixGrid = forwardRef(({
                             )}
                         </div>
 
-                        {/* Play Icon Overlay for Video (Simple) */}
-                        {currentSection === 'portfolio' && (
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <div className="w-8 h-8 rounded-full bg-red-600/90 flex items-center justify-center blur-[1px] group-hover:blur-0 transition-all">
-                                    <div className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[8px] border-l-white border-b-[4px] border-b-transparent ml-0.5" />
-                                </div>
-                            </div>
-                        )}
-
                         {/* Title Overlay */}
                         <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
-                            <span className={`block text-[8px] font-brand font-black truncate uppercase tracking-tight ${currentSection === 'portfolio' ? 'text-white/90' : 'text-cyan-400/80'}`}>
+                            <span className={`block text-[8px] font-brand font-black truncate uppercase tracking-tight text-cyan-400/80`}>
                                 {item.title || item.name || 'ANON'}
                             </span>
                         </div>

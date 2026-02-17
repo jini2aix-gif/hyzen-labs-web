@@ -1,99 +1,134 @@
 import React from 'react';
-import { X, Fingerprint, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion'; // Removed AnimatePresence from here
+import { X, User } from 'lucide-react';
 
-const DetailModal = ({
-    isOpen,
-    selectedItem,
-    onClose,
-    onDeleteRequest,
-    modalExitDir,
-    modalDragY,
-    handleModalTouchStart,
-    handleModalTouchMove,
-    handleModalTouchEnd
-}) => {
-    if (!isOpen || !selectedItem) return null;
+const DetailModal = ({ item, onClose }) => {
+    // Scroll Lock
+    React.useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, []);
+
+    // Swipe to close logic
+    const handleDragEnd = (event, info) => {
+        if (info.offset.y > 100 || info.offset.y < -100) {
+            onClose();
+        }
+    };
+
+    if (!item) return null;
+
+    // Parse Date Logic
+    let displayDate = 'Unknown Date';
+    if (item.date) {
+        displayDate = item.date;
+    } else if (item.createdAt && item.createdAt.seconds) {
+        const date = new Date(item.createdAt.seconds * 1000);
+        displayDate = date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    }
 
     return (
-        <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-4" onClick={onClose}>
-            <div
-                className={`w-full max-w-4xl glass-panel relative rounded-[2rem] overflow-hidden flex flex-col lg:flex-row transition-all duration-300
-          ${modalExitDir === 'up' ? 'modal-exit-up' : ''} 
-          ${modalExitDir === 'down' ? 'modal-exit-down' : ''}
-        `}
-                style={{
-                    transform: modalExitDir ? undefined : `translateY(${modalDragY}px) scale(${1 - Math.abs(modalDragY) / 3000})`,
-                    opacity: modalExitDir ? undefined : 1 - Math.abs(modalDragY) / 1000
-                }}
+        <motion.div
+            key={`modal-overlay-${item.id}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4"
+            onClick={onClose}
+        >
+            <motion.div
+                key={`modal-card-${item.id}`}
+                drag="y"
+                dragConstraints={{ top: 0, bottom: 0 }}
+                dragElastic={0.7}
+                onDragEnd={handleDragEnd}
+                initial={{ scale: 0.9, opacity: 0, y: 50 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, transition: { duration: 0.2 } }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="w-[95%] md:w-full max-w-md bg-white/95 backdrop-blur-3xl rounded-[2rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden relative border border-white/60 flex flex-col h-[70vh] md:h-[600px] ring-1 ring-white/20"
                 onClick={e => e.stopPropagation()}
-                onTouchStart={handleModalTouchStart}
-                onTouchMove={handleModalTouchMove}
-                onTouchEnd={handleModalTouchEnd}
             >
-                {/* Media Section (Left/Top) */}
-                <div className="h-[50vh] lg:h-[60vh] lg:w-1/2 bg-black relative overflow-hidden group">
-                    {selectedItem.type === 'youtube' ? (
-                        <iframe
-                            className="w-full h-full"
-                            src={`https://www.youtube.com/embed/${selectedItem.id}?autoplay=1&rel=0&modestbranding=1`}
-                            title={selectedItem.title}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                        />
-                    ) : (
-                        selectedItem.image ? <img src={selectedItem.image} className="w-full h-full object-cover animate-image-scan" alt="" /> : <div className="w-full h-full flex items-center justify-center text-white/5"><Fingerprint size={100} /></div>
-                    )}
-
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
-                    <div className="absolute bottom-6 left-6 flex items-center gap-2 pointer-events-none">
-                        <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${selectedItem.type === 'youtube' ? 'bg-red-500' : 'bg-cyan-400'}`} />
-                        <span className={`font-brand text-[8px] font-black uppercase tracking-[0.4em] ${selectedItem.type === 'youtube' ? 'text-red-500' : 'text-cyan-400'}`}>
-                            {selectedItem.type === 'youtube' ? 'Video Feed Active' : 'Node Tracking Active'}
-                        </span>
+                {/* Header: Consistent Gradient */}
+                <div className="flex justify-between items-center px-5 py-4 md:px-6 md:py-5 bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 text-white z-10 shadow-lg shadow-rose-500/20 shrink-0 cursor-grab active:cursor-grabbing">
+                    <div className="flex flex-col">
+                        <h2 className="text-xl font-bold tracking-tight font-brand text-white">Memory Record</h2>
+                        <span className="text-[10px] text-white/80 font-tech tracking-widest uppercase">Archived Data</span>
                     </div>
+                    <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition-colors text-white/90 hover:text-white">
+                        <X size={20} />
+                    </button>
                 </div>
 
-                {/* Content Section (Right/Bottom) */}
-                <div className="flex-1 p-6 lg:p-12 flex flex-col justify-between">
-                    <div className="space-y-4">
-                        <span className={`font-brand text-[9px] font-black uppercase tracking-[0.3em] inline-block mb-1 ${selectedItem.type === 'youtube' ? 'text-red-500' : 'text-cyan-400'}`}>
-                            {selectedItem.type === 'youtube' ? 'Hyzen.TV Stream' : 'Identity Analysis'}
-                        </span>
-                        <h2 className="text-xl lg:text-3xl font-black font-title text-white uppercase tracking-tighter leading-tight line-clamp-1">
-                            {selectedItem.title || selectedItem.name}
-                        </h2>
+                {/* Content Container - 50:50 Split */}
+                <div className="flex flex-col flex-1 overflow-hidden h-full">
 
-                        {/* YouTube Stats in Modal */}
-                        {selectedItem.type === 'youtube' && (
-                            <div className="flex gap-4 py-2 border-b border-white/5 w-fit">
-                                <span className="flex items-center gap-2 text-xs font-mono text-white/80 font-bold">
-                                    <span className="text-red-500">👁</span> {parseInt(selectedItem.views || 0).toLocaleString()} Views
-                                </span>
-                                <span className="flex items-center gap-2 text-xs font-mono text-white/80 font-bold">
-                                    <span className="text-red-500">♥</span> {parseInt(selectedItem.likes || 0).toLocaleString()} Likes
-                                </span>
+                    {/* Image Section - 50% Height */}
+                    <div className="relative w-full flex-1 bg-black overflow-hidden border-b border-white/50 shrink-0 basis-0 min-h-0 bg-gray-100 flex items-center justify-center group">
+                        {(item.image || item.thumbnail) ? (
+                            <motion.img
+                                key={`tracker-img-${item.id}`}
+                                src={item.image || item.thumbnail}
+                                className="w-full h-full object-cover will-change-transform"
+                                alt="Visual Record"
+                                initial={{ scale: 1.4, objectPosition: "50% 0%" }}
+                                animate={{
+                                    objectPosition: ["50% 0%", "50% 100%", "50% 50%", "50% 50%"],
+                                    scale: [1.4, 1.4, 1.4, 1.0]
+                                }}
+                                transition={{
+                                    duration: 5,
+                                    times: [0, 0.4, 0.7, 1],
+                                    ease: "easeInOut"
+                                }}
+                            />
+                        ) : (
+                            <div className="text-gray-400 flex flex-col items-center gap-2 opacity-70">
+                                <User size={48} />
+                                <span className="text-[10px] font-tech uppercase tracking-widest">No Visual Data</span>
                             </div>
                         )}
-                        <p className="text-xs lg:text-sm italic text-white/70 leading-relaxed font-sans max-h-[150px] overflow-y-auto scrollbar-hide">
-                            {selectedItem.description || selectedItem.text}
-                        </p>
+
+                        {/* Scanline Effect (Optional, but adds to the 'tracking' feel) */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-transparent bg-[length:100%_200%] animate-scan pointer-events-none opacity-50" />
                     </div>
-                    <div className="mt-8 pt-6 border-t border-white/5 flex justify-between items-center">
-                        <div className="flex flex-col">
-                            <span className="text-[7px] font-mono text-white/30 uppercase tracking-[0.3em]">Temporal Stamp</span>
-                            <span className={`text-[10px] font-mono uppercase tracking-tight ${selectedItem.type === 'youtube' ? 'text-red-500' : 'text-cyan-400'}`}>
-                                {selectedItem.publishedAt ? new Date(selectedItem.publishedAt).toLocaleDateString() : selectedItem.date}
-                            </span>
+
+                    {/* Text Section - 50% Height */}
+                    <div className="flex-1 p-6 md:p-8 overflow-y-auto bg-white/60 shrink-0 basis-0 min-h-0">
+                        <div className="mb-4">
+                            <h2 className="text-2xl font-brand font-bold text-gray-900 mb-1 leading-tight">
+                                {item.name || 'Anonymous User'}
+                            </h2>
+                            <div className="flex items-center gap-3 text-[10px] text-gray-400 font-tech uppercase tracking-widest">
+                                <span className="text-orange-500 font-bold">{displayDate}</span>
+                                <span className="w-px h-2 bg-gray-300"></span>
+                                <span>ID: {item.id?.slice(0, 8)}</span>
+                            </div>
                         </div>
-                        {selectedItem.type !== 'youtube' && (
-                            <button onClick={onDeleteRequest} className="p-3 text-white/20 hover:text-red-500 transition-all"><Trash2 size={18} /></button>
-                        )}
+
+                        {/* Text Block */}
+                        <div className="relative pl-4">
+                            <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-rose-400 to-orange-400 rounded-full"></div>
+                            <p className="text-gray-700 font-brand text-base leading-relaxed whitespace-pre-wrap">
+                                {item.text}
+                            </p>
+                        </div>
                     </div>
                 </div>
-                <button onClick={onClose} className="absolute top-6 right-6 p-2 bg-black/40 rounded-full border border-white/10 text-white/60 hover:text-white transition-all backdrop-blur-md z-50"><X size={20} /></button>
-            </div>
-        </div>
+
+                {/* Footer status */}
+                <div className="px-6 py-3 bg-gray-50/90 backdrop-blur-sm border-t border-white/50 flex justify-between items-center shrink-0">
+                    <span className="text-[9px] font-tech text-gray-400 uppercase tracking-[0.2em]">Secure Transmission</span>
+                    <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-bold text-green-600 uppercase tracking-widest animate-pulse">Live</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-lg shadow-green-500/50"></div>
+                    </div>
+                </div>
+            </motion.div>
+        </motion.div>
     );
 };
 
-export default React.memo(DetailModal);
+export default DetailModal;

@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import {
+    getAuth,
+    signInAnonymously,
+    signInWithPopup,
+    GoogleAuthProvider,
+    signOut as firebaseSignOut,
+    onAuthStateChanged
+} from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const FALLBACK_APP_ID = 'hyzen-labs-production';
@@ -27,24 +34,41 @@ export const useFirebase = () => {
     const [cloudStatus, setCloudStatus] = useState('disconnected');
     const [isInitializingAuth, setIsInitializingAuth] = useState(true);
 
+    // Login with Google
+    const loginWithGoogle = async () => {
+        if (!auth) return;
+        try {
+            const provider = new GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+            await signInWithPopup(auth, provider);
+        } catch (error) {
+            console.error("Google Login Error:", error);
+            throw error;
+        }
+    };
+
+    // Logout
+    const logout = async () => {
+        if (!auth) return;
+        try {
+            await firebaseSignOut(auth);
+        } catch (error) {
+            console.error("Logout Error:", error);
+        }
+    };
+
     useEffect(() => {
         const initAuth = async () => {
             if (!auth) {
                 setIsInitializingAuth(false);
                 return;
             }
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (err) {
-                console.error("Auth Error:", err);
-                setCloudStatus('error');
-            } finally {
-                setIsInitializingAuth(false);
-            }
+            // We do NOT force anonymous login anymore if we want explicit Google Auth
+            // But we can keep it as a fallback for 'view-only' if needed, 
+            // OR just wait for user action. 
+            // For now, let's NOT auto-login anonymously to keep it clean for Phase 3 options.
+            // If the user was previously logged in, onAuthStateChanged will catch it.
+            setIsInitializingAuth(false);
         };
 
         initAuth();
@@ -58,5 +82,5 @@ export const useFirebase = () => {
         return () => unsubscribe();
     }, []);
 
-    return { user, cloudStatus, db, appId, isInitializingAuth };
+    return { user, cloudStatus, db, appId, isInitializingAuth, loginWithGoogle, logout };
 };

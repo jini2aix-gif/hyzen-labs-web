@@ -1,25 +1,38 @@
-import React, { useRef } from 'react';
-import { X, Loader2, Camera } from 'lucide-react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import React, { useRef, useEffect } from 'react';
+import { X, Loader2, Camera, LogIn, Save, Image as ImageIcon } from 'lucide-react';
+import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db, appId } from '../../hooks/useFirebase';
+import { motion } from 'framer-motion';
 
 const GuestbookModal = ({
     isOpen,
     onClose,
-    modalExitDir,
-    modalDragY,
-    handleModalTouchStart,
-    handleModalTouchMove,
-    handleModalTouchEnd,
-    playSystemSound,
-    setModalExitDir,
+    user,
+    loginWithGoogle,
     newMessage,
     setNewMessage,
     isUploading,
     setIsUploading,
-    compressImage
+    compressImage,
+    editMode = false,
+    messageId = null
 }) => {
     const fileInputRef = useRef(null);
+    const textareaRef = useRef(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+            if (textareaRef.current) {
+                textareaRef.current.focus();
+            }
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -35,65 +48,188 @@ const GuestbookModal = ({
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!newMessage.name || !newMessage.text || isUploading) return;
+
+        // If not logged in, prompt login
+        if (!user) {
+            loginWithGoogle();
+            return;
+        }
+
+        if (!newMessage.text.trim() || isUploading) return;
+
         setIsUploading(true);
         try {
-            const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-            const now = new Date();
-            const dateString = now.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '');
-            const timeString = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
-            const fullDateTime = `${dateString} ${timeString}`;
-            await addDoc(q, { name: newMessage.name, text: newMessage.text, image: newMessage.image, createdAt: serverTimestamp(), date: fullDateTime });
+            const collectionPath = ['artifacts', appId, 'public', 'data', 'messages'];
+
+            if (editMode && messageId) {
+                // Update existing document
+                const docRef = doc(db, ...collectionPath, messageId);
+                await updateDoc(docRef, {
+                    text: newMessage.text,
+                    image: newMessage.image,
+                    isEdited: true,
+                    updatedAt: serverTimestamp()
+                });
+            } else {
+                // Create new document
+                const q = collection(db, ...collectionPath);
+                const now = new Date();
+                const dateString = now.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '');
+                const timeString = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+                const fullDateTime = `${dateString} ${timeString}`;
+
+                await addDoc(q, {
+                    name: user.displayName || 'Anonymous',
+                    uid: user.uid,
+                    photoURL: user.photoURL,
+                    text: newMessage.text,
+                    image: newMessage.image,
+                    createdAt: serverTimestamp(),
+                    date: fullDateTime
+                });
+            }
+
             setNewMessage({ name: '', text: '', image: null });
-            setModalExitDir('up');
-            setTimeout(onClose, 400);
-            playSystemSound('popup');
-        } catch (err) { console.error(err); } finally { setIsUploading(false); }
+            onClose();
+        } catch (err) {
+            console.error(err);
+            alert("Failed to save message.");
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     return (
-        <div className="fixed inset-0 z-[7000] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-3xl" onClick={onClose}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4" onClick={onClose}>
             <div
-                className={`w-full sm:max-w-md glass-panel rounded-t-[3.5rem] sm:rounded-[2.5rem] p-10 sm:p-12 shadow-[0_0_100px_rgba(34,211,238,0.1)] relative cursor-grab active:cursor-grabbing transition-all duration-300
-          ${modalExitDir === 'up' ? 'modal-exit-up' : ''} 
-          ${modalExitDir === 'down' ? 'modal-exit-down' : ''}
-        `}
-                style={{
-                    transform: modalExitDir ? undefined : `translateY(${modalDragY}px) scale(${1 - Math.abs(modalDragY) / 2000})`,
-                    opacity: modalExitDir ? undefined : 1 - Math.abs(modalDragY) / 800
-                }}
+                className="w-[95%] md:w-full max-w-md bg-white/95 backdrop-blur-3xl rounded-[2rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden relative border border-white/60 flex flex-col h-[85dvh] md:max-h-[800px] ring-1 ring-white/20"
                 onClick={e => e.stopPropagation()}
-                onTouchStart={handleModalTouchStart}
-                onTouchMove={handleModalTouchMove}
-                onTouchEnd={handleModalTouchEnd}
             >
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/10 rounded-full" />
-                <div className="flex justify-between items-center mb-10 pointer-events-none">
-                    <div className="flex flex-col gap-1.5">
-                        <h2 className="text-xl font-black font-brand uppercase tracking-tight text-white">New Trace</h2>
-                        <span className="text-[7px] font-mono text-cyan-400/60 uppercase tracking-[0.4em]">Swipe Up/Down to Dismiss</span>
+                {/* Header: UPDATED Vivid Gradient */}
+                <div className="flex justify-between items-center px-5 py-4 md:px-6 md:py-5 bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 text-white z-10 shadow-lg shadow-rose-500/20 shrink-0">
+                    <div className="flex flex-col">
+                        <h2 className="text-xl font-bold tracking-tight font-brand text-white">
+                            {editMode ? 'Edit Memory' : 'New Memory'}
+                        </h2>
+                        <span className="text-[10px] text-white/80 font-tech tracking-widest uppercase">
+                            Share your moment
+                        </span>
                     </div>
-                    <button onClick={onClose} className="p-2.5 bg-white/5 rounded-full hover:bg-white/10 transition-all text-white/40 pointer-events-auto"><X size={18} /></button>
+                    <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition-colors text-white/90 hover:text-white">
+                        <X size={20} />
+                    </button>
                 </div>
-                <form onSubmit={handleSubmit} className="space-y-10">
-                    <div className="space-y-1.5">
-                        <label className="text-[8px] font-brand text-cyan-400/60 uppercase tracking-[0.3em] ml-1">Identity Name</label>
-                        <input type="text" placeholder="AUTHOR_ID" className="w-full bg-white/5 border-b border-white/10 px-1 py-4 text-sm font-brand outline-none focus:border-cyan-500 transition-all uppercase tracking-widest text-white placeholder:text-white/10" value={newMessage.name} onChange={e => setNewMessage({ ...newMessage, name: e.target.value.toUpperCase() })} required />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-[8px] font-brand text-cyan-400/60 uppercase tracking-[0.3em] ml-1">Narrative Data</label>
-                        <textarea placeholder="ENTER FRAGMENTED THOUGHTS..." className="w-full h-24 bg-white/5 border-b border-white/10 px-1 py-4 text-sm font-title outline-none focus:border-cyan-500 resize-none transition-all text-white/90 placeholder:text-white/10" value={newMessage.text} onChange={e => setNewMessage({ ...newMessage, text: e.target.value })} required />
-                    </div>
-                    <div className="flex flex-col gap-3">
-                        <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
-                        <button type="button" onClick={() => fileInputRef.current?.click()} className={`h-16 flex items-center justify-center gap-4 rounded-3xl border transition-all ${newMessage.image ? 'border-cyan-500 text-cyan-400 bg-cyan-400/5' : 'border-white/10 text-white/30 hover:border-white/20'}`}>
-                            {isUploading ? <Loader2 size={20} className="animate-spin" /> : <Camera size={20} />}
-                            <span className="text-[9px] font-brand font-black uppercase tracking-widest">{newMessage.image ? "Visual Ready" : "Attach Image"}</span>
+
+                {!user ? (
+                    <div className="flex flex-col items-center justify-center flex-1 gap-6 text-center px-8 bg-white/50">
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center text-pink-500 mb-2 shadow-inner">
+                            <LogIn size={32} />
+                        </div>
+                        <div className="space-y-2">
+                            <p className="font-brand text-xl font-bold text-gray-800">Authentication Required</p>
+                            <p className="text-gray-500 text-sm leading-relaxed">Please sign in with Google to leave your mark on the guestbook.</p>
+                        </div>
+                        <button
+                            onClick={loginWithGoogle}
+                            className="w-full py-4 bg-black text-white rounded-xl font-bold hover:scale-[1.02] transition-transform font-tech uppercase tracking-widest shadow-xl shadow-orange-500/10 flex items-center justify-center gap-3 mt-4"
+                        >
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
+                            <span>Sign in with Google</span>
                         </button>
                     </div>
-                    {newMessage.image && <div className="w-full h-32 rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl"><img src={newMessage.image} className="w-full h-full object-cover" alt="Preview" /></div>}
-                    <button type="submit" className="w-full h-14 bg-white text-black rounded-2xl font-brand font-black uppercase tracking-[0.5em] text-[13px] active:scale-[0.98] disabled:opacity-50 shadow-xl transition-all hover:bg-cyan-400" disabled={isUploading}>{isUploading ? "Syncing..." : "SYNC"}</button>
-                </form>
+                ) : (
+                    <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden bg-white/50 h-full">
+
+                        {/* TOP: Image Area - 50% Height */}
+                        <div className="relative w-full flex-1 bg-gray-50/50 border-b border-gray-100 group flex items-center justify-center overflow-hidden shrink-0 basis-0 min-h-0">
+                            <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
+
+                            {newMessage.image ? (
+                                <div className="relative w-full h-full bg-black">
+                                    <img src={newMessage.image} className="w-full h-full object-contain absolute inset-0" alt="Preview" />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewMessage(p => ({ ...p, image: null }))}
+                                        className="absolute top-4 right-4 p-2 bg-black/60 text-white rounded-full hover:bg-red-500 transition-all backdrop-blur-md shadow-lg"
+                                        title="Remove Image"
+                                    >
+                                        <X size={18} />
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="absolute bottom-4 right-4 px-5 py-2.5 bg-white text-black text-[10px] font-bold rounded-full shadow-xl opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-opacity duration-300 uppercase font-tech tracking-widest"
+                                    >
+                                        Change Photo
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="flex flex-col items-center justify-center gap-4 text-gray-400 group-hover:text-pink-500 transition-colors w-full h-full p-6"
+                                >
+                                    <div className="relative">
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-orange-400 to-pink-500 blur-xl opacity-0 group-hover:opacity-30 transition-opacity rounded-full" />
+                                        <div className="relative p-5 rounded-2xl bg-white border-2 border-dashed border-gray-200 group-hover:border-pink-300 transition-all shadow-sm">
+                                            <Camera size={28} strokeWidth={1.5} />
+                                        </div>
+                                    </div>
+                                    <span className="text-[10px] font-bold uppercase font-tech tracking-[0.25em]">Tap to Upload Visual</span>
+                                </button>
+                            )}
+
+                            {isUploading && (
+                                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center flex-col gap-4 z-20">
+                                    <div className="w-10 h-10 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin" />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* BOTTOM: Text Area - 50% Height */}
+                        <div className="flex-1 p-5 md:p-6 flex flex-col bg-white shrink-0 basis-0 min-h-0">
+                            <div className="flex items-center gap-3 mb-4 shrink-0">
+                                {user.photoURL ? (
+                                    <img src={user.photoURL} alt="User" className="w-10 h-10 rounded-full border-2 border-orange-100 shadow-sm object-cover" />
+                                ) : (
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-400">
+                                        <user size={20} />
+                                    </div>
+                                )}
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-gray-900 font-brand tracking-tight">{user.displayName}</span>
+                                    <span className="text-[9px] text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-pink-500 font-tech font-bold tracking-wider">OFFICIAL TRANSMISSION</span>
+                                </div>
+                            </div>
+
+                            <textarea
+                                ref={textareaRef}
+                                placeholder="What's on your mind?"
+                                className="flex-1 w-full bg-transparent border-none outline-none resize-none font-sans text-base leading-relaxed placeholder:text-gray-300 text-gray-800"
+                                value={newMessage.text}
+                                onChange={e => setNewMessage({ ...newMessage, text: e.target.value })}
+                                required
+                            />
+                        </div>
+
+                        {/* Footer Action - Fixed at bottom */}
+                        <div className="p-4 md:p-5 border-t border-gray-100 bg-gray-50/80 backdrop-blur-sm shrink-0">
+                            <button
+                                type="submit"
+                                className="w-full py-3.5 md:py-4 bg-gradient-to-r from-orange-500 to-pink-600 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-orange-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.98]"
+                                disabled={isUploading || !newMessage.text.trim()}
+                            >
+                                {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                                <span className="font-tech uppercase tracking-[0.2em] ml-1">
+                                    {editMode ? "Save Changes" : "Publish Memory"}
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                )}
             </div>
         </div>
     );

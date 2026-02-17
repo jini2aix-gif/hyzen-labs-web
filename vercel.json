@@ -1,0 +1,7 @@
+{
+    "name": "hyzen-labs-web",
+    "alias": [
+        "hyzen-labs-web.vercel.app"
+    ],
+    "framework": "vite"
+}
