@@ -278,7 +278,10 @@ const GameCanvas = ({ onGameOver, onScoreUpdate, gameAudio, onLevelChange, onCol
             const timeScale = isPaused ? 0.0 : 1.0;
             const isInvulnerable = now < invulnerableUntilRef.current;
 
-            speedMultiplierRef.current = 1.2 + (levelRef.current * 0.1);
+            // Base speed increases with level, more aggressive after Level 5
+            const baseMultiplier = 1.2 + (levelRef.current * 0.1);
+            const extraScaling = levelRef.current > 5 ? (levelRef.current - 5) * 0.15 : 0;
+            speedMultiplierRef.current = baseMultiplier + extraScaling;
 
             const maxSpeed = 6;
             const friction = 0.95;
@@ -366,7 +369,10 @@ const GameCanvas = ({ onGameOver, onScoreUpdate, gameAudio, onLevelChange, onCol
                 }
             }
 
-            const maxEnemies = 2 + (levelRef.current);
+            // Target enemy count increases with level, more aggressive after Level 5
+            const baseEnemies = 2 + levelRef.current;
+            const extraEnemies = levelRef.current > 5 ? (levelRef.current - 5) * 2 : 0;
+            const maxEnemies = baseEnemies + extraEnemies;
             if (enemiesRef.current.length < maxEnemies && Math.random() < 0.02) {
                 const side = Math.floor(Math.random() * 4);
                 let ex, ey, vx, vy;
@@ -377,9 +383,9 @@ const GameCanvas = ({ onGameOver, onScoreUpdate, gameAudio, onLevelChange, onCol
                 else if (side === 2) { ex = Math.random() * width; ey = height + 20; vx = (Math.random() - 0.5) * 2; vy = -speed; }
                 else { ex = -20; ey = Math.random() * height; vx = speed; vy = (Math.random() - 0.5) * 2; }
 
-                // Enemy size increase if level > 5
+                // Enemy size increases progressively if level > 5
                 const sizeBase = 10 + Math.random() * 15;
-                const sizeFactor = levelRef.current > 5 ? 1.3 : 1.0;
+                const sizeFactor = levelRef.current > 5 ? 1.0 + (levelRef.current - 5) * 0.12 : 1.0;
 
                 enemiesRef.current.push({
                     x: ex, y: ey, vx, vy,

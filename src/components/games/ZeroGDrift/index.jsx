@@ -20,6 +20,7 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
     // Life System States
     const [lives, setLives] = useState(2);
     const [heartBits, setHeartBits] = useState(0);
+    const [showHeartLoss, setShowHeartLoss] = useState(false);
 
     // Initialize & Manage Audio
     useEffect(() => {
@@ -93,6 +94,9 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
 
     // Life Management
     const handleCollision = (currentScore) => {
+        setShowHeartLoss(true);
+        setTimeout(() => setShowHeartLoss(false), 800);
+
         setLives(prev => {
             const newLives = prev - 1;
             if (newLives <= 0) {
@@ -254,6 +258,27 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                                 </div>
                             </motion.div>
                         )}
+
+                        {/* Heart Loss Animation */}
+                        {showHeartLoss && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.5 }}
+                                animate={{ opacity: [0, 1, 1, 0], scale: [0.5, 1.2, 1, 1.5], y: [0, 0, -50] }}
+                                transition={{ duration: 0.8 }}
+                                className="absolute inset-0 z-[120] flex items-center justify-center pointer-events-none"
+                            >
+                                <div className="flex flex-col items-center">
+                                    <Heart size={120} fill="#ff4d4d" className="text-[#ff4d4d] drop-shadow-[0_0_30px_#ff4d4d]" />
+                                    <motion.span
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="text-white font-mono font-bold text-2xl mt-4 tracking-tighter"
+                                    >
+                                        LIFE LOST
+                                    </motion.span>
+                                </div>
+                            </motion.div>
+                        )}
                     </AnimatePresence>
                 </>
             )}
@@ -318,7 +343,7 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                                         ZERO-G DRIFT
                                     </h1>
                                     <div className="text-[10px] text-cyan-400/50 font-mono mt-1 uppercase tracking-[0.3em]">
-                                        v4.9.6 - Bug Fixed
+                                        v4.9.7 - Difficulty Scaled
                                     </div>
                                 </div>
 
@@ -331,19 +356,19 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                                                 <div className="w-6 h-6 rounded-full border border-[#4ade80] flex items-center justify-center shadow-[0_0_5px_#4ade80]">
                                                     <div className="w-2.5 h-2.5 bg-[#4ade80] rounded-[1px]"></div>
                                                 </div>
-                                                <div className="text-[#4ade80] font-bold text-[10px] font-mono">TIME +5</div>
+                                                <div className="text-[#4ade80] font-bold text-[10px] font-mono">시간 +5초</div>
                                             </div>
                                             <div className="flex flex-col items-center text-center gap-1">
                                                 <div className="w-6 h-6 rounded-full border border-[#60a5fa] border-dashed flex items-center justify-center shadow-[0_0_5px_#60a5fa]">
                                                     <div className="w-2.5 h-2.5 bg-[#60a5fa] rotate-45"></div>
                                                 </div>
-                                                <div className="text-[#60a5fa] font-bold text-[10px] font-mono">PAUSE</div>
+                                                <div className="text-[#60a5fa] font-bold text-[10px] font-mono">일시정지</div>
                                             </div>
                                             <div className="flex flex-col items-center text-center gap-1">
                                                 <div className="w-6 h-6 flex items-center justify-center">
                                                     <Heart size={14} fill="#ff4d4d" className="text-[#ff4d4d] drop-shadow-[0_0_5px_#ff4d4d]" />
                                                 </div>
-                                                <div className="text-[#ff4d4d] font-bold text-[9px] font-mono leading-tight uppercase">EXTRA LIFE<br /><span className="text-[7px] opacity-70">5 HEART BITS = +1 LIFE</span></div>
+                                                <div className="text-[#ff4d4d] font-bold text-[9px] font-mono leading-tight uppercase">생명 추가<br /><span className="text-[7px] opacity-70">하트 조각 5개 수집</span></div>
                                             </div>
                                         </div>
                                     </div>
