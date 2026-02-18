@@ -1,7 +1,7 @@
 {
   "name": "hyzen-labs-web",
   "private": true,
-  "version": "4.9.8",
+  "version": "4.10.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "chart.js": "^4.5.1",
+    "dotenv": "^17.3.1",
     "firebase": "^12.8.0",
     "framer-motion": "^12.34.0",
     "lucide-react": "^0.344.0",

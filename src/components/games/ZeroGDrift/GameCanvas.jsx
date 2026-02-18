@@ -1,4 +1,7 @@
 import React, { useRef, useEffect } from 'react';
+import { kyleAI } from '../../../services/kyleAI';
+
+// Last Updated: 2026-02-18 23:05 (AI ADDA Integrated - v4.9.9)
 
 const GameCanvas = ({ onGameOver, onScoreUpdate, gameAudio, onLevelChange, onCollision, onHeartCollect }) => {
     const canvasRef = useRef(null);
@@ -18,6 +21,11 @@ const GameCanvas = ({ onGameOver, onScoreUpdate, gameAudio, onLevelChange, onCol
     const speedMultiplierRef = useRef(1);
     const slowMoEndTimeRef = useRef(0);
     const invulnerableUntilRef = useRef(0); // Add invulnerability state
+
+    // AI Intelligent Difficulty (ADDA) Refs
+    const aiIntelligenceRef = useRef({ modifier: 1.0, strategy: "NORMAL", comment: "Ready to drift?" });
+    const lastAIUpdateRef = useRef(0);
+    const isAIThinkingRef = useRef(false);
 
     // UI Refs
     const notificationRef = useRef({ text: "레벨 1", alpha: 2.0, color: "#fff" });
@@ -278,8 +286,36 @@ const GameCanvas = ({ onGameOver, onScoreUpdate, gameAudio, onLevelChange, onCol
             const timeScale = isPaused ? 0.0 : 1.0;
             const isInvulnerable = now < invulnerableUntilRef.current;
 
-            // Base speed increases with level, more aggressive after Level 5
-            const baseMultiplier = 1.2 + (levelRef.current * 0.1);
+            // --- AI ADDA Logic: Update every 30 seconds ---
+            if (now - lastAIUpdateRef.current > 30000 && !isAIThinkingRef.current) {
+                isAIThinkingRef.current = true;
+                kyleAI.getDynamicDifficulty({
+                    score: currentScore,
+                    level: levelRef.current,
+                    livesRemaining: 2 // simplified for ref
+                }).then(res => {
+                    aiIntelligenceRef.current = res;
+                    lastAIUpdateRef.current = now;
+                    isAIThinkingRef.current = false;
+
+                    // Display AI Taunt
+                    notificationRef.current = {
+                        text: `[Kyle-AI] ${res.strategy}: ${res.comment}`,
+                        alpha: 2.5,
+                        color: "#f472b6"
+                    };
+                    floatTextsRef.current.push({
+                        x: playerRef.current.x,
+                        y: playerRef.current.y - 40,
+                        text: `${res.strategy}!`,
+                        life: 1.5,
+                        color: "#f472b6"
+                    });
+                });
+            }
+
+            const aiMod = aiIntelligenceRef.current.modifier || 1.0;
+            const baseMultiplier = (1.2 + (levelRef.current * 0.1)) * aiMod;
             const extraScaling = levelRef.current > 5 ? (levelRef.current - 5) * 0.15 : 0;
             speedMultiplierRef.current = baseMultiplier + extraScaling;
 
@@ -369,10 +405,10 @@ const GameCanvas = ({ onGameOver, onScoreUpdate, gameAudio, onLevelChange, onCol
                 }
             }
 
-            // Target enemy count increases with level, more aggressive after Level 5
+            // Intelligence-based enemy count
             const baseEnemies = 2 + levelRef.current;
             const extraEnemies = levelRef.current > 5 ? (levelRef.current - 5) * 2 : 0;
-            const maxEnemies = baseEnemies + extraEnemies;
+            const maxEnemies = Math.floor((baseEnemies + extraEnemies) * aiMod);
             if (enemiesRef.current.length < maxEnemies && Math.random() < 0.02) {
                 const side = Math.floor(Math.random() * 4);
                 let ex, ey, vx, vy;
@@ -466,6 +502,12 @@ const GameCanvas = ({ onGameOver, onScoreUpdate, gameAudio, onLevelChange, onCol
                 ctx.fillStyle = '#60a5fa';
                 ctx.fillText(`시간 정지!`, 20, 60);
             }
+
+            // Show AI Strategy on HUD
+            ctx.textAlign = "right";
+            ctx.fillStyle = "rgba(244, 114, 182, 0.6)";
+            ctx.font = 'bold 12px "Courier New"';
+            ctx.fillText(`AI STRAT: ${aiIntelligenceRef.current.strategy}`, width - 20, 40);
 
             animationFrameId = requestAnimationFrame(loop);
         };

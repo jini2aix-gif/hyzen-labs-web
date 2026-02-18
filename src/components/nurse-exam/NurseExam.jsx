@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getProportionalQuestions, questionStats } from './questionBank';
+import { kyleAI } from '../../services/kyleAI';
 import './ExamStyles.css';
 
 const NurseExam = ({ isOpen, onClose }) => {
@@ -11,6 +12,10 @@ const NurseExam = ({ isOpen, onClose }) => {
     const [result, setResult] = useState(null);
     const [activeQuestions, setActiveQuestions] = useState([]);
     const [isPaused, setIsPaused] = useState(false); // 일시정지 상태
+
+    // AI Tutor States
+    const [aiExplanations, setAiExplanations] = useState({});
+    const [loadingAi, setLoadingAi] = useState({});
 
     // Utility to prepare exam with proportional questions (105 questions total)
     const prepareExam = useCallback(() => {
@@ -105,6 +110,15 @@ const NurseExam = ({ isOpen, onClose }) => {
             incorrect
         });
         setStep('result');
+    };
+
+    const fetchAiExplanation = async (idx, question, userChoiceText, correctChoiceText) => {
+        if (loadingAi[idx]) return;
+
+        setLoadingAi(prev => ({ ...prev, [idx]: true }));
+        const explanation = await kyleAI.getExamTutor(question, userChoiceText, correctChoiceText);
+        setAiExplanations(prev => ({ ...prev, [idx]: explanation }));
+        setLoadingAi(prev => ({ ...prev, [idx]: false }));
     };
 
     if (!isOpen) return null;
@@ -331,9 +345,42 @@ const NurseExam = ({ isOpen, onClose }) => {
                                             </div>
                                         </div>
                                         <div className="review-explanation">
-                                            <p className="font-bold text-blue-600 mb-1">카일의 족집게 해설:</p>
+                                            <p className="font-bold text-blue-600 mb-1">기본 해설:</p>
                                             {q.explanation}
                                         </div>
+
+                                        {/* KYLE AI TUTOR SECTION */}
+                                        {!aiExplanations[i] ? (
+                                            <button
+                                                className="ai-ask-button"
+                                                onClick={() => fetchAiExplanation(i, q.question, q.options[q.userChoice], q.options[q.answer])}
+                                                disabled={loadingAi[i]}
+                                            >
+                                                {loadingAi[i] ? (
+                                                    <div className="kyle-loader">
+                                                        <div className="kyle-dot" />
+                                                        <div className="kyle-dot" />
+                                                        <div className="kyle-dot" />
+                                                    </div>
+                                                ) : (
+                                                    <><span>✨</span> 카일 CTO에게 1:1 과외 요청</>
+                                                )}
+                                            </button>
+                                        ) : (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="kyle-tutor-container"
+                                            >
+                                                <div className="kyle-avatar-badge">
+                                                    <div className="kyle-avatar-icon">K</div>
+                                                    <span className="kyle-name">Kyle's Insight</span>
+                                                </div>
+                                                <div className="kyle-speech-bubble">
+                                                    {aiExplanations[i]}
+                                                </div>
+                                            </motion.div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
