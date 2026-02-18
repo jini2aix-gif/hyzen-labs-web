@@ -1,4 +1,4 @@
-// Last Updated: 2026-02-18 20:55 (Bug Fix - v4.9.6)
+// Last Updated: 2026-02-18 21:05 (HUD Layout Fix - v4.9.8)
 import React, { useState, useEffect } from 'react';
 import { X, Play, RotateCcw, LogOut, Heart, Volume2, VolumeX, AlertTriangle } from 'lucide-react';
 import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
@@ -201,26 +201,31 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                         }}
                     />
 
-                    {/* In-Game HUD (Lives) */}
-                    <div className="absolute top-6 left-16 z-50 flex items-center gap-6">
-                        <div className="flex items-center gap-2">
+                    {/* In-Game HUD (Lives) - Positioned below speaker icon */}
+                    <div className="absolute top-16 left-6 z-50 flex flex-col items-start gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5 max-w-[200px]">
                             {Array.from({ length: lives }).map((_, i) => (
                                 <motion.div
                                     key={`heart-${i}`}
                                     initial={{ scale: 0 }}
                                     animate={{ scale: 1 }}
-                                    className="text-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"
+                                    className="text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]"
                                 >
-                                    <Heart size={20} fill="currentColor" />
+                                    <Heart size={18} fill="currentColor" />
                                 </motion.div>
                             ))}
-                            {heartBits > 0 && (
-                                <div className="ml-2 flex gap-1">
-                                    {Array.from({ length: heartBits }).map((_, i) => (
-                                        <div key={`bit-${i}`} className="w-1.5 h-1.5 rounded-full bg-red-400/50" />
-                                    ))}
-                                </div>
-                            )}
+                        </div>
+                        {/* Heart Bits Progress (Under hearts) */}
+                        <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm px-2 py-1 rounded-full border border-white/10">
+                            <span className="text-[9px] font-mono text-white/50 uppercase tracking-tighter">BITS</span>
+                            <div className="flex gap-1">
+                                {[...Array(5)].map((_, i) => (
+                                    <div
+                                        key={`bit-${i}`}
+                                        className={`w-2 h-2 rounded-full transition-all duration-300 ${i < heartBits ? 'bg-red-500 shadow-[0_0_5px_#ff4d4d]' : 'bg-white/10'}`}
+                                    />
+                                ))}
+                            </div>
                         </div>
                     </div>
 
@@ -343,7 +348,7 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                                         ZERO-G DRIFT
                                     </h1>
                                     <div className="text-[10px] text-cyan-400/50 font-mono mt-1 uppercase tracking-[0.3em]">
-                                        v4.9.7 - Difficulty Scaled
+                                        v4.9.8 - HUD Adjusted
                                     </div>
                                 </div>
 
