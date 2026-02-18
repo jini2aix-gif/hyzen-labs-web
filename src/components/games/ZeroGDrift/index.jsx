@@ -1,3 +1,4 @@
+// Last Updated: 2026-02-18 20:30 (Force Build v4.9.0)
 import React, { useState, useEffect } from 'react';
 import { X, Play, RotateCcw, LogOut, Heart, Volume2, VolumeX } from 'lucide-react';
 import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
@@ -316,6 +317,9 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                                     <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 font-brand italic tracking-tighter whitespace-nowrap">
                                         ZERO-G DRIFT
                                     </h1>
+                                    <div className="text-[10px] text-cyan-400/50 font-mono mt-1 uppercase tracking-[0.3em]">
+                                        v4.9.0 - Life System Active
+                                    </div>
                                 </div>
 
                                 {/* Item Guide (Start Screen Only) */}
