@@ -343,7 +343,7 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                                                 <div className="w-6 h-6 flex items-center justify-center">
                                                     <Heart size={14} fill="#ff4d4d" className="text-[#ff4d4d] drop-shadow-[0_0_5px_#ff4d4d]" />
                                                 </div>
-                                                <div className="text-[#ff4d4d] font-bold text-[10px] font-mono leading-tight uppercase">Extra Life<br /><span className="text-[8px] opacity-70">(Collect 5)</span></div>
+                                                <div className="text-[#ff4d4d] font-bold text-[9px] font-mono leading-tight uppercase">EXTRA LIFE<br /><span className="text-[7px] opacity-70">5 HEART BITS = +1 LIFE</span></div>
                                             </div>
                                         </div>
                                     </div>
