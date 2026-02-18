@@ -1,6 +1,6 @@
-// Last Updated: 2026-02-18 20:50 (Final Deployment Check - v4.9.5)
+// Last Updated: 2026-02-18 20:55 (Bug Fix - v4.9.6)
 import React, { useState, useEffect } from 'react';
-import { X, Play, RotateCcw, LogOut, Heart, Volume2, VolumeX } from 'lucide-react';
+import { X, Play, RotateCcw, LogOut, Heart, Volume2, VolumeX, AlertTriangle } from 'lucide-react';
 import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db, appId } from '../../../hooks/useFirebase';
 import GameCanvas from './GameCanvas';
@@ -318,7 +318,7 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                                         ZERO-G DRIFT
                                     </h1>
                                     <div className="text-[10px] text-cyan-400/50 font-mono mt-1 uppercase tracking-[0.3em]">
-                                        v4.9.5 - Deployment Verified
+                                        v4.9.6 - Bug Fixed
                                     </div>
                                 </div>
 
