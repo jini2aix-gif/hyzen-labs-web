@@ -343,7 +343,7 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                                                 <div className="w-6 h-6 flex items-center justify-center">
                                                     <Heart size={14} fill="#ff4d4d" className="text-[#ff4d4d] drop-shadow-[0_0_5px_#ff4d4d]" />
                                                 </div>
-                                                <div className="text-[#ff4d4d] font-bold text-[10px] font-mono leading-tight">LIFE UP<br />(5 PIECES)</div>
+                                                <div className="text-[#ff4d4d] font-bold text-[10px] font-mono leading-tight">LIFE UP<br />(5개 수집 시)</div>
                                             </div>
                                         </div>
                                     </div>
