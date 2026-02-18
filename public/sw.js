@@ -1,5 +1,5 @@
 // Service Worker - Network First for HTML, Cache First for Assets
-const CACHE_NAME = 'hyzen-labs-v2';
+const CACHE_NAME = 'hyzen-labs-v3';
 const urlsToCache = [
     '/',
     '/index.html',
