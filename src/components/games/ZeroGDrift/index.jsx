@@ -1,4 +1,4 @@
-// Last Updated: 2026-02-18 20:35 (Force Build v4.9.1)
+// Last Updated: 2026-02-18 20:40 (Force Build v4.9.2)
 import React, { useState, useEffect } from 'react';
 import { X, Play, RotateCcw, LogOut, Heart, Volume2, VolumeX } from 'lucide-react';
 import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
@@ -318,7 +318,7 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                                         ZERO-G DRIFT
                                     </h1>
                                     <div className="text-[10px] text-cyan-400/50 font-mono mt-1 uppercase tracking-[0.3em]">
-                                        v4.9.0 - Life System Active
+                                        v4.9.2 - Update Confirmed
                                     </div>
                                 </div>
 
@@ -343,7 +343,7 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                                                 <div className="w-6 h-6 flex items-center justify-center">
                                                     <Heart size={14} fill="#ff4d4d" className="text-[#ff4d4d] drop-shadow-[0_0_5px_#ff4d4d]" />
                                                 </div>
-                                                <div className="text-[#ff4d4d] font-bold text-[10px] font-mono leading-tight">LIFE UP<br />(5개 수집 시)</div>
+                                                <div className="text-[#ff4d4d] font-bold text-[10px] font-mono leading-tight uppercase">Extra Life<br /><span className="text-[8px] opacity-70">(Collect 5)</span></div>
                                             </div>
                                         </div>
                                     </div>
