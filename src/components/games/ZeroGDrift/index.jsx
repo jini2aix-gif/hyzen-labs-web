@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Play, RotateCcw, LogOut, Check, AlertTriangle, Volume2, VolumeX } from 'lucide-react';
+import { X, Play, RotateCcw, LogOut, Heart, Volume2, VolumeX } from 'lucide-react';
 import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db, appId } from '../../../hooks/useFirebase';
 import GameCanvas from './GameCanvas';
@@ -15,6 +15,10 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
     const [countdown, setCountdown] = useState(null);
     const [showConfirmQuit, setShowConfirmQuit] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
+
+    // Life System States
+    const [lives, setLives] = useState(2);
+    const [heartBits, setHeartBits] = useState(0);
 
     // Initialize & Manage Audio
     useEffect(() => {
@@ -43,6 +47,8 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
         if (isOpen) {
             setGameState('start');
             setScore(0);
+            setLives(2);
+            setHeartBits(0);
             setShowConfirmQuit(false);
             // Lock Scroll
             document.body.style.overflow = 'hidden';
@@ -84,6 +90,31 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
         }
     };
 
+    // Life Management
+    const handleCollision = (currentScore) => {
+        setLives(prev => {
+            const newLives = prev - 1;
+            if (newLives <= 0) {
+                handleGameOver(currentScore);
+                return 0;
+            }
+            return newLives;
+        });
+        return lives - 1 <= 0; // returns true if game over
+    };
+
+    const handleHeartCollect = () => {
+        setHeartBits(prev => {
+            const newBits = prev + 1;
+            if (newBits >= 5) {
+                setLives(l => l + 1);
+                gameAudio.playSFX('collect'); // Extra feedback for life up
+                return 0;
+            }
+            return newBits;
+        });
+    };
+
     const startGame = () => {
         gameAudio.playSFX('click');
         setGameState('start'); // Keep in start UI during countdown
@@ -96,6 +127,8 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                     setGameState('playing');
                     setCountdown(null);
                     setScore(0);
+                    setLives(2);
+                    setHeartBits(0);
                     setCurrentLevel(1);
                     // Initial Level Announcement
                     setShowLevelUp(true);
@@ -151,6 +184,8 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                 <>
                     <GameCanvas
                         onGameOver={handleGameOver}
+                        onCollision={handleCollision}
+                        onHeartCollect={handleHeartCollect}
                         onScoreUpdate={(s) => setScore(s)}
                         gameAudio={gameAudio}
                         onLevelChange={(lvl) => {
@@ -161,6 +196,29 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                         }}
                     />
 
+                    {/* In-Game HUD (Lives) */}
+                    <div className="absolute top-6 left-16 z-50 flex items-center gap-6">
+                        <div className="flex items-center gap-2">
+                            {Array.from({ length: lives }).map((_, i) => (
+                                <motion.div
+                                    key={`heart-${i}`}
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="text-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"
+                                >
+                                    <Heart size={20} fill="currentColor" />
+                                </motion.div>
+                            ))}
+                            {heartBits > 0 && (
+                                <div className="ml-2 flex gap-1">
+                                    {Array.from({ length: heartBits }).map((_, i) => (
+                                        <div key={`bit-${i}`} className="w-1.5 h-1.5 rounded-full bg-red-400/50" />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     {/* In-Game Exit Button */}
                     <button
                         onClick={requestQuit}
@@ -170,10 +228,7 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                         <X size={24} />
                     </button>
 
-                    {/* Instructions */}
-                    <div className="absolute top-6 left-16 z-40 pointer-events-none opacity-50 text-[12px] font-mono text-white uppercase tracking-widest hidden md:block pl-4">
-                        Use Joystick to Move
-                    </div>
+                    {/* Instructions Removed */}
                     {/* Level Announcement Overlay */}
                     <AnimatePresence>
                         {showLevelUp && (
@@ -183,7 +238,7 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                                 exit={{ opacity: 0, scale: 1.5, y: 20 }}
                                 className="absolute inset-0 z-[110] flex items-center justify-center pointer-events-none"
                             >
-                                <div className="flex flex-col items-center py-10 px-20 bg-cyan-500/5 backdrop-blur-[2px] rounded-[4rem] border border-cyan-500/20">
+                                <div className="flex flex-col items-center">
                                     <motion.span
                                         initial={{ tracking: "1em", opacity: 0 }}
                                         animate={{ tracking: "0.5em", opacity: 0.7 }}
@@ -194,7 +249,7 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                                     <h2 className="text-6xl md:text-8xl font-black italic text-white drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] font-brand uppercase tracking-tighter">
                                         LEVEL {currentLevel}
                                     </h2>
-                                    <div className="h-[2px] w-24 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mt-6 shadow-[0_0_15px_rgba(6,182,212,0.8)]"></div>
+                                    <div className="h-[2px] w-24 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mt-6 shadow-[0_0_15px_rgba(6,182,212,0.8)] opacity-50"></div>
                                 </div>
                             </motion.div>
                         )}
@@ -267,24 +322,24 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                                 {gameState === 'start' && (
                                     <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
                                         <h3 className="text-white/70 font-mono text-xs uppercase tracking-widest mb-3 border-b border-white/10 pb-2">아이템 설명</h3>
-                                        <div className="flex justify-center gap-4 text-left">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full border-2 border-[#4ade80] flex items-center justify-center shadow-[0_0_10px_#4ade80]">
-                                                    <div className="w-4 h-4 bg-[#4ade80] clip-path-cross"></div>
+                                        <div className="grid grid-cols-3 gap-2 text-left">
+                                            <div className="flex flex-col items-center text-center gap-1">
+                                                <div className="w-6 h-6 rounded-full border border-[#4ade80] flex items-center justify-center shadow-[0_0_5px_#4ade80]">
+                                                    <div className="w-2.5 h-2.5 bg-[#4ade80] rounded-[1px]"></div>
                                                 </div>
-                                                <div>
-                                                    <div className="text-[#4ade80] font-bold text-xs font-mono">시간 보너스</div>
-                                                    <div className="text-gray-400 text-[10px] font-mono">생존 시간 +5초</div>
-                                                </div>
+                                                <div className="text-[#4ade80] font-bold text-[10px] font-mono">TIME +5</div>
                                             </div>
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full border-2 border-[#60a5fa] border-dashed flex items-center justify-center shadow-[0_0_10px_#60a5fa]">
-                                                    <div className="w-4 h-4 bg-[#60a5fa] rounded-sm rotate-45"></div>
+                                            <div className="flex flex-col items-center text-center gap-1">
+                                                <div className="w-6 h-6 rounded-full border border-[#60a5fa] border-dashed flex items-center justify-center shadow-[0_0_5px_#60a5fa]">
+                                                    <div className="w-2.5 h-2.5 bg-[#60a5fa] rotate-45"></div>
                                                 </div>
-                                                <div>
-                                                    <div className="text-[#60a5fa] font-bold text-xs font-mono">일시 정지</div>
-                                                    <div className="text-gray-400 text-[10px] font-mono">적 5초간 정지</div>
+                                                <div className="text-[#60a5fa] font-bold text-[10px] font-mono">PAUSE</div>
+                                            </div>
+                                            <div className="flex flex-col items-center text-center gap-1">
+                                                <div className="w-6 h-6 flex items-center justify-center">
+                                                    <Heart size={14} fill="#ff4d4d" className="text-[#ff4d4d] drop-shadow-[0_0_5px_#ff4d4d]" />
                                                 </div>
+                                                <div className="text-[#ff4d4d] font-bold text-[10px] font-mono">LIFE (1/5)</div>
                                             </div>
                                         </div>
                                     </div>
