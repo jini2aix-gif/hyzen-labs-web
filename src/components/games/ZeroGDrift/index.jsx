@@ -1,4 +1,4 @@
-// Last Updated: 2026-02-18 20:40 (Force Build v4.9.2)
+// Last Updated: 2026-02-18 20:47 (Vercel Reconnect - v4.9.4)
 import React, { useState, useEffect } from 'react';
 import { X, Play, RotateCcw, LogOut, Heart, Volume2, VolumeX } from 'lucide-react';
 import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
@@ -318,7 +318,7 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                                         ZERO-G DRIFT
                                     </h1>
                                     <div className="text-[10px] text-cyan-400/50 font-mono mt-1 uppercase tracking-[0.3em]">
-                                        v4.9.2 - Update Confirmed
+                                        v4.9.4 - System Reconnected
                                     </div>
                                 </div>
 
