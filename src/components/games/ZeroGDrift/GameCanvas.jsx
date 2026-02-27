@@ -23,7 +23,19 @@ const GameCanvas = ({ onGameOver, onScoreUpdate, gameAudio, onLevelChange, onCol
     const invulnerableUntilRef = useRef(0); // Add invulnerability state
 
     // AI Intelligent Difficulty (ADDA) Refs
-    const aiIntelligenceRef = useRef({ modifier: 1.0, strategy: "NORMAL", comment: "Ready to drift?" });
+    const getAIIntelligence = async (currentScore, currentLevel, currentSpeedMultiplier) => {
+        isAIThinkingRef.current = true; // Indicate AI is thinking
+        try {
+            const aiData = await kyleAI.getAIIntelligence(currentScore, currentLevel, currentSpeedMultiplier);
+            isAIThinkingRef.current = false; // AI finished thinking
+            return aiData;
+        } catch (error) {
+            console.error("KYLE-AI Game Error:", error);
+            isAIThinkingRef.current = false; // AI finished thinking (with error)
+            return { modifier: 1.0, strategy: "MANUAL", comment: "AI가 분석 중입니다... 잠시만요!" };
+        }
+    };
+    const aiIntelligenceRef = useRef({ modifier: 1.0, strategy: "NORMAL", comment: "AI가 분석 중입니다... 잠시만요!" });
     const lastAIUpdateRef = useRef(0);
     const isAIThinkingRef = useRef(false);
 
@@ -289,6 +301,13 @@ const GameCanvas = ({ onGameOver, onScoreUpdate, gameAudio, onLevelChange, onCol
             // --- AI ADDA Logic: Update every 30 seconds ---
             if (now - lastAIUpdateRef.current > 30000 && !isAIThinkingRef.current) {
                 isAIThinkingRef.current = true;
+                // AI Thinking display
+                notificationRef.current = {
+                    text: `[Kyle-AI] 플레이어 분석 중...`,
+                    alpha: 1.5,
+                    color: "#60a5fa"
+                };
+
                 kyleAI.getDynamicDifficulty({
                     score: currentScore,
                     level: levelRef.current,
@@ -405,27 +424,40 @@ const GameCanvas = ({ onGameOver, onScoreUpdate, gameAudio, onLevelChange, onCol
                 }
             }
 
+            // --- Device Specific Difficulty Adjustments (Mobile vs PC) ---
+            const isMobile = width < 768;
+            const diffScale = {
+                count: isMobile ? 0.5 : 1.0,   // 모바일: 최대 적 스폰 수 50% 감소
+                speed: isMobile ? 0.55 : 1.0,  // 모바일: 적 이동 속도 45% 감소
+                size: isMobile ? 0.7 : 1.0,    // 모바일: 장애물 크기 30% 축소
+                spawnRate: isMobile ? 0.008 : 0.02 // 모바일: 스폰 자주 안됨
+            };
+
             // Intelligence-based enemy count
-            const baseEnemies = 2 + levelRef.current;
-            const extraEnemies = levelRef.current > 5 ? (levelRef.current - 5) * 2 : 0;
+            const baseEnemies = (2 + levelRef.current) * diffScale.count;
+            const extraEnemies = levelRef.current > 5 ? (levelRef.current - 5) * 1.5 * diffScale.count : 0;
             const maxEnemies = Math.floor((baseEnemies + extraEnemies) * aiMod);
-            if (enemiesRef.current.length < maxEnemies && Math.random() < 0.02) {
+
+            if (enemiesRef.current.length < maxEnemies && Math.random() < diffScale.spawnRate) {
                 const side = Math.floor(Math.random() * 4);
                 let ex, ey, vx, vy;
-                const speed = (1.0 + Math.random() * 1.5) * speedMultiplierRef.current;
+
+                // 적용된 모바일 스피드 감속
+                const speed = (1.0 + Math.random() * 1.5) * speedMultiplierRef.current * diffScale.speed;
 
                 if (side === 0) { ex = Math.random() * width; ey = -20; vx = (Math.random() - 0.5) * 2; vy = speed; }
                 else if (side === 1) { ex = width + 20; ey = Math.random() * height; vx = -speed; vy = (Math.random() - 0.5) * 2; }
                 else if (side === 2) { ex = Math.random() * width; ey = height + 20; vx = (Math.random() - 0.5) * 2; vy = -speed; }
                 else { ex = -20; ey = Math.random() * height; vx = speed; vy = (Math.random() - 0.5) * 2; }
 
-                // Enemy size increases progressively if level > 5
+                // Enemy size increases progressively if level > 5, then scale by device 
                 const sizeBase = 10 + Math.random() * 15;
                 const sizeFactor = levelRef.current > 5 ? 1.0 + (levelRef.current - 5) * 0.12 : 1.0;
+                const finalSize = sizeBase * sizeFactor * diffScale.size;
 
                 enemiesRef.current.push({
                     x: ex, y: ey, vx, vy,
-                    size: sizeBase * sizeFactor,
+                    size: finalSize,
                     color: `hsl(${Math.random() * 360}, 70%, 70%)`
                 });
             }

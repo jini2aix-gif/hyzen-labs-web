@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://hyzen-labs-web.vercel.app/sitemap.xml
+Sitemap: https://hyzen-labs.com/sitemap.xml

@@ -3,33 +3,56 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+
+  <!-- Favicon & Icons -->
+  <link rel="icon" type="image/svg+xml" href="/hl_logo.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/pwa-icon.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- PWA & Mobile Meta -->
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Hyzen Labs." />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
   <!-- SEO Meta Tags -->
-  <title>Hyzen Labs v4.9.2 | AI & Next-Gen Gaming</title>
-  <meta name="description"
-    content="Hyzen Labs is a future-forward gaming and AI experiment playground. Experience Zero-G Drift, Pulse Dash, and connect with the community.">
-  <meta name="keywords"
-    content="Hyzen Labs, AI Gaming, Zero-G Drift, Pulse Dash, Web Gaming, Futuristic UI, React Games">
+  <title>하이젠 랩스 | Hyzen Labs - 미래형 AI & 게이밍 연구소</title>
+  <meta name="description" content="하이젠 랩스(Hyzen Labs)는 미래 지향적 AI 실험과 혁신적인 웹 게임을 연구하는 플레이그라운드입니다.">
+  <meta name="keywords" content="하이젠 랩스, Hyzen Labs, AI 튜터, 제로지 드리프트, 펄스 대쉬, 웹 게임 연구소">
   <meta name="author" content="Hyzen Labs Team">
-  <meta name="google-site-verification" content="NstbCc8mlfncC5USnmeh35GuJ5pjvl8IQFeZX9rE0YY" />
-  <meta name="naver-site-verification" content="4c3d09c1d0855f4465f292b749b8fd9d1202fcd6" />
+  <meta name="google-site-verification" content="8b_PDNhFnlpuRjre-yqSmW1S_Dg_lriv7eNrQnwZKpY" />
+  <meta name="naver-site-verification" content="53b12c618c4f1c6354a8acfff11227834ae21506" />
+
+  <!-- Structured Data for Google -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "하이젠 랩스 (Hyzen Labs)",
+      "url": "https://hyzen-labs.com/",
+      "logo": "https://hyzen-labs.com/hl_logo.svg",
+      "description": "미래 지향적 AI 기술과 차세대 웹 게이밍을 연구하는 혁신 연구소",
+      "sameAs": [
+        "https://github.com/jini2aix-gif"
+      ]
+    }
+  </script>
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://hyzen-labs-web.vercel.app/">
-  <meta property="og:title" content="Hyzen Labs | AI & Game Playground">
-  <meta property="og:description" content="Explore the next generation of web gaming and AI interaction at Hyzen Labs.">
-  <meta property="og:image" content="https://hyzen-labs-web.vercel.app/games/pulse-dash-bg.png">
+  <meta property="og:url" content="https://hyzen-labs.com/">
+  <meta property="og:title" content="하이젠 랩스 | Hyzen Labs - AI & Game 연구소">
+  <meta property="og:description" content="AI 실험실과 차세대 웹 게임의 성지, 하이젠 랩스에서 창의적인 콘텐츠를 경험하세요.">
+  <meta property="og:image" content="https://hyzen-labs.com/hl_logo.svg">
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://hyzen-labs-web.vercel.app/">
-  <meta property="twitter:title" content="Hyzen Labs | AI & Game Playground">
-  <meta property="twitter:description"
-    content="Explore the next generation of web gaming and AI interaction at Hyzen Labs.">
-  <meta property="twitter:image" content="https://hyzen-labs-web.vercel.app/games/pulse-dash-bg.png">
+  <meta property="twitter:url" content="https://hyzen-labs.com/">
+  <meta property="twitter:title" content="하이젠 랩스 | Hyzen Labs - AI & Game 연구소">
+  <meta property="twitter:description" content="하이젠 랩스에서 펼쳐지는 미래형 AI 게이밍 실험실에 참여하세요.">
+  <meta property="twitter:image" content="https://hyzen-labs.com/hl_logo.svg">
 
   <!-- Google Fonts Preconnect -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -43,14 +66,7 @@
 
   </div>
 
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#000000">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3">
 
-  <!-- iOS PWA Compatibility -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Hyzen Labs.">
 
   <!-- Service Worker Disabled Temporarily to Force Network Update 
   <script>

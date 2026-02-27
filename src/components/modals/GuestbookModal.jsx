@@ -100,10 +100,9 @@ const GuestbookModal = ({
     };
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4">
             <div
                 className="w-[95%] md:w-full max-w-md bg-white/95 backdrop-blur-3xl rounded-[2rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden relative border border-white/60 flex flex-col h-[85dvh] md:max-h-[800px] ring-1 ring-white/20"
-                onClick={e => e.stopPropagation()}
             >
                 {/* Header: UPDATED Vivid Gradient */}
                 <div className="flex justify-between items-center px-5 py-4 md:px-6 md:py-5 bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 text-white z-10 shadow-lg shadow-rose-500/20 shrink-0">

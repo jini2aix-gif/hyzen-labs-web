@@ -1,5 +1,5 @@
 import React, { useRef, useMemo, useEffect } from 'react';
-import { motion, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring, useMotionValue, useTime } from 'framer-motion';
 
 // --- Debris Component with Repulsion Physics ---
 const FloatingDebris = ({ index, scrollY, mouseX, mouseY, windowSize, colors, allowedShapes }) => {
@@ -52,8 +52,21 @@ const FloatingDebris = ({ index, scrollY, mouseX, mouseY, windowSize, colors, al
     const yPhysics = useSpring(yRepel, { stiffness: 150, damping: 20 });
     const rotatePhysics = useTransform(xPhysics, [-100, 100], [-45, 45]);
 
-    const floatY = [0, -30 * depth, 0];
-    const floatDuration = 4 + Math.random() * 5;
+    // Use absolute time to explicitly guarantee loop without initial mount issues
+    const time = useTime();
+
+    // Each element gets its own sine wave float, factoring in random offset + specific duration
+    const speed = useMemo(() => 800 + Math.random() * 600, []); // Math.sin expects frequency 
+    const randomPhaseOffset = useMemo(() => Math.random() * 10000, []);
+
+    // floatHeight = -30 * depth
+    const floatHeight = -30 * depth;
+
+    const yFloat = useTransform(time, t => {
+        // Normal sine wave goes from -1 to +1. We want 0 to floatHeight to 0
+        const sine = Math.sin((t + randomPhaseOffset) / speed);
+        return sine * floatHeight;
+    });
 
     return (
         <motion.div
@@ -65,9 +78,11 @@ const FloatingDebris = ({ index, scrollY, mouseX, mouseY, windowSize, colors, al
                 height: size,
                 y: yParallax,
                 rotate: rotateScroll,
-                opacity
+                opacity,
+                zIndex: 0,
+                transform: 'translateZ(0)',
             }}
-            className="pointer-events-none z-0 mix-blend-multiply"
+            className="pointer-events-none will-change-transform"
         >
             <motion.div
                 style={{
@@ -75,35 +90,42 @@ const FloatingDebris = ({ index, scrollY, mouseX, mouseY, windowSize, colors, al
                     y: yPhysics,
                     rotate: rotatePhysics
                 }}
-                animate={{
-                    y: floatY,
-                }}
-                transition={{
-                    duration: floatDuration,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                }}
                 className="w-full h-full"
             >
-                {/* Shape Rendering */}
-                {shape === 'circle' && <div className="w-full h-full rounded-full" style={{ backgroundColor: color }} />}
-                {shape === 'square' && <div className="w-full h-full transform rotate-12" style={{ backgroundColor: color }} />}
-                {shape === 'triangle' && (
-                    <div className="w-0 h-0 border-l-[15px] border-r-[15px] border-b-[26px] border-l-transparent border-r-transparent" style={{ width: 0, height: 0, borderBottomColor: color }} />
-                )}
-                {shape === 'cross' && (
-                    <div className="relative w-full h-full flex items-center justify-center">
-                        <div className="absolute w-[120%] h-[15%] rounded-full" style={{ backgroundColor: color }} />
-                        <div className="absolute h-[120%] w-[15%] rounded-full" style={{ backgroundColor: color }} />
-                    </div>
-                )}
-                {/* Community Specific Shapes */}
-                {shape === 'ring' && (
-                    <div className="w-full h-full rounded-full border-[6px]" style={{ borderColor: color }} />
-                )}
-                {shape === 'pill' && (
-                    <div className="w-full h-[60%] rounded-full top-[20%] relative" style={{ backgroundColor: color }} />
-                )}
+                <motion.div
+                    style={{
+                        y: yFloat,
+                        width: '100%',
+                        height: '100%'
+                    }}
+                >
+                    {/* Shape Rendering */}
+                    {shape === 'circle' && <div className="w-full h-full rounded-full" style={{ backgroundColor: color }} />}
+                    {shape === 'square' && <div className="w-full h-full transform rotate-12" style={{ backgroundColor: color }} />}
+                    {shape === 'triangle' && (
+                        <div className="w-0 h-0 border-l-[15px] border-r-[15px] border-b-[26px] border-l-transparent border-r-transparent" style={{ width: 0, height: 0, borderBottomColor: color }} />
+                    )}
+                    {shape === 'cross' && (
+                        <div className="relative w-full h-full flex items-center justify-center">
+                            <div className="absolute w-[120%] h-[15%] rounded-full" style={{ backgroundColor: color }} />
+                            <div className="absolute h-[120%] w-[15%] rounded-full" style={{ backgroundColor: color }} />
+                        </div>
+                    )}
+                    {/* Community Specific Shapes */}
+                    {shape === 'ring' && (
+                        <div className="w-full h-full rounded-full border-[6px]" style={{ borderColor: color }} />
+                    )}
+                    {shape === 'pill' && (
+                        <div className="w-full h-[60%] rounded-full top-[20%] relative" style={{ backgroundColor: color }} />
+                    )}
+                    {/* Runner's Specific Shapes */}
+                    {shape === 'diamond' && (
+                        <div className="w-[80%] h-[80%] transform rotate-45 relative top-[10%] left-[10%]" style={{ backgroundColor: color }} />
+                    )}
+                    {shape === 'line' && (
+                        <div className="w-full h-[15%] rounded-full relative top-[42.5%] transform rotate-[-45deg]" style={{ backgroundColor: color }} />
+                    )}
+                </motion.div>
             </motion.div>
         </motion.div>
     );
@@ -132,7 +154,10 @@ const Hero = ({
 
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
-    const [windowSize, setWindowSize] = React.useState({ w: 0, h: 0 });
+    const [windowSize, setWindowSize] = React.useState({
+        w: typeof window !== 'undefined' ? window.innerWidth : 1000,
+        h: typeof window !== 'undefined' ? window.innerHeight : 800
+    });
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -185,14 +210,14 @@ const Hero = ({
                 ))}
             </div>
 
-            {/* --- Main Content Container --- */}
             <motion.div
                 ref={containerRef}
                 style={{
                     y: smoothY,
-                    opacity: smoothOpacity
+                    opacity: smoothOpacity,
+                    zIndex: 10,
                 }}
-                className="relative z-10 w-full h-full flex flex-col items-center justify-center origin-center will-change-transform"
+                className="relative w-full h-full flex flex-col items-center justify-center origin-center will-change-transform isolation-auto"
             >
                 {/* Decoration Lines */}
                 <div className="flex items-center gap-4 mb-4 opacity-50">
@@ -202,7 +227,7 @@ const Hero = ({
                 </div>
 
                 {/* Main Heading */}
-                <h1 className="text-[13vw] md:text-[10vw] font-brand font-bold tracking-tighter leading-[0.85] text-center text-black mix-blend-darken uppercase relative">
+                <h1 className="text-[13vw] md:text-[10vw] font-brand font-bold tracking-tighter leading-[0.85] text-center text-black uppercase relative drop-shadow-sm">
                     {title}
                 </h1>
 

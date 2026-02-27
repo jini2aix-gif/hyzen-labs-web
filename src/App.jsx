@@ -5,21 +5,24 @@ import Header from './components/layout/Header';
 import SectionNav from './components/layout/SectionNav';
 import MainPage from './components/official/MainPage';
 import GamePage from './components/official/GamePage';
-import GuestbookModal from './components/modals/GuestbookModal';
-import MyPageModal from './components/modals/MyPageModal';
-import ZeroGDrift from './components/games/ZeroGDrift';
-import PulseDash from './components/games/PulseDash';
-import DetailModal from './components/modals/DetailModal';
-import NurseExam from './components/nurse-exam/NurseExam';
+import BlogPage from './components/official/BlogPage';
+const GuestbookModal = React.lazy(() => import('./components/modals/GuestbookModal'));
+const MyPageModal = React.lazy(() => import('./components/modals/MyPageModal'));
+const ZeroGDrift = React.lazy(() => import('./components/games/ZeroGDrift'));
+const PulseDash = React.lazy(() => import('./components/games/PulseDash'));
+const DetailModal = React.lazy(() => import('./components/modals/DetailModal'));
+const AuthModal = React.lazy(() => import('./components/modals/AuthModal'));
+const BlogWriteModal = React.lazy(() => import('./components/modals/BlogWriteModal'));
+const BlogDetailModal = React.lazy(() => import('./components/modals/BlogDetailModal'));
 
 import { useFirebase } from './hooks/useFirebase';
 import { compressImage } from './utils/image';
 
 const App = () => {
-  const { user, loginWithGoogle, appId, db } = useFirebase();
+  const { user, loginWithGoogle, registerWithEmail, loginWithEmail, appId, db } = useFirebase();
 
   // Navigation State
-  const [viewIndex, setViewIndex] = useState(0); // 0: Playground (Game), 1: Community (Main/Guestbook)
+  const [viewIndex, setViewIndex] = useState(0); // 0: Playground (Game), 1: Blog, 2: Community (Main/Guestbook)
   const [direction, setDirection] = useState(0);
 
   // Modal State (Global)
@@ -27,7 +30,7 @@ const App = () => {
   const [isMyPageOpen, setIsMyPageOpen] = useState(false);
   const [isZeroGOpen, setIsZeroGOpen] = useState(false);
   const [isPulseDashOpen, setIsPulseDashOpen] = useState(false);
-  const [isNurseExamOpen, setIsNurseExamOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const [newMessage, setNewMessage] = useState({ name: '', text: '', image: null });
   const [isUploading, setIsUploading] = useState(false);
@@ -39,6 +42,54 @@ const App = () => {
   // Detail Modal
   const [selectedDetailItem, setSelectedDetailItem] = useState(null);
 
+  // Blog Modal State
+  const [isBlogWriteOpen, setIsBlogWriteOpen] = useState(false);
+  const [newBlogData, setNewBlogData] = useState({ title: '', blocks: [{ id: 'init', type: 'text', content: '' }] });
+  const [editBlogMode, setEditBlogMode] = useState(false);
+  const [editingBlogId, setEditingBlogId] = useState(null);
+
+  // Blog Detail Modal
+  const [selectedBlogDetailItem, setSelectedBlogDetailItem] = useState(null);
+
+  const handleOpenBlogDetail = useCallback((item) => {
+    setTimeout(() => setSelectedBlogDetailItem(item), 0);
+  }, []);
+
+  const handleCloseBlogDetail = useCallback(() => {
+    setSelectedBlogDetailItem(null);
+  }, []);
+
+  const handleEditBlog = useCallback((item) => {
+    let blocks = item.blocks;
+    if (!blocks || blocks.length === 0) {
+      blocks = [];
+      if (item.image) blocks.push({ id: 'legacy-img', type: 'image', url: item.image });
+      blocks.push({ id: 'legacy-txt', type: 'text', content: item.text || '' });
+    }
+    if (blocks.length === 0) blocks = [{ id: 'init', type: 'text', content: '' }];
+
+    setNewBlogData({ title: item.title, blocks });
+    setEditingBlogId(item.id);
+    setEditBlogMode(true);
+    setIsBlogWriteOpen(true);
+  }, []);
+
+  const handleOpenNewBlogWrite = useCallback(() => {
+    setEditBlogMode(false);
+    setEditingBlogId(null);
+    setNewBlogData({ title: '', blocks: [{ id: Date.now().toString(), type: 'text', content: '' }] });
+    setIsBlogWriteOpen(true);
+  }, []);
+
+  const handleCloseBlogWriteModal = useCallback(() => {
+    setIsBlogWriteOpen(false);
+    setTimeout(() => {
+      setEditBlogMode(false);
+      setEditingBlogId(null);
+      setNewBlogData({ title: '', blocks: [{ id: 'init', type: 'text', content: '' }] });
+    }, 300);
+  }, []);
+
   const handleOpenDetail = useCallback((item) => {
     setTimeout(() => setSelectedDetailItem(item), 0);
   }, []);
@@ -46,6 +97,29 @@ const App = () => {
   const handleCloseDetail = useCallback(() => {
     setSelectedDetailItem(null);
   }, []);
+
+  const handleOpenAuthModal = useCallback(() => {
+    setIsAuthModalOpen(true);
+  }, []);
+
+  const handleGoogleLogin = useCallback(async () => {
+    try {
+      await loginWithGoogle();
+      setIsAuthModalOpen(false);
+    } catch (e) {
+      if (e.code === 'auth/popup-blocked') {
+        alert('팝업 차단이 감지되었습니다. 브라우저 설정에서 팝업을 허용해 주세요.');
+      } else if (e.code === 'auth/unauthorized-domain') {
+        alert('인증 도메인 오류가 발생했습니다. 관리자에게 문의하세요.');
+      } else if (e.code === 'auth/popup-closed-by-user') {
+        // User closed the popup, do nothing
+      } else {
+        console.error(e);
+        alert(`로그인 오류: ${e.message}`);
+      }
+    }
+  }, [loginWithGoogle]);
+
 
 
   // Navigation Handlers
@@ -69,18 +143,18 @@ const App = () => {
 
   const onTouchEnd = () => {
     // DISABLE SWIPE IF MODALS ARE OPEN
-    if (isGuestbookOpen || isMyPageOpen || isZeroGOpen || isPulseDashOpen || selectedDetailItem) return;
+    if (isGuestbookOpen || isMyPageOpen || isZeroGOpen || isPulseDashOpen || selectedDetailItem || isBlogWriteOpen || selectedBlogDetailItem) return;
 
     if (!touchStart || !touchEnd) return;
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
 
-    if (isLeftSwipe && viewIndex === 0) {
-      paginate(1);
+    if (isLeftSwipe && viewIndex < 2) {
+      paginate(viewIndex + 1);
     }
-    if (isRightSwipe && viewIndex === 1) {
-      paginate(0);
+    if (isRightSwipe && viewIndex > 0) {
+      paginate(viewIndex - 1);
     }
   };
 
@@ -140,15 +214,6 @@ const App = () => {
     setIsPulseDashOpen(false);
   }, []);
 
-  const handleOpenNurseExam = useCallback(() => {
-    setIsNurseExamOpen(true);
-  }, []);
-
-  const handleCloseNurseExam = useCallback(() => {
-    setIsNurseExamOpen(false);
-  }, []);
-
-
   // Animation Variants
   const variants = {
     enter: (direction) => ({
@@ -179,11 +244,23 @@ const App = () => {
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      {(isGuestbookOpen || selectedDetailItem) ? null : <Header onOpenMyPage={handleOpenMyPage} />}
+      {/* SEO Hidden Header for Search Engines */}
+      <h1 style={{ position: 'absolute', width: '1px', height: '1px', padding: '0', margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: '0' }}>
+        하이젠 랩스 - Hyzen Labs AI & 게이밍 연구소
+      </h1>
+
+      {(isGuestbookOpen || selectedDetailItem || isBlogWriteOpen || selectedBlogDetailItem) ? null : (
+        <Header
+          onOpenMyPage={handleOpenMyPage}
+          currentIndex={viewIndex}
+          onNavigate={paginate}
+          onOpenLoginModal={handleOpenAuthModal}
+        />
+      )}
 
       <main className="relative w-full h-full pt-0">
         <AnimatePresence initial={false} custom={direction} mode="wait">
-          {viewIndex === 0 ? (
+          {viewIndex === 0 && (
             <motion.div
               key="playground"
               custom={direction}
@@ -201,10 +278,34 @@ const App = () => {
                 user={user}
                 onOpenZeroG={handleOpenZeroG}
                 onOpenPulseDash={handleOpenPulseDash}
-                onOpenNurseExam={handleOpenNurseExam}
               />
             </motion.div>
-          ) : (
+          )}
+
+          {viewIndex === 1 && (
+            <motion.div
+              key="blog"
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: "spring", stiffness: 300, damping: 30 },
+                opacity: { duration: 0.2 }
+              }}
+              className="w-full absolute top-0 left-0 h-full"
+            >
+              <BlogPage
+                onOpenWriteModal={handleOpenNewBlogWrite}
+                onEditPost={handleEditBlog}
+                user={user}
+                onOpenDetail={handleOpenBlogDetail}
+              />
+            </motion.div>
+          )}
+
+          {viewIndex === 2 && (
             <motion.div
               key="community"
               custom={direction}
@@ -229,60 +330,87 @@ const App = () => {
         </AnimatePresence>
       </main>
 
-      {(!isGuestbookOpen && !selectedDetailItem) && (
+      {(!isGuestbookOpen && !selectedDetailItem && !isBlogWriteOpen && !selectedBlogDetailItem) && (
         <SectionNav
           currentIndex={viewIndex}
           onNavigate={paginate}
         />
       )}
 
-      <GuestbookModal
-        isOpen={isGuestbookOpen}
-        onClose={handleCloseModal}
-        user={user}
-        loginWithGoogle={loginWithGoogle}
-        newMessage={newMessage}
-        setNewMessage={setNewMessage}
-        isUploading={isUploading}
-        setIsUploading={setIsUploading}
-        compressImage={compressImage}
-        editMode={editMode}
-        messageId={editingMessageId}
-      />
+      <React.Suspense fallback={null}>
+        <GuestbookModal
+          isOpen={isGuestbookOpen}
+          onClose={handleCloseModal}
+          user={user}
+          loginWithGoogle={handleOpenAuthModal}
+          newMessage={newMessage}
+          setNewMessage={setNewMessage}
+          isUploading={isUploading}
+          setIsUploading={setIsUploading}
+          compressImage={compressImage}
+          editMode={editMode}
+          messageId={editingMessageId}
+        />
 
-      <MyPageModal
-        isOpen={isMyPageOpen}
-        onClose={handleCloseMyPage}
-        user={user}
-        onEditPost={handleEditFromMyPage}
-      />
+        <MyPageModal
+          isOpen={isMyPageOpen}
+          onClose={handleCloseMyPage}
+          user={user}
+          onEditPost={handleEditFromMyPage}
+        />
 
-      <AnimatePresence mode="wait">
-        {selectedDetailItem && (
-          <DetailModal
-            key={selectedDetailItem.id || 'detail-modal'}
-            item={selectedDetailItem}
-            onClose={handleCloseDetail}
-          />
-        )}
-      </AnimatePresence>
+        <AnimatePresence mode="wait">
+          {selectedDetailItem && (
+            <DetailModal
+              key={selectedDetailItem.id || 'detail-modal'}
+              item={selectedDetailItem}
+              onClose={handleCloseDetail}
+            />
+          )}
 
-      <ZeroGDrift
-        isOpen={isZeroGOpen}
-        onClose={handleCloseZeroG}
-        user={user}
-      />
+          {selectedBlogDetailItem && (
+            <BlogDetailModal
+              key={selectedBlogDetailItem.id || 'blog-detail-modal'}
+              item={selectedBlogDetailItem}
+              onClose={handleCloseBlogDetail}
+            />
+          )}
+        </AnimatePresence>
 
-      <PulseDash
-        isOpen={isPulseDashOpen}
-        onClose={handleClosePulseDash}
-        user={user}
-      />
+        <BlogWriteModal
+          isOpen={isBlogWriteOpen}
+          onClose={handleCloseBlogWriteModal}
+          user={user}
+          loginWithGoogle={handleOpenAuthModal}
+          newPost={newBlogData}
+          setNewPost={setNewBlogData}
+          isUploading={isUploading}
+          setIsUploading={setIsUploading}
+          compressImage={compressImage}
+          editMode={editBlogMode}
+          postId={editingBlogId}
+        />
 
-      <NurseExam
-        isOpen={isNurseExamOpen}
-        onClose={handleCloseNurseExam}
-      />
+        <ZeroGDrift
+          isOpen={isZeroGOpen}
+          onClose={handleCloseZeroG}
+          user={user}
+        />
+
+        <PulseDash
+          isOpen={isPulseDashOpen}
+          onClose={handleClosePulseDash}
+          user={user}
+        />
+
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          onGoogleLogin={handleGoogleLogin}
+          onEmailLogin={loginWithEmail}
+          onEmailRegister={registerWithEmail}
+        />
+      </React.Suspense>
     </div>
   );
 };

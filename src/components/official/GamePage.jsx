@@ -7,34 +7,35 @@ import { db, appId } from '../../hooks/useFirebase';
 import zeroGBg from '../../assets/games/zero-g-drift-bg.png';
 import pulseDashBg from '../../assets/games/pulse-dash-bg.png';
 
-const LeaderboardTicker = ({ gameId = 'zero-g-drift', label = 'ZERO-G DRIFT LEADERS', color = 'text-cyan-500' }) => {
-    const [ranks, setRanks] = useState([]);
+const UnifiedLeaderboardTicker = () => {
+    const [zeroGRanks, setZeroGRanks] = useState([]);
+    const [pulseRanks, setPulseRanks] = useState([]);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     useEffect(() => {
         if (!db || !appId) return;
-        const scoresRef = collection(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'scores');
-        const q = query(scoresRef, orderBy('score', 'desc'), limit(3));
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const topScores = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setRanks(topScores);
-            setIsInitialLoad(false);
-        }, (error) => {
-            console.error(`${gameId} Ticker fetch error:`, error);
+        // Fetch Zero-G Drift
+        const zeroGRef = collection(db, 'artifacts', appId, 'public', 'data', 'games', 'zero-g-drift', 'scores');
+        const q0 = query(zeroGRef, orderBy('score', 'desc'), limit(3));
+        const unsub0 = onSnapshot(q0, (snap) => {
+            setZeroGRanks(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             setIsInitialLoad(false);
         });
 
-        return () => unsubscribe();
-    }, [db, appId, gameId]);
+        // Fetch Pulse Dash
+        const pulseRef = collection(db, 'artifacts', appId, 'public', 'data', 'games', 'pulse-dash', 'scores');
+        const q1 = query(pulseRef, orderBy('score', 'desc'), limit(3));
+        const unsub1 = onSnapshot(q1, (snap) => {
+            setPulseRanks(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
 
-    // Ticker content defined for reuse
-    const renderTickerContent = () => (
-        <div className="flex items-center gap-12 whitespace-nowrap px-12">
-            <div className={`flex items-center gap-2 ${color} font-brand italic font-black text-sm`}>
+        return () => { unsub0(); unsub1(); };
+    }, [db, appId]);
+
+    const renderRanks = (ranks, label, color, isTime) => (
+        <>
+            <div className={`flex items-center gap-2 ${color} font-brand italic font-black text-sm ml-12`}>
                 <Trophy size={14} />
                 {label}
             </div>
@@ -43,64 +44,62 @@ const LeaderboardTicker = ({ gameId = 'zero-g-drift', label = 'ZERO-G DRIFT LEAD
                     <span className="font-tech text-[10px] text-gray-400">RANK{idx + 1}</span>
                     <span className="font-brand font-bold text-xs text-gray-800">{rank.displayName || 'Anonymous'}</span>
                     <span className={`font-mono text-[10px] font-bold ${color}`}>
-                        {gameId === 'zero-g-drift'
-                            ? `${rank.score.toFixed(2)}s`
-                            : `${Math.floor(rank.score).toLocaleString()} PTS`}
+                        {isTime ? `${rank.score.toFixed(2)}s` : `${Math.floor(rank.score).toLocaleString()} PTS`}
                     </span>
                 </div>
             ))}
-            {ranks.length === 0 && !isInitialLoad && (
-                <div className="text-[10px] font-tech text-gray-300 uppercase tracking-widest pl-4">
-                    데이터 없음
-                </div>
-            )}
+            {ranks.length === 0 && <span className="text-[10px] font-tech text-gray-300 uppercase tracking-widest pl-4">데이터 없음</span>}
+        </>
+    );
+
+    const renderTickerContent = () => (
+        <div className="flex items-center gap-16 whitespace-nowrap px-12">
+            {renderRanks(zeroGRanks, 'ZERO-G DRIFT', 'text-cyan-500', true)}
+            <div className="w-[1px] h-4 bg-gray-200 mx-4"></div>
+            {renderRanks(pulseRanks, 'PULSE DASH', 'text-indigo-500', false)}
+            {/* Loop Padding for smoothness */}
+            <div className="w-[100px]"></div>
         </div>
     );
 
+    const hasData = zeroGRanks.length > 0 || pulseRanks.length > 0;
+
     return (
         <div className="w-full bg-gray-50/30 border-b border-gray-100/50 overflow-hidden py-2 relative min-h-[40px] flex items-center">
-            <AnimatePresence mode="wait">
-                {ranks.length > 0 ? (
-                    <motion.div
-                        key={`${gameId}-ticker-active`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="flex w-full overflow-hidden"
-                    >
-                        <motion.div
-                            animate={{ x: ["0%", "-50%"] }}
-                            transition={{
-                                duration: 15,
-                                repeat: Infinity,
-                                ease: "linear",
-                                repeatType: "loop"
-                            }}
-                            className="flex w-fit"
-                        >
-                            {renderTickerContent()}
-                            {renderTickerContent()}
-                        </motion.div>
-                    </motion.div>
+            {/* CSS Animation Keyframe Definition */}
+            <style>
+                {`
+                    @keyframes ticker-scroll {
+                        0% { transform: translateX(0); }
+                        100% { transform: translateX(-50%); }
+                    }
+                    .ticker-animate {
+                        display: flex;
+                        width: max-content;
+                        animation: ticker-scroll 35s linear infinite;
+                    }
+                `}
+            </style>
+
+            <div className="flex w-full overflow-hidden">
+                {hasData ? (
+                    <div className="ticker-animate" style={{ opacity: 1 }}>
+                        {renderTickerContent()}
+                        {renderTickerContent()}
+                    </div>
                 ) : (
-                    <motion.div
-                        key={`${gameId}-ticker-loading`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="w-full flex justify-center items-center"
-                    >
-                        <span className="text-[10px] font-tech text-gray-300 uppercase tracking-widest animate-pulse">
-                            {isInitialLoad ? `${label} 동기화 중...` : `${label} 데이터 없음`}
+                    <div className="w-full flex justify-center items-center py-1">
+                        <span className="text-[10px] font-tech text-gray-400 uppercase tracking-[0.3em] animate-pulse">
+                            HYZEN REAL-TIME DATA SYNCING...
                         </span>
-                    </motion.div>
+                    </div>
                 )}
-            </AnimatePresence>
+            </div>
         </div>
     );
 };
 
-const GameGrid = ({ onOpenZeroG, onOpenPulseDash, onOpenNurseExam }) => {
+const GameGrid = ({ onOpenZeroG, onOpenPulseDash }) => {
     return (
         <div className="w-full px-4 md:px-10 pb-20">
             <div className="flex items-center gap-4 mb-8">
@@ -110,7 +109,7 @@ const GameGrid = ({ onOpenZeroG, onOpenPulseDash, onOpenNurseExam }) => {
             </div>
 
             {/* Compact Grid: Reduced height to 160px */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-[160px]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-[160px]">
                 {/* Zero-G Drift Card */}
                 <div
                     onClick={onOpenZeroG}
@@ -197,56 +196,12 @@ const GameGrid = ({ onOpenZeroG, onOpenPulseDash, onOpenNurseExam }) => {
                         </div>
                     </div>
                 </div>
-
-
-                {/* Nurse Exam Card */}
-                <div
-                    onClick={onOpenNurseExam}
-                    className="group relative w-full h-full bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 rounded-3xl overflow-hidden border-2 border-blue-300/50 transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/40 cursor-pointer"
-                >
-                    <div className="absolute inset-0">
-                        <div className="w-full h-full bg-gradient-to-br from-blue-600/90 to-indigo-800/90"></div>
-                        <div className="absolute inset-0 flex items-center justify-center opacity-15">
-                            <div className="text-[120px] transform rotate-12">💉</div>
-                        </div>
-                        <div className="absolute top-4 right-4 opacity-20">
-                            <div className="text-6xl">🩺</div>
-                        </div>
-                        <div className="absolute bottom-4 left-4 opacity-20">
-                            <div className="text-5xl">📋</div>
-                        </div>
-                    </div>
-
-                    {/* Content Layout */}
-                    <div className="absolute inset-0 p-6 z-10 flex flex-col justify-between">
-                        <div className="flex justify-end items-start mt-2">
-                            <h3 className="font-brand text-3xl md:text-4xl font-black italic tracking-tighter text-white group-hover:text-blue-200 transition-all duration-500 text-right leading-[0.8]">
-                                NURSE<br />EXAM
-                            </h3>
-                        </div>
-
-                        <div className="flex items-end justify-between">
-                            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10 translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-300 animate-pulse"></span>
-                                <p className="font-tech text-[8px] tracking-[0.2em] text-gray-300 uppercase">
-                                    Trial Mock
-                                </p>
-                            </div>
-
-                            <div className="opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300">
-                                <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:bg-blue-300">
-                                    <Play size={16} fill="currentColor" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     )
 }
 
-const GamePage = ({ user, onOpenZeroG, onOpenPulseDash, onOpenNurseExam }) => {
+const GamePage = ({ user, onOpenZeroG, onOpenPulseDash }) => {
     const scrollContainerRef = useRef(null);
 
     return (
@@ -268,10 +223,9 @@ const GamePage = ({ user, onOpenZeroG, onOpenPulseDash, onOpenNurseExam }) => {
             />
 
             <div className="relative pt-0 pb-24 flex flex-col">
-                <LeaderboardTicker gameId="zero-g-drift" label="ZERO-G DRIFT TOP 3" color="text-cyan-500" />
-                <LeaderboardTicker gameId="pulse-dash" label="PULSE DASH TOP 3" color="text-indigo-500" />
+                <UnifiedLeaderboardTicker />
                 <div className="pt-24">
-                    <GameGrid onOpenZeroG={onOpenZeroG} onOpenPulseDash={onOpenPulseDash} onOpenNurseExam={onOpenNurseExam} />
+                    <GameGrid onOpenZeroG={onOpenZeroG} onOpenPulseDash={onOpenPulseDash} />
                 </div>
             </div>
 

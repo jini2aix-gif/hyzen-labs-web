@@ -5,10 +5,13 @@ import {
     signInAnonymously,
     signInWithPopup,
     GoogleAuthProvider,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    updateProfile,
     signOut as firebaseSignOut,
     onAuthStateChanged
 } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
 
 const FALLBACK_APP_ID = 'hyzen-labs-production';
 
@@ -40,9 +43,62 @@ export const useFirebase = () => {
         try {
             const provider = new GoogleAuthProvider();
             provider.setCustomParameters({ prompt: 'select_account' });
-            await signInWithPopup(auth, provider);
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+
+            if (user && db) {
+                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+                await setDoc(userRef, {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL,
+                    lastLoginAt: new Date().toISOString()
+                }, { merge: true });
+            }
+
         } catch (error) {
             console.error("Google Login Error:", error);
+            throw error;
+        }
+    };
+
+    // Register with Email/Password
+    const registerWithEmail = async (email, password, nickname) => {
+        if (!auth) return;
+        try {
+            const result = await createUserWithEmailAndPassword(auth, email, password);
+            const user = result.user;
+
+            // Update Profile with Nickname
+            await updateProfile(user, { displayName: nickname });
+
+            if (user && db) {
+                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+                await setDoc(userRef, {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: nickname,
+                    photoURL: null,
+                    provider: 'email',
+                    lastLoginAt: new Date().toISOString()
+                }, { merge: true });
+            }
+            return user;
+        } catch (error) {
+            console.error("Registration Error:", error);
+            throw error;
+        }
+    };
+
+    // Login with Email/Password
+    const loginWithEmail = async (email, password) => {
+        if (!auth) return;
+        try {
+            const result = await signInWithEmailAndPassword(auth, email, password);
+            return result.user;
+        } catch (error) {
+            console.error("Email Login Error:", error);
             throw error;
         }
     };
@@ -82,5 +138,5 @@ export const useFirebase = () => {
         return () => unsubscribe();
     }, []);
 
-    return { user, cloudStatus, db, appId, isInitializingAuth, loginWithGoogle, logout };
+    return { user, cloudStatus, db, appId, isInitializingAuth, loginWithGoogle, registerWithEmail, loginWithEmail, logout };
 };

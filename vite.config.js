@@ -10,6 +10,16 @@ export default defineConfig({
     host: '0.0.0.0',
   },
   build: {
-    chunkSizeWarningLimit: 1000, // 1000kb
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          firebase: ['firebase/app', 'firebase/firestore', 'firebase/auth'],
+          motion: ['framer-motion'],
+          ui: ['lucide-react', 'chart.js']
+        }
+      }
+    }
   },
 })
