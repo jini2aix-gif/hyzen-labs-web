@@ -50,7 +50,7 @@ const VisitorCounter = () => {
     );
 };
 
-const Header = ({ onOpenMyPage, currentIndex, onNavigate, onOpenLoginModal }) => {
+const Header = ({ onOpenMyPage, onOpenLoginModal }) => {
     const { user, logout } = useFirebase();
 
     const handleReload = () => {
@@ -68,22 +68,6 @@ const Header = ({ onOpenMyPage, currentIndex, onNavigate, onOpenLoginModal }) =>
                         </span>
                     </button>
                     <VisitorCounter />
-                </div>
-
-                {/* Desktop Navigation Index (PC 전용) */}
-                <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
-                    <button
-                        onClick={() => onNavigate(0)}
-                        className={`font-tech text-xs tracking-[0.2em] uppercase transition-all ${currentIndex === 0 ? 'text-black font-bold border-b-2 border-black pb-1' : 'text-gray-400 hover:text-black'}`}
-                    >
-                        01 Playground
-                    </button>
-                    <button
-                        onClick={() => onNavigate(1)}
-                        className={`font-tech text-xs tracking-[0.2em] uppercase transition-all ${currentIndex === 1 ? 'text-black font-bold border-b-2 border-black pb-1' : 'text-gray-400 hover:text-black'}`}
-                    >
-                        02 Runner's
-                    </button>
                 </div>
 
                 {/* Actions Area */}
