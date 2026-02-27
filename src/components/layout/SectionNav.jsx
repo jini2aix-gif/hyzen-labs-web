@@ -16,13 +16,6 @@ const SectionNav = ({ currentIndex, onNavigate }) => {
             >
                 02 Runner's
             </button>
-            <div className="w-[1px] h-3 bg-gray-200"></div>
-            <button
-                onClick={() => onNavigate(2)}
-                className={`font-tech text-[10px] tracking-widest uppercase transition-colors ${currentIndex === 2 ? 'text-black font-bold' : 'text-gray-400 hover:text-gray-600'}`}
-            >
-                03 Comm
-            </button>
         </div>
     );
 };

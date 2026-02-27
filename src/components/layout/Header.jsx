@@ -84,12 +84,6 @@ const Header = ({ onOpenMyPage, currentIndex, onNavigate, onOpenLoginModal }) =>
                     >
                         02 Runner's
                     </button>
-                    <button
-                        onClick={() => onNavigate(2)}
-                        className={`font-tech text-xs tracking-[0.2em] uppercase transition-all ${currentIndex === 2 ? 'text-black font-bold border-b-2 border-black pb-1' : 'text-gray-400 hover:text-black'}`}
-                    >
-                        03 Community
-                    </button>
                 </div>
 
                 {/* Actions Area */}

@@ -3,14 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import Header from './components/layout/Header';
 import SectionNav from './components/layout/SectionNav';
-import MainPage from './components/official/MainPage';
 import GamePage from './components/official/GamePage';
 import BlogPage from './components/official/BlogPage';
-const GuestbookModal = React.lazy(() => import('./components/modals/GuestbookModal'));
 const MyPageModal = React.lazy(() => import('./components/modals/MyPageModal'));
 const ZeroGDrift = React.lazy(() => import('./components/games/ZeroGDrift'));
 const PulseDash = React.lazy(() => import('./components/games/PulseDash'));
-const DetailModal = React.lazy(() => import('./components/modals/DetailModal'));
 const AuthModal = React.lazy(() => import('./components/modals/AuthModal'));
 const BlogWriteModal = React.lazy(() => import('./components/modals/BlogWriteModal'));
 const BlogDetailModal = React.lazy(() => import('./components/modals/BlogDetailModal'));
@@ -22,25 +19,16 @@ const App = () => {
   const { user, loginWithGoogle, registerWithEmail, loginWithEmail, appId, db } = useFirebase();
 
   // Navigation State
-  const [viewIndex, setViewIndex] = useState(0); // 0: Playground (Game), 1: Blog, 2: Community (Main/Guestbook)
+  const [viewIndex, setViewIndex] = useState(0); // 0: Playground (Game), 1: Blog
   const [direction, setDirection] = useState(0);
 
   // Modal State (Global)
-  const [isGuestbookOpen, setIsGuestbookOpen] = useState(false);
   const [isMyPageOpen, setIsMyPageOpen] = useState(false);
   const [isZeroGOpen, setIsZeroGOpen] = useState(false);
   const [isPulseDashOpen, setIsPulseDashOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  const [newMessage, setNewMessage] = useState({ name: '', text: '', image: null });
   const [isUploading, setIsUploading] = useState(false);
-
-  // Edit Mode State
-  const [editMode, setEditMode] = useState(false);
-  const [editingMessageId, setEditingMessageId] = useState(null);
-
-  // Detail Modal
-  const [selectedDetailItem, setSelectedDetailItem] = useState(null);
 
   // Blog Modal State
   const [isBlogWriteOpen, setIsBlogWriteOpen] = useState(false);
@@ -90,14 +78,6 @@ const App = () => {
     }, 300);
   }, []);
 
-  const handleOpenDetail = useCallback((item) => {
-    setTimeout(() => setSelectedDetailItem(item), 0);
-  }, []);
-
-  const handleCloseDetail = useCallback(() => {
-    setSelectedDetailItem(null);
-  }, []);
-
   const handleOpenAuthModal = useCallback(() => {
     setIsAuthModalOpen(true);
   }, []);
@@ -143,14 +123,14 @@ const App = () => {
 
   const onTouchEnd = () => {
     // DISABLE SWIPE IF MODALS ARE OPEN
-    if (isGuestbookOpen || isMyPageOpen || isZeroGOpen || isPulseDashOpen || selectedDetailItem || isBlogWriteOpen || selectedBlogDetailItem) return;
+    if (isMyPageOpen || isZeroGOpen || isPulseDashOpen || isBlogWriteOpen || selectedBlogDetailItem) return;
 
     if (!touchStart || !touchEnd) return;
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
 
-    if (isLeftSwipe && viewIndex < 2) {
+    if (isLeftSwipe && viewIndex < 1) {
       paginate(viewIndex + 1);
     }
     if (isRightSwipe && viewIndex > 0) {
@@ -159,29 +139,6 @@ const App = () => {
   };
 
   // Modal Handlers
-  const handleEdit = useCallback((item) => {
-    setNewMessage({ name: item.name, text: item.text, image: item.image });
-    setEditingMessageId(item.id);
-    setEditMode(true);
-    setIsGuestbookOpen(true);
-  }, []);
-
-  const handleCloseModal = useCallback(() => {
-    setIsGuestbookOpen(false);
-    setTimeout(() => {
-      setEditMode(false);
-      setEditingMessageId(null);
-      setNewMessage({ name: '', text: '', image: null });
-    }, 300);
-  }, []);
-
-  const handleOpenNewModal = useCallback(() => {
-    setEditMode(false);
-    setEditingMessageId(null);
-    setNewMessage({ name: '', text: '', image: null });
-    setIsGuestbookOpen(true);
-  }, []);
-
   const handleOpenMyPage = useCallback(() => {
     setIsMyPageOpen(true);
   }, []);
@@ -193,9 +150,9 @@ const App = () => {
   const handleEditFromMyPage = useCallback((item) => {
     handleCloseMyPage();
     setTimeout(() => {
-      handleEdit(item);
+      handleEditBlog(item);
     }, 200);
-  }, [handleCloseMyPage, handleEdit]);
+  }, [handleCloseMyPage, handleEditBlog]);
 
   // Game Modal Handlers
   const handleOpenZeroG = useCallback(() => {
@@ -249,7 +206,7 @@ const App = () => {
         하이젠 랩스 - Hyzen Labs AI & 게이밍 연구소
       </h1>
 
-      {(isGuestbookOpen || selectedDetailItem || isBlogWriteOpen || selectedBlogDetailItem) ? null : (
+      {(isBlogWriteOpen || selectedBlogDetailItem) ? null : (
         <Header
           onOpenMyPage={handleOpenMyPage}
           currentIndex={viewIndex}
@@ -304,33 +261,10 @@ const App = () => {
               />
             </motion.div>
           )}
-
-          {viewIndex === 2 && (
-            <motion.div
-              key="community"
-              custom={direction}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{
-                x: { type: "spring", stiffness: 300, damping: 30 },
-                opacity: { duration: 0.2 }
-              }}
-              className="w-full absolute top-0 left-0 h-full"
-            >
-              <MainPage
-                onOpenWriteModal={handleOpenNewModal}
-                onEditPost={handleEdit}
-                user={user}
-                onOpenDetail={handleOpenDetail}
-              />
-            </motion.div>
-          )}
         </AnimatePresence>
       </main>
 
-      {(!isGuestbookOpen && !selectedDetailItem && !isBlogWriteOpen && !selectedBlogDetailItem) && (
+      {(!isBlogWriteOpen && !selectedBlogDetailItem) && (
         <SectionNav
           currentIndex={viewIndex}
           onNavigate={paginate}
@@ -338,20 +272,6 @@ const App = () => {
       )}
 
       <React.Suspense fallback={null}>
-        <GuestbookModal
-          isOpen={isGuestbookOpen}
-          onClose={handleCloseModal}
-          user={user}
-          loginWithGoogle={handleOpenAuthModal}
-          newMessage={newMessage}
-          setNewMessage={setNewMessage}
-          isUploading={isUploading}
-          setIsUploading={setIsUploading}
-          compressImage={compressImage}
-          editMode={editMode}
-          messageId={editingMessageId}
-        />
-
         <MyPageModal
           isOpen={isMyPageOpen}
           onClose={handleCloseMyPage}
@@ -360,14 +280,6 @@ const App = () => {
         />
 
         <AnimatePresence mode="wait">
-          {selectedDetailItem && (
-            <DetailModal
-              key={selectedDetailItem.id || 'detail-modal'}
-              item={selectedDetailItem}
-              onClose={handleCloseDetail}
-            />
-          )}
-
           {selectedBlogDetailItem && (
             <BlogDetailModal
               key={selectedBlogDetailItem.id || 'blog-detail-modal'}
@@ -414,5 +326,6 @@ const App = () => {
     </div>
   );
 };
+
 
 export default App;

@@ -1,3 +1,0 @@
-Vercel CLI 50.16.0
-Fetching deployment to alias in jini2aix-gifs-projects
-일괄 작업을 끝내시겠습니까 (Y/N)? 일괄 작업을 끝내시겠습니까 (Y/N)? 

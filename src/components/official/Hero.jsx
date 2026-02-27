@@ -111,13 +111,6 @@ const FloatingDebris = ({ index, scrollY, mouseX, mouseY, windowSize, colors, al
                             <div className="absolute h-[120%] w-[15%] rounded-full" style={{ backgroundColor: color }} />
                         </div>
                     )}
-                    {/* Community Specific Shapes */}
-                    {shape === 'ring' && (
-                        <div className="w-full h-full rounded-full border-[6px]" style={{ borderColor: color }} />
-                    )}
-                    {shape === 'pill' && (
-                        <div className="w-full h-[60%] rounded-full top-[20%] relative" style={{ backgroundColor: color }} />
-                    )}
                     {/* Runner's Specific Shapes */}
                     {shape === 'diamond' && (
                         <div className="w-[80%] h-[80%] transform rotate-45 relative top-[10%] left-[10%]" style={{ backgroundColor: color }} />
