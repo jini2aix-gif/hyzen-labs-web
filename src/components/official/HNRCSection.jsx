@@ -657,7 +657,7 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                             <div className="md:hidden w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
 
                             {/* Left Side: Post Content & Data */}
-                            <div className="w-full md:w-[60%] h-[60%] md:h-full shrink-0 flex flex-col bg-white border-b md:border-b-0 border-gray-100 relative overflow-hidden">
+                            <div className="w-full md:w-[60%] h-full shrink-0 flex flex-col bg-white border-b md:border-b-0 border-gray-100 relative overflow-hidden">
 
                                 {/* Fixed Top Section: Image, Profile, Stats, Title */}
                                 <div className="shrink-0 flex flex-col bg-white relative z-10 border-b border-gray-100 shadow-[0_5px_15px_-10px_rgba(0,0,0,0.05)]">
@@ -746,7 +746,10 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                                             </div>
                                         </div>
 
-                                        <h2 className="text-lg sm:text-2xl md:text-3xl font-black text-gray-900 leading-tight tracking-tight whitespace-pre-wrap break-keep">{selectedPost.title}</h2>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-1.5 h-6 sm:h-8 bg-indigo-600 rounded-full shrink-0"></div>
+                                            <h2 className="text-lg sm:text-2xl md:text-3xl font-black text-gray-900 leading-tight tracking-tight whitespace-pre-wrap break-keep">{selectedPost.title}</h2>
+                                        </div>
                                     </div>
                                 </div>
 
