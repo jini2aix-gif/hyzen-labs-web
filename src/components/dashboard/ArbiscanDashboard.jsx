@@ -156,14 +156,14 @@ const ArbiscanDashboard = () => {
                             className="flex items-center gap-2 text-blue-600 font-bold text-xs tracking-widest uppercase mb-2"
                         >
                             <Database size={14} />
-                            <span>Real-Time</span>
+                            <span>On-Chain Intelligence</span>
                         </motion.div>
                         <motion.h1
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             className="text-4xl md:text-5xl font-semibold text-gray-900 tracking-tighter"
                         >
-                            ARB Dashboard
+                            ARBISCAN
                         </motion.h1>
                     </div>
                 </div>
