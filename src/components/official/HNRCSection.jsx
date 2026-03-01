@@ -426,20 +426,19 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                                                             <MapPin size={10} />
                                                             <span className="font-black italic text-xs">{post.distance.toFixed(1)} <span className="text-[9px] not-italic opacity-60">KM</span></span>
                                                         </div>
-                                                        <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-xl bg-gray-50 border border-gray-100 text-gray-600">
+                                                        <div className="flex items-center gap-1 px-2 py-1 rounded-xl bg-gray-50 border border-gray-100 text-gray-600">
                                                             <Zap size={10} className="text-gray-400" />
                                                             <span className="font-black italic text-xs">{post.pace || "--'--\""}</span>
                                                         </div>
                                                     </div>
 
                                                     <div className="flex items-center gap-3 text-gray-400 pl-1">
-                                                        <button
-                                                            onClick={(e) => handleToggleLike(e, post)}
-                                                            className={`flex items-center gap-1 transition-colors ${post.likes?.includes(user?.uid) ? 'text-red-500' : 'hover:text-red-500'}`}
+                                                        <div
+                                                            className={`flex items-center gap-1 ${post.likes?.includes(user?.uid) ? 'text-red-500' : 'text-gray-400'}`}
                                                         >
                                                             <Heart size={14} fill={post.likes?.includes(user?.uid) ? "currentColor" : "none"} />
                                                             <span className="text-[10px] font-black">{post.likes?.length || 0}</span>
-                                                        </button>
+                                                        </div>
                                                         <div className="flex items-center gap-1">
                                                             <MessageSquare size={14} />
                                                             <span className="text-[10px] font-black">{post.commentCount || 0}</span>
@@ -490,12 +489,12 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
             {/* Post View Modal (Social/Blog Style Popup) */}
             <AnimatePresence>
                 {selectedPost && (
-                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md" onClick={() => { setSelectedPost(null); setReplyTo(null); }}>
+                    <div className="fixed inset-0 z-[150] flex flex-col justify-end sm:justify-center items-center p-0 sm:p-6 pt-16 sm:pt-24 bg-black/60 backdrop-blur-md" onClick={() => { setSelectedPost(null); setReplyTo(null); }}>
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 50 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 50 }}
-                            className="w-full max-w-6xl max-h-[90vh] sm:h-[85vh] bg-white rounded-[24px] sm:rounded-[40px] shadow-2xl flex flex-col md:flex-row relative overflow-y-auto md:overflow-hidden custom-scrollbar"
+                            initial={{ opacity: 0, y: "100%" }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: "100%" }}
+                            className="w-full max-w-6xl h-[88vh] sm:h-[85vh] bg-white rounded-t-[24px] sm:rounded-[40px] shadow-2xl flex flex-col md:flex-row relative overflow-hidden"
                             onClick={e => e.stopPropagation()}
                         >
                             {/* Desktop Close Button */}
@@ -510,12 +509,25 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                             <div className="md:hidden w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
 
                             {/* Left Side: Post Content & Data */}
-                            <div className="w-full md:w-[60%] shrink-0 md:h-full md:overflow-y-auto bg-white custom-scrollbar">
+                            <div className="w-full md:w-[60%] flex-shrink-0 max-h-[50%] md:max-h-full md:h-full overflow-y-auto bg-white custom-scrollbar border-b md:border-b-0 border-gray-100">
                                 {/* Image Box */}
                                 {selectedPost.image ? (
-                                    <div className="w-full aspect-video sm:aspect-[4/3] bg-gray-100 overflow-hidden relative">
-                                        <img src={selectedPost.image} className="w-full h-full object-cover" alt="Run" />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                                    <div className="w-full aspect-video sm:aspect-[4/3] bg-gray-100 overflow-hidden relative flex shrink-0">
+                                        <motion.img
+                                            src={selectedPost.image}
+                                            className="w-full h-full object-cover"
+                                            alt="Run"
+                                            animate={{
+                                                scale: [1, 1.25, 1.25, 1.25, 1],
+                                                y: ["0%", "10%", "-10%", "0%", "0%"]
+                                            }}
+                                            transition={{
+                                                duration: 6,
+                                                times: [0, 0.2, 0.5, 0.8, 1],
+                                                ease: "easeInOut"
+                                            }}
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
 
                                         {/* Mobile Exit Button on Image */}
                                         <button
@@ -538,8 +550,8 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                                     </div>
                                 )}
 
-                                <div className="p-6 sm:p-10 md:p-12">
-                                    <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+                                <div className="p-5 sm:p-10 md:p-12 shrink-0">
+                                    <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
                                         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-indigo-50 shadow-sm bg-gray-100 flex-shrink-0">
                                             {(user?.uid === selectedPost.authorId && profile?.photoURL) ? (
                                                 <img src={profile.photoURL} className="w-full h-full object-cover" alt={profile.displayName} />
@@ -567,25 +579,25 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                                         </div>
                                     </div>
 
-                                    {/* Stats Grid - High Contrast */}
-                                    <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-8 sm:mb-10">
-                                        <div className="bg-indigo-600 p-3 sm:p-4 rounded-2xl sm:rounded-3xl text-white shadow-lg shadow-indigo-100">
-                                            <p className="text-[9px] sm:text-[10px] font-black opacity-60 uppercase tracking-widest mb-0.5 sm:mb-1">DISTANCE</p>
-                                            <p className="text-xl sm:text-2xl font-black italic">{selectedPost.distance.toFixed(1)}<span className="text-[10px] sm:text-xs not-italic ml-0.5 opacity-60">KM</span></p>
+                                    {/* Stats Grid - Compact */}
+                                    <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6 sm:mb-8">
+                                        <div className="bg-indigo-600 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-white shadow-sm flex flex-col justify-center">
+                                            <p className="text-[8px] sm:text-[9px] font-black opacity-80 uppercase tracking-widest mb-0.5 sm:mb-1 leading-none">DIST</p>
+                                            <p className="text-lg sm:text-xl font-black italic leading-none">{selectedPost.distance.toFixed(1)}<span className="text-[9px] sm:text-[10px] not-italic ml-0.5 opacity-60">KM</span></p>
                                         </div>
-                                        <div className="bg-gray-900 p-3 sm:p-4 rounded-2xl sm:rounded-3xl text-white shadow-lg shadow-gray-100">
-                                            <p className="text-[9px] sm:text-[10px] font-black opacity-60 uppercase tracking-widest mb-0.5 sm:mb-1">TIME</p>
-                                            <p className="text-xl sm:text-2xl font-black italic">{selectedPost.time || '--:--'}</p>
+                                        <div className="bg-gray-900 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-white shadow-sm flex flex-col justify-center">
+                                            <p className="text-[8px] sm:text-[9px] font-black opacity-80 uppercase tracking-widest mb-0.5 sm:mb-1 leading-none">TIME</p>
+                                            <p className="text-lg sm:text-xl font-black italic leading-none">{selectedPost.time || '--:--'}</p>
                                         </div>
-                                        <div className="bg-gray-50 p-3 sm:p-4 rounded-2xl sm:rounded-3xl text-gray-900 border border-gray-100/50">
-                                            <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 sm:mb-1">PACE</p>
-                                            <p className="text-xl sm:text-2xl font-black italic text-indigo-600">{selectedPost.pace || "--'--\""}</p>
+                                        <div className="bg-gray-50 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-gray-900 border border-gray-100/50 flex flex-col justify-center">
+                                            <p className="text-[8px] sm:text-[9px] font-black text-gray-500 uppercase tracking-widest mb-0.5 sm:mb-1 leading-none">PACE</p>
+                                            <p className="text-lg sm:text-xl font-black italic text-indigo-600 leading-none">{selectedPost.pace || "--'--\""}</p>
                                         </div>
                                     </div>
 
                                     <div className="space-y-4 sm:space-y-6">
-                                        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 leading-tight tracking-tight whitespace-pre-wrap break-keep">{selectedPost.title}</h2>
-                                        <p className="text-gray-600 text-[15px] sm:text-lg leading-relaxed whitespace-pre-wrap font-medium pb-4">
+                                        <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-gray-900 leading-tight tracking-tight whitespace-pre-wrap break-keep">{selectedPost.title}</h2>
+                                        <p className="text-gray-600 text-[14px] sm:text-lg leading-relaxed whitespace-pre-wrap font-medium pb-4">
                                             {selectedPost.content}
                                         </p>
                                     </div>
@@ -593,8 +605,8 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                             </div>
 
                             {/* Right Side: Comments Section */}
-                            <div className="w-full md:w-[40%] shrink-0 flex flex-col bg-gray-50/50 md:h-full overflow-hidden border-t md:border-l md:border-t-0 border-gray-100">
-                                <div className="p-4 sm:p-6 border-b border-gray-100 bg-white flex items-center justify-between shrink-0">
+                            <div className="w-full md:w-[40%] flex-1 flex flex-col bg-gray-50/50 md:h-full overflow-hidden border-t md:border-l md:border-t-0 border-gray-100 relative">
+                                <div className="p-4 sm:p-6 border-b border-gray-100 bg-white flex items-center justify-between shrink-0 top-0 sticky z-20">
                                     <div className="flex items-center gap-2">
                                         <div className="p-1.5 sm:p-2 bg-indigo-50 rounded-lg">
                                             <MessageCircle size={16} className="text-indigo-600 sm:w-4 sm:h-4 w-3.5 h-3.5" />
