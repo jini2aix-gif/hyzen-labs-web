@@ -169,7 +169,7 @@ const App = () => {
         />
 
         <motion.main
-          className="relative min-h-screen overflow-hidden"
+          className="relative h-screen overflow-hidden"
           style={{ perspective: '1200px' }}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
@@ -221,21 +221,23 @@ const App = () => {
                 rotateY: { duration: 0.5, ease: "easeOut" }
               }}
               style={{ transformOrigin: direction > 0 ? "right center" : "left center", backfaceVisibility: "hidden" }}
-              className="w-full"
+              className="w-full h-full"
             >
               <React.Suspense fallback={<div className="h-screen w-full flex items-center justify-center bg-white text-black font-brand italic uppercase tracking-widest">Initialising Hyzen Systems...</div>}>
                 {viewIndex === 0 ? (
-                  <GamePage
-                    user={user}
-                    onOpenZeroG={handleOpenZeroG}
-                    onOpenPulseDash={handleOpenPulseDash}
-                  />
+                  <div className="h-full overflow-y-auto">
+                    <GamePage
+                      user={user}
+                      onOpenZeroG={handleOpenZeroG}
+                      onOpenPulseDash={handleOpenPulseDash}
+                    />
+                  </div>
                 ) : viewIndex === 1 ? (
-                  <div className="pt-0 h-full overflow-y-auto bg-gray-50">
+                  <div className="h-full overflow-y-auto bg-gray-50 scroll-smooth">
                     <HNRCSection user={user} profile={profile} onModalChange={setIsHNRCModalOpen} />
                   </div>
                 ) : (
-                  <div className="pt-0 h-full overflow-y-auto bg-gray-50">
+                  <div className="h-full overflow-y-auto bg-gray-50 scroll-smooth">
                     <ArbiscanDashboard />
                   </div>
                 )}
