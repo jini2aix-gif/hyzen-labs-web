@@ -409,8 +409,11 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
 
                                                         {user && user.uid === post.authorId && (
                                                             <div className="ml-auto flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <button onClick={(e) => handleEditClick(e, post)} className="text-gray-400 hover:text-indigo-500 p-1 bg-white/90 rounded-full backdrop-blur-sm shadow-sm">
-                                                                    <Edit2 size={10} />
+                                                                <button onClick={(e) => handleEditClick(e, post)} className="text-gray-400 hover:text-indigo-500 p-1 bg-white/90 rounded-full backdrop-blur-sm shadow-sm transition-colors" title="수정">
+                                                                    <Edit2 size={12} />
+                                                                </button>
+                                                                <button onClick={(e) => handleDeletePost(e, post.id)} className="text-gray-400 hover:text-red-500 p-1 bg-white/90 rounded-full backdrop-blur-sm shadow-sm transition-colors" title="삭제">
+                                                                    <Trash2 size={12} />
                                                                 </button>
                                                             </div>
                                                         )}
@@ -509,7 +512,7 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                             <div className="md:hidden w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
 
                             {/* Left Side: Post Content & Data */}
-                            <div className="w-full md:w-[60%] flex-shrink-0 max-h-[50%] md:max-h-full md:h-full overflow-y-auto bg-white custom-scrollbar border-b md:border-b-0 border-gray-100">
+                            <div className="w-full md:w-[60%] h-[55%] md:h-full shrink-0 overflow-y-auto bg-white custom-scrollbar border-b md:border-b-0 border-gray-100 relative">
                                 {/* Image Box */}
                                 {selectedPost.image ? (
                                     <div className="w-full aspect-video sm:aspect-[4/3] bg-gray-100 overflow-hidden relative flex shrink-0">
@@ -605,7 +608,7 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                             </div>
 
                             {/* Right Side: Comments Section */}
-                            <div className="w-full md:w-[40%] flex-1 flex flex-col bg-gray-50/50 md:h-full overflow-hidden border-t md:border-l md:border-t-0 border-gray-100 relative">
+                            <div className="w-full md:w-[40%] h-[45%] md:h-full shrink-0 flex flex-col bg-gray-50/50 overflow-hidden md:border-l border-gray-100 relative">
                                 <div className="p-4 sm:p-6 border-b border-gray-100 bg-white flex items-center justify-between shrink-0 top-0 sticky z-20">
                                     <div className="flex items-center gap-2">
                                         <div className="p-1.5 sm:p-2 bg-indigo-50 rounded-lg">
