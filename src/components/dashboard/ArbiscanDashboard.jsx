@@ -69,7 +69,6 @@ const ArbiscanDashboard = () => {
     const [tvlData, setTvlData] = useState([]);
     const [priceData, setPriceData] = useState([]);
     const [whaleData, setWhaleData] = useState([]);
-    const [isLogScale, setIsLogScale] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -206,12 +205,6 @@ const ArbiscanDashboard = () => {
                                 <Lock className="text-gray-900" size={20} />
                                 <h2 className="text-base sm:text-lg font-semibold tracking-widest uppercase">Active DeFi TVL</h2>
                             </div>
-                            <button
-                                onClick={() => setIsLogScale(!isLogScale)}
-                                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors border ${isLogScale ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-transparent text-gray-500 border-gray-200 hover:text-gray-900'}`}
-                            >
-                                LOG SCALE
-                            </button>
                         </div>
                         <div className="flex-1 min-h-0">
                             <ResponsiveContainer width="100%" height="100%">
@@ -233,7 +226,7 @@ const ArbiscanDashboard = () => {
                                         tickLine={false}
                                     />
                                     <YAxis
-                                        scale={isLogScale ? 'log' : 'auto'}
+                                        scale="auto"
                                         domain={['auto', 'auto']}
                                         stroke="#9ca3af"
                                         tick={{ fill: '#6b7280', fontSize: 10, fontFamily: 'monospace' }}

@@ -1,4 +1,4 @@
-export const CACHE_DURATION = 15 * 1000; // 15 seconds
+export const CACHE_DURATION = 10 * 1000; // 10 seconds
 
 const fetchWithCache = async (url, cacheKey, options = {}) => {
     try {
