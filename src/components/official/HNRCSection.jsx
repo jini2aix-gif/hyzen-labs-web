@@ -218,141 +218,141 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
         return (
             <div className="flex flex-col h-full bg-gray-50/50">
                 <div className="p-4 sm:p-6 border-b border-gray-100 bg-white flex items-center justify-between shrink-0 md:top-0 md:sticky z-20">
-                <div className="flex items-center gap-2">
-                <div className="p-1.5 sm:p-2 bg-indigo-50 rounded-lg">
-                <MessageCircle size={16} className="text-indigo-600 sm:w-4 sm:h-4 w-3.5 h-3.5" />
+                    <div className="flex items-center gap-2">
+                        <div className="p-1.5 sm:p-2 bg-indigo-50 rounded-lg">
+                            <MessageCircle size={16} className="text-indigo-600 sm:w-4 sm:h-4 w-3.5 h-3.5" />
+                        </div>
+                        <span className="font-bold text-gray-900 text-sm sm:text-base">댓글 <span className="text-indigo-600">{selectedPost.commentCount || 0}</span></span>
+                    </div>
+                    <button onClick={() => { setSelectedPost(null); setReplyTo(null); }} className="hidden md:block p-1 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
+                        <X size={20} />
+                    </button>
                 </div>
-                <span className="font-bold text-gray-900 text-sm sm:text-base">댓글 <span className="text-indigo-600">{selectedPost.commentCount || 0}</span></span>
-                </div>
-                <button onClick={() => { setSelectedPost(null); setReplyTo(null); }} className="hidden md:block p-1 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
-                <X size={20} />
-                </button>
-                </div>
-                
+
                 <div className="flex-1 overflow-y-visible md:overflow-y-auto p-6 space-y-6 custom-scrollbar min-h-0 bg-gray-50/10 mb-auto">
-                {comments.length === 0 ? (
-                <div className="h-40 flex flex-col items-center justify-center text-gray-400 gap-2">
-                <MessageSquare size={32} className="opacity-10" />
-                <p className="text-sm font-medium">아직 댓글이 없습니다.</p>
+                    {comments.length === 0 ? (
+                        <div className="h-40 flex flex-col items-center justify-center text-gray-400 gap-2">
+                            <MessageSquare size={32} className="opacity-10" />
+                            <p className="text-sm font-medium">아직 댓글이 없습니다.</p>
+                        </div>
+                    ) : (
+                        comments.filter(c => !c.parentId).map(comment => (
+                            <div key={comment.id} className="space-y-4">
+                                {/* Parent Comment */}
+                                <div className="flex gap-3">
+                                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-100">
+                                        {comment.authorPhoto ? <img src={comment.authorPhoto} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400">{comment.author.charAt(0)}</div>}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between gap-2 mb-1">
+                                            <span className="font-bold text-gray-900 text-sm">{comment.author}</span>
+                                            <span className="text-[10px] text-gray-400">{comment.timestamp.toLocaleDateString()}</span>
+                                        </div>
+                                        <p className="text-sm text-gray-600 leading-relaxed mb-2">{comment.text}</p>
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={() => setReplyTo({ id: comment.id, author: comment.author })}
+                                                className="text-[10px] font-bold text-indigo-600 hover:underline"
+                                            >
+                                                답글 달기
+                                            </button>
+                                            {user?.uid === comment.authorId && (
+                                                <button
+                                                    onClick={() => handleDeleteComment(comment.id)}
+                                                    className="text-[10px] font-bold text-gray-400 hover:text-red-500"
+                                                >
+                                                    삭제
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Replies */}
+                                {comments.filter(reply => reply.parentId === comment.id).map(reply => (
+                                    <div key={reply.id} className="flex gap-3 ml-8 pl-4 border-l-2 border-gray-50">
+                                        <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-100">
+                                            {reply.authorPhoto ? <img src={reply.authorPhoto} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-gray-400">{reply.author.charAt(0)}</div>}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-2 mb-0.5">
+                                                <span className="font-bold text-gray-900 text-[13px]">{reply.author}</span>
+                                                <span className="text-[9px] text-gray-400">{reply.timestamp.toLocaleDateString()}</span>
+                                            </div>
+                                            <p className="text-[13px] text-gray-600 leading-relaxed">
+                                                {reply.replyToAuthor && <span className="text-indigo-600 font-bold mr-1">@{reply.replyToAuthor}</span>}
+                                                {reply.text}
+                                            </p>
+                                            <div className="flex items-center gap-3 mt-1.5">
+                                                <button
+                                                    onClick={() => setReplyTo({ id: comment.id, author: reply.author })}
+                                                    className="text-[9px] font-bold text-indigo-600 hover:underline"
+                                                >
+                                                    답글 달기
+                                                </button>
+                                                {user?.uid === reply.authorId && (
+                                                    <button
+                                                        onClick={() => handleDeleteComment(reply.id)}
+                                                        className="text-[9px] font-bold text-gray-400 hover:text-red-500"
+                                                    >
+                                                        삭제
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ))
+                    )}
                 </div>
-                ) : (
-                comments.filter(c => !c.parentId).map(comment => (
-                <div key={comment.id} className="space-y-4">
-                {/* Parent Comment */}
-                <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-100">
-                {comment.authorPhoto ? <img src={comment.authorPhoto} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400">{comment.author.charAt(0)}</div>}
-                </div>
-                <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="font-bold text-gray-900 text-sm">{comment.author}</span>
-                <span className="text-[10px] text-gray-400">{comment.timestamp.toLocaleDateString()}</span>
-                </div>
-                <p className="text-sm text-gray-600 leading-relaxed mb-2">{comment.text}</p>
-                <div className="flex items-center gap-3">
-                <button
-                onClick={() => setReplyTo({ id: comment.id, author: comment.author })}
-                className="text-[10px] font-bold text-indigo-600 hover:underline"
-                >
-                답글 달기
-                </button>
-                {user?.uid === comment.authorId && (
-                <button
-                onClick={() => handleDeleteComment(comment.id)}
-                className="text-[10px] font-bold text-gray-400 hover:text-red-500"
-                >
-                삭제
-                </button>
-                )}
-                </div>
-                </div>
-                </div>
-                
-                {/* Replies */}
-                {comments.filter(reply => reply.parentId === comment.id).map(reply => (
-                <div key={reply.id} className="flex gap-3 ml-8 pl-4 border-l-2 border-gray-50">
-                <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-100">
-                {reply.authorPhoto ? <img src={reply.authorPhoto} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-gray-400">{reply.author.charAt(0)}</div>}
-                </div>
-                <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-0.5">
-                <span className="font-bold text-gray-900 text-[13px]">{reply.author}</span>
-                <span className="text-[9px] text-gray-400">{reply.timestamp.toLocaleDateString()}</span>
-                </div>
-                <p className="text-[13px] text-gray-600 leading-relaxed">
-                {reply.replyToAuthor && <span className="text-indigo-600 font-bold mr-1">@{reply.replyToAuthor}</span>}
-                {reply.text}
-                </p>
-                <div className="flex items-center gap-3 mt-1.5">
-                <button
-                onClick={() => setReplyTo({ id: comment.id, author: reply.author })}
-                className="text-[9px] font-bold text-indigo-600 hover:underline"
-                >
-                답글 달기
-                </button>
-                {user?.uid === reply.authorId && (
-                <button
-                onClick={() => handleDeleteComment(reply.id)}
-                className="text-[9px] font-bold text-gray-400 hover:text-red-500"
-                >
-                삭제
-                </button>
-                )}
-                </div>
-                </div>
-                </div>
-                ))}
-                </div>
-                ))
-                )}
-                </div>
-                
+
                 {/* Persistent Comment Input Area */}
                 <div className="p-4 border-t border-gray-100 bg-white sticky bottom-0 z-30 mt-auto border-t">
-                <AnimatePresence>
-                {replyTo && (
-                <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="mb-2 px-3 py-1.5 bg-gray-50 rounded-lg flex items-center justify-between"
-                >
-                <span className="text-[11px] font-bold text-indigo-600 flex items-center gap-1">
-                <CornerDownRight size={12} />
-                {replyTo.author}님에게 답글 남기는 중...
-                </span>
-                <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-gray-600">
-                <X size={14} />
-                </button>
-                </motion.div>
-                )}
-                </AnimatePresence>
-                
-                <form onSubmit={handleAddComment} className="relative">
-                <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder={user ? "댓글을 입력하세요..." : "로그인이 필요합니다"}
-                disabled={!user || isSubmittingComment}
-                className="w-full bg-gray-50 rounded-2xl p-4 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none min-h-[50px] max-h-[150px] placeholder:text-gray-400"
-                onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleAddComment(e);
-                }
-                }}
-                />
-                <button
-                type="submit"
-                disabled={!user || !newComment.trim() || isSubmittingComment}
-                className="absolute right-3 bottom-3 p-2 bg-black text-white rounded-xl disabled:bg-gray-200 disabled:text-gray-400 transition-all hover:scale-105 active:scale-95"
-                >
-                {isSubmittingComment ? <Loader2 size={16} className="animate-spin" /> : <Send size={18} />}
-                </button>
-                </form>
-                {!user && (
-                <p className="text-[10px] text-gray-400 text-center mt-2">이메일/구글 계정으로 로그인 후 이용 가능합니다.</p>
-                )}
+                    <AnimatePresence>
+                        {replyTo && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                className="mb-2 px-3 py-1.5 bg-gray-50 rounded-lg flex items-center justify-between"
+                            >
+                                <span className="text-[11px] font-bold text-indigo-600 flex items-center gap-1">
+                                    <CornerDownRight size={12} />
+                                    {replyTo.author}님에게 답글 남기는 중...
+                                </span>
+                                <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-gray-600">
+                                    <X size={14} />
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <form onSubmit={handleAddComment} className="relative">
+                        <textarea
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            placeholder={user ? "댓글을 입력하세요..." : "로그인이 필요합니다"}
+                            disabled={!user || isSubmittingComment}
+                            className="w-full bg-gray-50 rounded-2xl p-4 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none min-h-[50px] max-h-[150px] placeholder:text-gray-400"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleAddComment(e);
+                                }
+                            }}
+                        />
+                        <button
+                            type="submit"
+                            disabled={!user || !newComment.trim() || isSubmittingComment}
+                            className="absolute right-3 bottom-3 p-2 bg-black text-white rounded-xl disabled:bg-gray-200 disabled:text-gray-400 transition-all hover:scale-105 active:scale-95"
+                        >
+                            {isSubmittingComment ? <Loader2 size={16} className="animate-spin" /> : <Send size={18} />}
+                        </button>
+                    </form>
+                    {!user && (
+                        <p className="text-[10px] text-gray-400 text-center mt-2">이메일/구글 계정으로 로그인 후 이용 가능합니다.</p>
+                    )}
                 </div>
             </div>
         );
@@ -553,12 +553,12 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                                                         </div>
 
                                                         {user && user.uid === post.authorId && (
-                                                            <div className="ml-auto flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <button onClick={(e) => handleEditClick(e, post)} className="text-gray-400 hover:text-indigo-500 p-1 bg-white/90 rounded-full backdrop-blur-sm shadow-sm transition-colors" title="수정">
-                                                                    <Edit2 size={12} />
+                                                            <div className="ml-auto flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                                                                <button onClick={(e) => handleEditClick(e, post)} className="text-gray-400 hover:text-indigo-500 p-1.5 lg:p-1 bg-gray-100 lg:bg-white/90 rounded-full backdrop-blur-sm shadow-sm transition-colors" title="수정">
+                                                                    <Edit2 size={12} className="w-3.5 h-3.5 lg:w-3 lg:h-3" />
                                                                 </button>
-                                                                <button onClick={(e) => handleDeletePost(e, post.id)} className="text-gray-400 hover:text-red-500 p-1 bg-white/90 rounded-full backdrop-blur-sm shadow-sm transition-colors" title="삭제">
-                                                                    <Trash2 size={12} />
+                                                                <button onClick={(e) => handleDeleteRecord(e, post.id)} className="text-gray-400 hover:text-red-500 p-1.5 lg:p-1 bg-gray-100 lg:bg-white/90 rounded-full backdrop-blur-sm shadow-sm transition-colors" title="삭제">
+                                                                    <Trash2 size={12} className="w-3.5 h-3.5 lg:w-3 lg:h-3" />
                                                                 </button>
                                                             </div>
                                                         )}
@@ -754,7 +754,7 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                                 </div>
 
                                 {/* Scrollable Content Section */}
-                                                                {/* Scrollable Content Section & Mobile Comments */}
+                                {/* Scrollable Content Section & Mobile Comments */}
                                 <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/20 flex flex-col relative w-full h-full">
                                     <div className="px-5 py-4 sm:px-10 sm:py-6 md:px-12 shrink-0">
                                         <p className="text-gray-600 text-[14px] sm:text-lg leading-relaxed whitespace-pre-wrap font-medium pb-8">
