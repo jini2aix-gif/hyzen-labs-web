@@ -12,7 +12,8 @@ import {
     fetchArbitrumMarketData,
     fetchArbitrumTVL,
     getWhaleTrackerData,
-    fetchArbitrumPriceHistory
+    fetchArbitrumPriceHistory,
+    REFRESH
 } from '../../lib/api-fetcher';
 
 const CustomTooltip = ({ active, payload, label, prefix = '' }) => {
