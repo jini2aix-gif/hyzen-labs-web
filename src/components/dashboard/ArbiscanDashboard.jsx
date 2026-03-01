@@ -161,7 +161,7 @@ const ArbiscanDashboard = () => {
                         <motion.h1
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-4xl md:text-5xl font-semibold text-gray-900 tracking-tighter"
+                            className="text-5xl sm:text-6xl md:text-8xl font-black text-gray-900 tracking-tighter leading-none"
                         >
                             ARBISCAN
                         </motion.h1>
