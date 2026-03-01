@@ -47,12 +47,19 @@ export const useFirebase = () => {
             const user = result.user;
 
             if (user && db) {
+                const { getDoc } = await import('firebase/firestore');
                 const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+                const existing = await getDoc(userRef);
+                // Preserve custom photoURL if already set by the user
+                const existingPhoto = existing.exists() ? existing.data().photoURL : null;
+
                 await setDoc(userRef, {
                     uid: user.uid,
                     email: user.email,
                     displayName: user.displayName,
-                    photoURL: user.photoURL,
+                    // Only use Google photo if no custom photo is stored
+                    photoURL: existingPhoto || user.photoURL,
+                    provider: 'google',
                     lastLoginAt: new Date().toISOString()
                 }, { merge: true });
             }
