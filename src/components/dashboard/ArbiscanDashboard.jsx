@@ -72,30 +72,44 @@ const ArbiscanDashboard = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const loadData = async () => {
+        // ── Fast loop: price/market only, every 20 seconds ────────────────
+        const fetchPrice = async () => {
+            try {
+                const data = await fetchArbitrumMarketData();
+                if (data) setMarketData(data);
+            } catch (e) {
+                console.error('Price refresh failed:', e);
+            }
+        };
+
+        // ── Slow loop: TVL, whale, price history, every 10 minutes ────────
+        const fetchSlowData = async () => {
             try {
                 const results = await Promise.allSettled([
-                    fetchArbitrumMarketData(),
                     fetchArbitrumTVL(),
                     getWhaleTrackerData(),
                     fetchArbitrumPriceHistory()
                 ]);
-
-                if (results[0].status === 'fulfilled' && results[0].value) setMarketData(results[0].value);
-                if (results[1].status === 'fulfilled' && results[1].value) setTvlData(results[1].value);
-                if (results[2].status === 'fulfilled' && results[2].value) setWhaleData(results[2].value);
-                if (results[3].status === 'fulfilled' && results[3].value) setPriceData(results[3].value);
-
-            } catch (err) {
-                console.error("Dashboard data load error:", err);
+                if (results[0].status === 'fulfilled' && results[0].value?.length) setTvlData(results[0].value);
+                if (results[1].status === 'fulfilled' && results[1].value?.length) setWhaleData(results[1].value);
+                if (results[2].status === 'fulfilled' && results[2].value?.length) setPriceData(results[2].value);
+            } catch (e) {
+                console.error('Slow data refresh failed:', e);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        loadData();
-        const interval = setInterval(loadData, 15 * 1000); // 15 seconds auto-refresh
-        return () => clearInterval(interval);
+        // Initial load
+        fetchPrice();
+        fetchSlowData();
+
+        const priceInterval = setInterval(fetchPrice, 20 * 1000);      // 20s – Binance 직접 호출
+        const slowInterval = setInterval(fetchSlowData, 10 * 60 * 1000); // 10min – heavy data
+        return () => {
+            clearInterval(priceInterval);
+            clearInterval(slowInterval);
+        };
     }, []);
 
     if (isLoading) {
