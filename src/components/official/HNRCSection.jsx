@@ -381,68 +381,68 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                                             exit={{ opacity: 0, scale: 0.95 }}
                                             transition={{ delay: idx * 0.05 }}
                                             onClick={() => setSelectedPost(post)}
-                                            className="relative bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-2xl hover:translate-y-[-4px] transition-all cursor-pointer flex flex-row overflow-hidden group min-h-[160px]"
+                                            className="relative bg-white rounded-[32px] p-5 border border-gray-100 shadow-sm hover:shadow-2xl hover:translate-y-[-4px] transition-all cursor-pointer flex flex-row overflow-hidden group min-h-[180px]"
                                         >
-                                            {/* Right Image Background with Gradient Blend */}
+                                            {/* Right Image Background - Expanded Area */}
                                             {post.image && (
-                                                <div className="absolute right-0 top-0 bottom-0 w-[45%] h-full z-0 overflow-hidden">
-                                                    <div className="absolute inset-0 z-10 bg-gradient-to-r from-white via-white/80 to-transparent"></div>
+                                                <div className="absolute right-0 top-0 bottom-0 w-[60%] h-full z-0 overflow-hidden">
+                                                    <div className="absolute inset-0 z-10 bg-gradient-to-r from-white via-white/40 to-transparent"></div>
                                                     <img
                                                         src={post.image}
-                                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                                         alt="Run record"
                                                     />
                                                 </div>
                                             )}
 
-                                            {/* Left Content - Elevated with Z-index */}
-                                            <div className="relative z-20 flex-1 min-w-0 flex flex-col justify-between">
-                                                <div className="w-full">
+                                            {/* Left Content Area */}
+                                            <div className="relative z-20 w-[50%] flex flex-col justify-between">
+                                                <div className="w-full pr-4">
                                                     <div className="flex items-center gap-2 mb-3">
-                                                        <div className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center font-bold text-gray-500 text-[10px] border border-white">
+                                                        <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center font-bold text-gray-500 text-[10px] border border-white shrink-0">
                                                             {(user?.uid === post.authorId && profile?.photoURL) ? <img src={profile.photoURL} className="w-full h-full object-cover" /> : (post.authorPhoto ? <img src={post.authorPhoto} className="w-full h-full object-cover" /> : (post.author || 'Guest').charAt(0).toUpperCase())}
                                                         </div>
-                                                        <span className="font-bold text-gray-800 text-[11px] tracking-tight">{(user?.uid === post.authorId && profile?.displayName) ? profile.displayName : post.author}</span>
-                                                        <span className="text-gray-400 text-[10px] font-medium">{post.timestamp.toLocaleDateString()}</span>
+                                                        <div className="min-w-0">
+                                                            <p className="font-bold text-gray-900 text-[11px] truncate tracking-tight">{(user?.uid === post.authorId && profile?.displayName) ? profile.displayName : post.author}</p>
+                                                            <p className="text-gray-400 text-[10px] font-medium leading-none">{post.timestamp.toLocaleDateString()}</p>
+                                                        </div>
 
                                                         {user && user.uid === post.authorId && (
                                                             <div className="ml-auto flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <button onClick={(e) => handleEditClick(e, post)} className="text-gray-400 hover:text-indigo-500 p-1 bg-white/80 rounded-full backdrop-blur-sm">
-                                                                    <Edit2 size={12} />
-                                                                </button>
-                                                                <button onClick={(e) => handleDeleteRecord(e, post.id)} className="text-gray-400 hover:text-red-500 p-1 bg-white/80 rounded-full backdrop-blur-sm">
-                                                                    <Trash2 size={12} />
+                                                                <button onClick={(e) => handleEditClick(e, post)} className="text-gray-400 hover:text-indigo-500 p-1 bg-white/90 rounded-full backdrop-blur-sm shadow-sm">
+                                                                    <Edit2 size={10} />
                                                                 </button>
                                                             </div>
                                                         )}
                                                     </div>
 
-                                                    <h3 className="text-lg font-black text-gray-900 truncate mb-1 leading-tight">{post.title}</h3>
-                                                    <p className="text-gray-500 text-[13px] line-clamp-2 leading-relaxed mb-4 max-w-[85%]">{post.content}</p>
+                                                    <h3 className="text-base font-black text-gray-900 truncate mb-1 leading-tight">{post.title}</h3>
+                                                    <p className="text-gray-500 text-[12px] line-clamp-2 leading-tight mb-4">{post.content}</p>
                                                 </div>
 
-                                                <div className="flex items-center gap-3 mt-auto">
-                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/40 backdrop-blur-xl border border-white/50 shadow-sm text-indigo-600 transition-all hover:bg-white/60">
-                                                        <MapPin size={12} />
-                                                        <span className="font-black italic text-sm">{post.distance.toFixed(1)} <span className="text-[10px] not-italic text-indigo-400 opacity-60">KM</span></span>
-                                                    </div>
-                                                    <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/40 backdrop-blur-xl border border-white/50 shadow-sm text-gray-600">
-                                                        <Zap size={12} className="text-gray-400" />
-                                                        <span className="font-black italic text-sm">{post.pace || "--'--\""}</span>
+                                                <div className="space-y-2 pb-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex items-center gap-1 px-2 py-1 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 shadow-sm">
+                                                            <MapPin size={10} />
+                                                            <span className="font-black italic text-xs">{post.distance.toFixed(1)} <span className="text-[9px] not-italic opacity-60">KM</span></span>
+                                                        </div>
+                                                        <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-xl bg-gray-50 border border-gray-100 text-gray-600">
+                                                            <Zap size={10} className="text-gray-400" />
+                                                            <span className="font-black italic text-xs">{post.pace || "--'--\""}</span>
+                                                        </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-2 ml-auto px-3 py-1.5 rounded-2xl bg-white/40 backdrop-blur-xl border border-white/50 shadow-sm">
+                                                    <div className="flex items-center gap-3 text-gray-400 pl-1">
                                                         <button
                                                             onClick={(e) => handleToggleLike(e, post)}
-                                                            className={`flex items-center gap-1 transition-colors ${post.likes?.includes(user?.uid) ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
+                                                            className={`flex items-center gap-1 transition-colors ${post.likes?.includes(user?.uid) ? 'text-red-500' : 'hover:text-red-500'}`}
                                                         >
                                                             <Heart size={14} fill={post.likes?.includes(user?.uid) ? "currentColor" : "none"} />
-                                                            <span className="text-[11px] font-black">{post.likes?.length || 0}</span>
+                                                            <span className="text-[10px] font-black">{post.likes?.length || 0}</span>
                                                         </button>
-                                                        <div className="w-[1px] h-3 bg-gray-200/50 mx-1"></div>
-                                                        <div className="flex items-center gap-1 text-gray-400">
+                                                        <div className="flex items-center gap-1">
                                                             <MessageSquare size={14} />
-                                                            <span className="text-[11px] font-black">{post.commentCount || 0}</span>
+                                                            <span className="text-[10px] font-black">{post.commentCount || 0}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -490,56 +490,69 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
             {/* Post View Modal (Social/Blog Style Popup) */}
             <AnimatePresence>
                 {selectedPost && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm" onClick={() => { setSelectedPost(null); setReplyTo(null); }}>
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-0 sm:p-6 bg-black/60 backdrop-blur-md" onClick={() => { setSelectedPost(null); setReplyTo(null); }}>
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            initial={{ opacity: 0, scale: 0.95, y: 50 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="w-full max-w-6xl h-[90vh] sm:h-auto sm:max-h-[85vh] bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:flex-row relative"
+                            exit={{ opacity: 0, scale: 0.95, y: 50 }}
+                            className="w-full max-w-6xl h-full sm:h-[85vh] bg-white sm:rounded-[40px] shadow-2xl overflow-hidden flex flex-col md:flex-row relative"
                             onClick={e => e.stopPropagation()}
                         >
-                            {/* Close Button (Mobile) */}
+                            {/* Desktop Close Button */}
                             <button
                                 onClick={() => { setSelectedPost(null); setReplyTo(null); }}
-                                className="absolute top-4 right-4 z-[110] p-2 bg-white/80 backdrop-blur-md hover:bg-white text-gray-900 rounded-full transition-colors sm:hidden shadow-sm"
+                                className="absolute top-6 right-6 z-[160] p-3 bg-white/20 backdrop-blur-xl hover:bg-white/40 text-black rounded-full transition-all hidden md:flex border border-white/30"
                             >
-                                <X size={20} />
+                                <X size={24} />
                             </button>
 
-                            {/* Left Side: Post Content */}
-                            <div className="w-full md:w-[60%] h-[35vh] md:h-auto overflow-y-auto border-r border-gray-100 bg-gray-50/30 custom-scrollbar">
+                            {/* Mobile Pull Indicator */}
+                            <div className="md:hidden w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
+
+                            {/* Left Side: Post Content & Data */}
+                            <div className="w-full md:w-[60%] flex-1 overflow-y-auto bg-white custom-scrollbar">
+                                {/* Image Box */}
                                 {selectedPost.image ? (
-                                    <div className="w-full aspect-video bg-gray-100 overflow-hidden">
+                                    <div className="w-full aspect-[4/3] bg-gray-100 overflow-hidden relative">
                                         <img src={selectedPost.image} className="w-full h-full object-cover" alt="Run" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+
+                                        {/* Mobile Exit Button on Image */}
+                                        <button
+                                            onClick={() => { setSelectedPost(null); setReplyTo(null); }}
+                                            className="absolute top-4 right-4 z-[110] p-2 bg-black/20 backdrop-blur-md hover:bg-black/40 text-white rounded-full transition-all md:hidden border border-white/20"
+                                        >
+                                            <X size={20} />
+                                        </button>
                                     </div>
                                 ) : (
-                                    <div className="w-full h-40 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                                    <div className="w-full h-48 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
                                         <Activity size={48} className="text-white/20" />
                                     </div>
                                 )}
 
-                                <div className="p-6 md:p-10">
+                                <div className="p-8 sm:p-12">
                                     <div className="flex items-center gap-4 mb-8">
-                                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md bg-gray-100">
+                                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-indigo-50 shadow-sm bg-gray-100 flex-shrink-0">
                                             {(user?.uid === selectedPost.authorId && profile?.photoURL) ? (
                                                 <img src={profile.photoURL} className="w-full h-full object-cover" alt={profile.displayName} />
                                             ) : (
                                                 selectedPost.authorPhoto ? (
                                                     <img src={selectedPost.authorPhoto} className="w-full h-full object-cover" alt={selectedPost.author} />
                                                 ) : (
-                                                    <div className="w-full h-full flex items-center justify-center font-bold text-gray-400">{selectedPost.author.charAt(0)}</div>
+                                                    <div className="w-full h-full flex items-center justify-center font-bold text-gray-400 bg-gray-100">{selectedPost.author.charAt(0)}</div>
                                                 )
                                             )}
                                         </div>
-                                        <div>
-                                            <p className="text-xs font-bold text-indigo-600 uppercase tracking-widest">{selectedPost.timestamp.toLocaleDateString()}</p>
-                                            <h3 className="text-xl font-black text-gray-900">{(user?.uid === selectedPost.authorId && profile?.displayName) ? profile.displayName : selectedPost.author}</h3>
+                                        <div className="min-w-0">
+                                            <h3 className="text-lg font-black text-gray-900 truncate">{(user?.uid === selectedPost.authorId && profile?.displayName) ? profile.displayName : selectedPost.author}</h3>
+                                            <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest">{selectedPost.timestamp.toLocaleDateString()}</p>
                                         </div>
 
                                         <div className="ml-auto flex gap-2">
                                             <button
                                                 onClick={(e) => handleToggleLike(e, selectedPost)}
-                                                className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-sm transition-all ${selectedPost.likes?.includes(user?.uid) ? 'bg-red-50 text-red-500' : 'bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500'}`}
+                                                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-xs transition-all border ${selectedPost.likes?.includes(user?.uid) ? 'bg-red-50 border-red-100 text-red-500' : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500'}`}
                                             >
                                                 <Heart size={16} fill={selectedPost.likes?.includes(user?.uid) ? "currentColor" : "none"} />
                                                 <span>{selectedPost.likes?.length || 0}</span>
@@ -547,38 +560,41 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                                         </div>
                                     </div>
 
-                                    <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-6 leading-tight">{selectedPost.title}</h2>
-                                    <div className="prose prose-indigo max-w-none">
+                                    {/* Stats Grid - High Contrast */}
+                                    <div className="grid grid-cols-3 gap-3 mb-10">
+                                        <div className="bg-indigo-600 p-4 rounded-3xl text-white shadow-lg shadow-indigo-100">
+                                            <p className="text-[10px] font-black opacity-60 uppercase tracking-widest mb-1">DISTANCE</p>
+                                            <p className="text-2xl font-black italic">{selectedPost.distance.toFixed(1)}<span className="text-xs not-italic ml-0.5 opacity-60">KM</span></p>
+                                        </div>
+                                        <div className="bg-gray-900 p-4 rounded-3xl text-white shadow-lg shadow-gray-100">
+                                            <p className="text-[10px] font-black opacity-60 uppercase tracking-widest mb-1">TIME</p>
+                                            <p className="text-2xl font-black italic">{selectedPost.time || '--:--'}</p>
+                                        </div>
+                                        <div className="bg-gray-50 p-4 rounded-3xl text-gray-900 border border-gray-100">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">PACE</p>
+                                            <p className="text-2xl font-black italic text-indigo-600">{selectedPost.pace || "--'--\""}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <h2 className="text-3xl sm:text-4xl font-black text-gray-900 leading-tight tracking-tight whitespace-pre-wrap">{selectedPost.title}</h2>
                                         <p className="text-gray-600 text-lg leading-relaxed whitespace-pre-wrap font-medium">
                                             {selectedPost.content}
                                         </p>
-                                    </div>
-
-                                    <div className="grid grid-cols-3 gap-4 mt-10">
-                                        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">거리</p>
-                                            <p className="text-xl font-black text-indigo-600 italic">{selectedPost.distance.toFixed(1)}<span className="text-xs not-italic ml-0.5">KM</span></p>
-                                        </div>
-                                        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">시간</p>
-                                            <p className="text-xl font-black text-gray-900 italic">{selectedPost.time || '--:--'}</p>
-                                        </div>
-                                        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">페이스</p>
-                                            <p className="text-xl font-black text-gray-900 italic">{selectedPost.pace || "--'--\""}</p>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Right Side: Comments Section */}
-                            <div className="w-full md:w-[40%] flex flex-col flex-1 md:h-auto bg-white relative overflow-hidden">
-                                <div className="p-6 border-b border-gray-100 sticky top-0 bg-white/80 backdrop-blur-md z-10 flex items-center justify-between">
+                            <div className="w-full md:w-[40%] flex flex-col bg-gray-50/50 md:h-auto overflow-hidden border-l border-gray-100">
+                                <div className="p-6 border-b border-gray-100 bg-white flex items-center justify-between shrink-0">
                                     <div className="flex items-center gap-2">
-                                        <MessageCircle size={18} className="text-indigo-600" />
+                                        <div className="p-2 bg-indigo-50 rounded-lg">
+                                            <MessageCircle size={18} className="text-indigo-600" />
+                                        </div>
                                         <span className="font-bold text-gray-900">댓글 <span className="text-indigo-600">{selectedPost.commentCount || 0}</span></span>
                                     </div>
-                                    <button onClick={() => { setSelectedPost(null); setReplyTo(null); }} className="hidden sm:block p-1 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
+                                    <button onClick={() => { setSelectedPost(null); setReplyTo(null); }} className="hidden md:block p-1 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
                                         <X size={20} />
                                     </button>
                                 </div>
