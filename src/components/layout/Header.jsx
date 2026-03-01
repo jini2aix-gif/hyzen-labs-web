@@ -45,8 +45,8 @@ const VisitorCounter = () => {
     const formattedCount = count.toString().padStart(5, '0');
 
     return (
-        <div className="flex items-center gap-1 ml-2 opacity-50 hover:opacity-100 transition-opacity">
-            <span className="text-[10px] font-tech text-black tracking-widest leading-none">[{formattedCount}]</span>
+        <div className="flex items-center gap-1 ml-2 opacity-60 hover:opacity-100 transition-opacity">
+            <span className="text-[11px] sm:text-[12px] font-tech text-black tracking-widest leading-none">[{formattedCount}]</span>
         </div>
     );
 };

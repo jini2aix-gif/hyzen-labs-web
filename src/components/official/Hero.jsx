@@ -6,7 +6,11 @@ const FloatingDebris = ({ index, scrollY, mouseX, mouseY, windowSize, colors, al
     // Random Properties
     const randomX = useMemo(() => Math.random() * 100, []); // 0-100%
     const randomY = useMemo(() => Math.random() * 100, []); // 0-100%
-    const size = useMemo(() => 20 + Math.random() * 60, []); // 20px - 80px
+    const isMobile = useMemo(() => windowSize.w < 640, [windowSize.w]);
+    const size = useMemo(() => {
+        const base = isMobile ? 8 + Math.random() * 22 : 20 + Math.random() * 60; // mobile: 8-30px / desktop: 20-80px
+        return base;
+    }, [isMobile]);
     const depth = useMemo(() => 0.5 + Math.random() * 2, []); // Depth Multiplier
     const rotationSpeed = useMemo(() => (Math.random() - 0.5), []);
 

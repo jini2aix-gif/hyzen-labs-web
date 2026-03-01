@@ -284,7 +284,7 @@ const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegist
                                 ) : (
                                     <>
                                         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="Google" />
-                                        구글 계정으로 시작하기
+                                        구글 계정으로 가입하기
                                     </>
                                 )}
                             </button>
