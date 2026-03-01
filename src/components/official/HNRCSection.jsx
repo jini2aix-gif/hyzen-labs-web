@@ -6,7 +6,7 @@ import { db, appId } from '../../hooks/useFirebase';
 import HNRCRecordModal from '../modals/HNRCRecordModal';
 import HNRCHeroCanvas from './HNRCHeroCanvas';
 
-const HNRCSection = ({ user, profile, onModalChange }) => {
+const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
     const [posts, setPosts] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRecord, setEditingRecord] = useState(null);
@@ -493,6 +493,7 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.9 }}
                                     onClick={() => {
+                                        if (!user) { onOpenLoginModal?.(); return; }
                                         setEditingRecord(null);
                                         setIsModalOpen(true);
                                     }}

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Activity, TrendingUp, DollarSign, Database,
-    Lock, Clock, BarChart2
+    Lock, Clock, BarChart2, ShieldAlert, LogIn
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -65,7 +65,7 @@ const CountdownTimer = () => {
     );
 };
 
-const ArbiscanDashboard = () => {
+const ArbiscanDashboard = ({ user, onOpenLoginModal }) => {
     const [marketData, setMarketData] = useState(null);
     const [tvlData, setTvlData] = useState([]);
     const [priceData, setPriceData] = useState([]);
@@ -131,6 +131,72 @@ const ArbiscanDashboard = () => {
 
 
     const { priceUSD = 0, marketCapUSD = 0, priceChange24h = 0, volume24hUSD = 0 } = marketData || {};
+
+    // ── Auth Gate ─────────────────────────────────────────────────────────────
+    if (!user) {
+        return (
+            <section className="relative bg-gray-50 min-h-screen pt-20 sm:pt-24 pb-20 sm:pb-32 px-4 md:px-10 text-gray-900 font-sans overflow-hidden flex items-center justify-center">
+                {/* Blurred background preview */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none select-none" aria-hidden="true">
+                    <div className="opacity-20 blur-xl scale-105 origin-top">
+                        {/* Fake shimmer cards */}
+                        <div className="max-w-[1400px] mx-auto pt-24 space-y-6">
+                            <div className="grid grid-cols-4 gap-4">
+                                {[...Array(4)].map((_, i) => <div key={i} className="h-28 bg-gradient-to-br from-blue-200 to-indigo-200 rounded-3xl" />)}
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                {[...Array(2)].map((_, i) => <div key={i} className="h-64 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-3xl" />)}
+                            </div>
+                            <div className="h-72 bg-gradient-to-br from-indigo-100 to-blue-50 rounded-3xl" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Background glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-transparent to-indigo-600/5 pointer-events-none" />
+
+                {/* Center Login Gate Card */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.92, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    className="relative z-10 bg-white/80 backdrop-blur-2xl border border-white/60 shadow-2xl shadow-blue-500/10 rounded-[32px] p-10 sm:p-14 flex flex-col items-center text-center max-w-md w-full mx-4"
+                >
+                    {/* Icon */}
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mb-6 shadow-lg shadow-blue-500/30">
+                        <ShieldAlert size={28} className="text-white" />
+                    </div>
+
+                    {/* Badge */}
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 border border-blue-100 rounded-full mb-4">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                        <span className="text-blue-600 text-[10px] font-bold uppercase tracking-widest">Members Only</span>
+                    </div>
+
+                    <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tighter leading-tight mb-3">
+                        ARBISCAN
+                    </h2>
+                    <p className="text-gray-500 text-sm leading-relaxed mb-8">
+                        온체인 인텔리전스 대시보드는 <br className="hidden sm:block" />
+                        <span className="font-semibold text-gray-700">Hyzen Labs 멤버</span>에게만 공개됩니다.
+                    </p>
+
+                    <button
+                        onClick={onOpenLoginModal}
+                        className="w-full flex items-center justify-center gap-2.5 bg-gray-900 hover:bg-blue-600 text-white font-bold text-sm py-4 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-blue-500/25 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                        <LogIn size={18} />
+                        로그인하고 대시보드 보기
+                    </button>
+
+                    <p className="mt-5 text-xs text-gray-400">
+                        계정이 없으신가요?{' '}
+                        <button onClick={onOpenLoginModal} className="text-blue-600 font-semibold hover:underline">무료로 가입하기 →</button>
+                    </p>
+                </motion.div>
+            </section>
+        );
+    }
 
     // Calculate global sentiment for top whales
     const totalBought7D = whaleData.reduce((acc, w) => acc + (w.bought7d || 0), 0);

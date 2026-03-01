@@ -74,16 +74,18 @@ const App = () => {
 
   // Game Modal Handlers
   const handleOpenZeroG = useCallback(() => {
+    if (!user) { setIsAuthModalOpen(true); return; }
     setIsZeroGOpen(true);
-  }, []);
+  }, [user]);
 
   const handleCloseZeroG = useCallback(() => {
     setIsZeroGOpen(false);
   }, []);
 
   const handleOpenPulseDash = useCallback(() => {
+    if (!user) { setIsAuthModalOpen(true); return; }
     setIsPulseDashOpen(true);
-  }, []);
+  }, [user]);
 
   const handleClosePulseDash = useCallback(() => {
     setIsPulseDashOpen(false);
@@ -234,11 +236,11 @@ const App = () => {
                   </div>
                 ) : viewIndex === 1 ? (
                   <div className="h-full overflow-y-auto bg-gray-50 scroll-smooth">
-                    <HNRCSection user={user} profile={profile} onModalChange={setIsHNRCModalOpen} />
+                    <HNRCSection user={user} profile={profile} onModalChange={setIsHNRCModalOpen} onOpenLoginModal={handleOpenAuthModal} />
                   </div>
                 ) : (
                   <div className="h-full overflow-y-auto bg-gray-50 scroll-smooth">
-                    <ArbiscanDashboard />
+                    <ArbiscanDashboard user={user} onOpenLoginModal={handleOpenAuthModal} />
                   </div>
                 )}
               </React.Suspense>
