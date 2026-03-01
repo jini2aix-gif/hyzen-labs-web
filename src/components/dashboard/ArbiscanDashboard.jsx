@@ -111,10 +111,10 @@ const ArbiscanDashboard = () => {
     const { priceUSD = 0, marketCapUSD = 0, priceChange24h = 0, volume24hUSD = 0 } = marketData || {};
 
     return (
-        <section className="bg-gray-50 min-h-screen pt-24 pb-32 px-4 md:px-10 text-gray-900 font-sans overflow-x-hidden">
-            <div className="max-w-[1400px] mx-auto space-y-8">
+        <section className="bg-gray-50 min-h-screen pt-20 sm:pt-24 pb-20 sm:pb-32 px-4 md:px-10 text-gray-900 font-sans overflow-x-hidden">
+            <div className="max-w-[1400px] mx-auto space-y-4 sm:space-y-8">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3 sm:gap-6 mb-8 sm:mb-12">
                     <div>
                         <motion.div
                             initial={{ opacity: 0, x: -20 }}
@@ -137,13 +137,13 @@ const ArbiscanDashboard = () => {
                 {/* 1. Market Overview Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Price Card */}
-                    <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm relative overflow-hidden">
-                        <div className="flex items-center gap-3 mb-4 text-gray-500">
+                    <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-gray-200 shadow-sm relative overflow-hidden">
+                        <div className="flex items-center gap-3 mb-3 sm:mb-4 text-gray-500">
                             <DollarSign size={16} />
                             <h3 className="text-xs font-medium uppercase tracking-widest">ARB Price</h3>
                         </div>
                         <div className="flex items-end gap-3">
-                            <span className="text-3xl sm:text-4xl font-mono font-semibold text-gray-900">${priceUSD?.toFixed(4)}</span>
+                            <span className="text-[28px] sm:text-4xl leading-none font-mono font-semibold text-gray-900">${priceUSD?.toFixed(4)}</span>
                             <span className={`text-sm font-medium mb-1 ${priceChange24h >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
                                 {priceChange24h >= 0 ? '+' : ''}{priceChange24h?.toFixed(2)}%
                             </span>
@@ -151,36 +151,36 @@ const ArbiscanDashboard = () => {
                     </div>
 
                     {/* Market Cap Card */}
-                    <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm relative overflow-hidden">
-                        <div className="flex items-center gap-3 mb-4 text-gray-500">
+                    <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-gray-200 shadow-sm relative overflow-hidden">
+                        <div className="flex items-center gap-3 mb-3 sm:mb-4 text-gray-500">
                             <TrendingUp size={16} />
                             <h3 className="text-xs font-medium uppercase tracking-widest">Market Cap</h3>
                         </div>
-                        <div className="text-2xl sm:text-3xl font-mono font-semibold text-gray-900">
+                        <div className="text-xl sm:text-3xl leading-none font-mono font-semibold text-gray-900">
                             ${(marketCapUSD / 1e9).toFixed(2)}B
                         </div>
                     </div>
 
                     {/* Volume Card */}
-                    <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm relative overflow-hidden">
-                        <div className="flex items-center gap-3 mb-4 text-gray-500">
+                    <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-gray-200 shadow-sm relative overflow-hidden">
+                        <div className="flex items-center gap-3 mb-3 sm:mb-4 text-gray-500">
                             <Activity size={16} />
                             <h3 className="text-xs font-medium uppercase tracking-widest">24h Volume</h3>
                         </div>
-                        <div className="text-2xl sm:text-3xl font-mono font-semibold text-gray-900">
+                        <div className="text-xl sm:text-3xl leading-none font-mono font-semibold text-gray-900">
                             ${(volume24hUSD / 1e6).toFixed(1)}M
                         </div>
                     </div>
 
                     {/* Countdown Card */}
-                    <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm relative overflow-hidden">
-                        <div className="flex items-center gap-3 mb-4 text-blue-600">
+                    <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-gray-200 shadow-sm relative overflow-hidden">
+                        <div className="flex items-center gap-3 mb-3 sm:mb-4 text-blue-600">
                             <Clock size={16} />
-                            <h3 className="text-xs font-medium uppercase tracking-widest font-sans">Supply Shock ETA</h3>
+                            <h3 className="text-[10px] sm:text-xs font-medium uppercase tracking-widest font-sans">Supply Shock ETA</h3>
                         </div>
                         <div>
                             <CountdownTimer />
-                            <p className="text-[10px] text-gray-500 mt-2 uppercase tracking-widest font-medium">Target: March 16, 2027</p>
+                            <p className="text-[9px] sm:text-[10px] text-gray-500 mt-1.5 sm:mt-2 uppercase tracking-widest font-medium">Target: March 16, 2027</p>
                         </div>
                     </div>
                 </div>
@@ -188,8 +188,8 @@ const ArbiscanDashboard = () => {
                 {/* Charts Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* 2. TVL Chart */}
-                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm flex flex-col h-[400px]">
-                        <div className="flex justify-between items-center mb-6">
+                    <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 border border-gray-200 shadow-sm flex flex-col h-[300px] sm:h-[400px]">
+                        <div className="flex justify-between items-center mb-4 sm:mb-6">
                             <div className="flex items-center gap-3">
                                 <Lock className="text-gray-900" size={20} />
                                 <h2 className="text-base sm:text-lg font-semibold tracking-widest uppercase">Active DeFi TVL</h2>
@@ -244,11 +244,11 @@ const ArbiscanDashboard = () => {
                     </div>
 
                     {/* 3. Price History Chart */}
-                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm flex flex-col h-[400px]">
-                        <div className="flex justify-between items-center mb-6">
+                    <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 border border-gray-200 shadow-sm flex flex-col h-[300px] sm:h-[400px]">
+                        <div className="flex justify-between items-center mb-4 sm:mb-6">
                             <div className="flex items-center gap-3">
                                 <DollarSign className="text-gray-900" size={20} />
-                                <h2 className="text-base sm:text-lg font-semibold tracking-widest uppercase">ARB Price (30D)</h2>
+                                <h2 className="text-base sm:text-lg font-semibold tracking-widest uppercase">ARB Price (Monthly)</h2>
                             </div>
                         </div>
                         <div className="flex-1 min-h-0">
@@ -294,8 +294,8 @@ const ArbiscanDashboard = () => {
                 </div>
 
                 {/* 4. Whale Tracker Section */}
-                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-6">
+                <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 border border-gray-200 shadow-sm">
+                    <div className="flex items-center gap-3 mb-4 sm:mb-6">
                         <BarChart2 className="text-gray-900" size={20} />
                         <h2 className="text-base sm:text-lg font-semibold tracking-widest uppercase">Top 10 Accumulators (24H)</h2>
                     </div>
