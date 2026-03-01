@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, MapPin, Calendar, Clock, Trophy, MessageSquare, ChevronRight, PenTool, Trash2, Edit2, Plus, X, ChevronLeft, User, Zap, Heart, MessageCircle, CornerDownRight } from 'lucide-react';
+import { Activity, MapPin, Calendar, Clock, Trophy, MessageSquare, ChevronRight, PenTool, Trash2, Edit2, Plus, X, ChevronLeft, User, Zap, Heart, MessageCircle, CornerDownRight, Send, Loader2 } from 'lucide-react';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, where, getDocs } from 'firebase/firestore';
 import { db, appId } from '../../hooks/useFirebase';
 import HNRCRecordModal from '../modals/HNRCRecordModal';
@@ -220,7 +220,7 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
     const totalPages = Math.ceil(posts.length / postsPerPage);
 
     return (
-        <section className="min-h-screen bg-white pt-20 lg:pt-24 pb-32 px-4 md:px-10 relative overflow-hidden">
+        <section className="min-h-screen bg-gray-50/50 pt-20 lg:pt-24 pb-32 px-4 md:px-10 relative overflow-hidden">
             <HNRCHeroCanvas />
 
             <div className="w-full relative z-10">
@@ -480,12 +480,12 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
             {/* Post View Modal (Social/Blog Style Popup) */}
             <AnimatePresence>
                 {selectedPost && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-6 bg-black/40 backdrop-blur-sm" onClick={() => { setSelectedPost(null); setReplyTo(null); }}>
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm" onClick={() => { setSelectedPost(null); setReplyTo(null); }}>
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="w-full h-full sm:h-auto sm:max-h-[85vh] max-w-6xl bg-white sm:rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:flex-row relative"
+                            className="w-full max-w-6xl h-[90vh] sm:h-auto sm:max-h-[85vh] bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:flex-row relative"
                             onClick={e => e.stopPropagation()}
                         >
                             {/* Close Button (Mobile) */}
@@ -497,7 +497,7 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                             </button>
 
                             {/* Left Side: Post Content */}
-                            <div className="w-full md:w-[60%] h-[40vh] md:h-auto overflow-y-auto border-r border-gray-100 bg-gray-50/30 custom-scrollbar">
+                            <div className="w-full md:w-[60%] h-[35vh] md:h-auto overflow-y-auto border-r border-gray-100 bg-gray-50/30 custom-scrollbar">
                                 {selectedPost.image ? (
                                     <div className="w-full aspect-video bg-gray-100 overflow-hidden">
                                         <img src={selectedPost.image} className="w-full h-full object-cover" alt="Run" />
@@ -562,7 +562,7 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                             </div>
 
                             {/* Right Side: Comments Section */}
-                            <div className="w-full md:w-[40%] flex flex-col h-full bg-white relative">
+                            <div className="w-full md:w-[40%] flex flex-col flex-1 md:h-auto bg-white relative overflow-hidden">
                                 <div className="p-6 border-b border-gray-100 sticky top-0 bg-white/80 backdrop-blur-md z-10 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <MessageCircle size={18} className="text-indigo-600" />
@@ -691,7 +691,7 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                                             disabled={!user || !newComment.trim() || isSubmittingComment}
                                             className="absolute right-3 bottom-3 p-2 bg-black text-white rounded-xl disabled:bg-gray-200 disabled:text-gray-400 transition-all hover:scale-105 active:scale-95"
                                         >
-                                            {isSubmittingComment ? <Loader2 size={16} className="animate-spin" /> : <ChevronRight size={18} />}
+                                            {isSubmittingComment ? <Loader2 size={16} className="animate-spin" /> : <Send size={18} />}
                                         </button>
                                     </form>
                                     {!user && (

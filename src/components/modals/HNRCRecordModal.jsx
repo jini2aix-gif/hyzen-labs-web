@@ -157,7 +157,7 @@ const HNRCRecordModal = ({ isOpen, onClose, user, onSubmit, initialData }) => {
     return (
         <AnimatePresence>
             <div
-                className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 sm:p-4"
+                className="fixed inset-0 z-[150] flex items-center justify-center p-4"
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchMove={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
@@ -176,7 +176,7 @@ const HNRCRecordModal = ({ isOpen, onClose, user, onSubmit, initialData }) => {
                     exit={{ y: '100%' }}
                     transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                     onClick={(e) => e.stopPropagation()}
-                    className="relative w-full max-w-lg bg-white rounded-t-[32px] sm:rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                    className="relative w-full max-w-lg bg-white rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
                 >
                     <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
                         <h3 className="text-xl font-black text-gray-900 tracking-tight">러닝 기록</h3>
@@ -189,7 +189,7 @@ const HNRCRecordModal = ({ isOpen, onClose, user, onSubmit, initialData }) => {
                         <form id="hnrc-form" onSubmit={handleSubmit} className="space-y-6">
 
                             {/* Stats Display Pane */}
-                            <div className="bg-indigo-600 rounded-3xl p-6 text-white shadow-xl shadow-indigo-100 relative overflow-hidden">
+                            <div className="bg-indigo-600 rounded-3xl p-5 text-white shadow-xl shadow-indigo-100 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-4 opacity-10">
                                     <Zap size={80} />
                                 </div>
