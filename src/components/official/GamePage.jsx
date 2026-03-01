@@ -62,7 +62,7 @@ const UnifiedLeaderboardTicker = () => {
         </div>
     );
 
-    const hasData = zeroGRanks.length > 0 || pulseRanks.length > 0;
+    const hasData = (zeroGRanks?.length || 0) > 0 || (pulseRanks?.length || 0) > 0;
 
     return (
         <div className="w-full bg-gray-50/30 border-b border-gray-100/50 overflow-hidden py-2 relative min-h-[40px] flex items-center">
@@ -227,13 +227,12 @@ const GamePage = ({ user, onOpenZeroG, onOpenPulseDash }) => {
                 <div className="pt-24">
                     <GameGrid onOpenZeroG={onOpenZeroG} onOpenPulseDash={onOpenPulseDash} />
                 </div>
+
+                {/* Footer moved inside scroll container */}
+                <footer className="py-12 border-t border-gray-100 text-center">
+                    <p className="text-[10px] uppercase tracking-widest text-gray-400 font-tech">© 2026 Hyzen Labs. All Rights Reserved.</p>
+                </footer>
             </div>
-
-
-            {/* Footer moved inside scroll container */}
-            <footer className="py-12 border-t border-gray-100 text-center">
-                <p className="text-[10px] uppercase tracking-widest text-gray-400 font-tech">© 2026 Hyzen Labs. All Rights Reserved.</p>
-            </footer>
         </div>
     );
 };

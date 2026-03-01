@@ -14,11 +14,11 @@ const GuestbookGrid = forwardRef(({
         <div ref={ref} className="w-full max-w-[1400px] mx-auto px-6 pb-32">
             <div className="flex items-center justify-between mb-8 border-b border-gray-100 pb-4">
                 <h2 className="text-sm font-bold tracking-tight uppercase font-tech">Digital Consciousness</h2>
-                <span className="text-xs text-black/40 font-tech">{messages.length} NODES DETECTED</span>
+                <span className="text-xs text-black/40 font-tech">{(messages?.length || 0)} NODES DETECTED</span>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {messages.map((item, idx) => {
+                {messages?.map((item, idx) => {
                     const isOwner = user && (user.uid === item.uid);
 
                     return (

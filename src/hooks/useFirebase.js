@@ -11,7 +11,7 @@ import {
     signOut as firebaseSignOut,
     onAuthStateChanged
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 const FALLBACK_APP_ID = 'hyzen-labs-production';
 
@@ -113,17 +113,14 @@ export const useFirebase = () => {
         }
     };
 
+    const [profile, setProfile] = useState(null);
+
     useEffect(() => {
         const initAuth = async () => {
             if (!auth) {
                 setIsInitializingAuth(false);
                 return;
             }
-            // We do NOT force anonymous login anymore if we want explicit Google Auth
-            // But we can keep it as a fallback for 'view-only' if needed, 
-            // OR just wait for user action. 
-            // For now, let's NOT auto-login anonymously to keep it clean for Phase 3 options.
-            // If the user was previously logged in, onAuthStateChanged will catch it.
             setIsInitializingAuth(false);
         };
 
@@ -138,5 +135,21 @@ export const useFirebase = () => {
         return () => unsubscribe();
     }, []);
 
-    return { user, cloudStatus, db, appId, isInitializingAuth, loginWithGoogle, registerWithEmail, loginWithEmail, logout };
+    useEffect(() => {
+        if (!user || !db) {
+            setProfile(null);
+            return;
+        }
+        const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+        const unsubscribeProfile = onSnapshot(userRef, (snapshot) => {
+            if (snapshot.exists()) {
+                setProfile(snapshot.data());
+            } else {
+                setProfile(null);
+            }
+        });
+        return () => unsubscribeProfile();
+    }, [user, db, appId]);
+
+    return { user, profile, cloudStatus, db, appId, isInitializingAuth, loginWithGoogle, registerWithEmail, loginWithEmail, logout };
 };
