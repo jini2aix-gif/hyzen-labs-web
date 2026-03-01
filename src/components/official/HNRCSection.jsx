@@ -490,18 +490,18 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
             {/* Post View Modal (Social/Blog Style Popup) */}
             <AnimatePresence>
                 {selectedPost && (
-                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-0 sm:p-6 bg-black/60 backdrop-blur-md" onClick={() => { setSelectedPost(null); setReplyTo(null); }}>
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md" onClick={() => { setSelectedPost(null); setReplyTo(null); }}>
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 50 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 50 }}
-                            className="w-full max-w-6xl h-full sm:h-[85vh] bg-white sm:rounded-[40px] shadow-2xl overflow-hidden flex flex-col md:flex-row relative"
+                            className="w-full max-w-6xl max-h-[90vh] sm:h-[85vh] bg-white rounded-[24px] sm:rounded-[40px] shadow-2xl flex flex-col md:flex-row relative overflow-y-auto md:overflow-hidden custom-scrollbar"
                             onClick={e => e.stopPropagation()}
                         >
                             {/* Desktop Close Button */}
                             <button
                                 onClick={() => { setSelectedPost(null); setReplyTo(null); }}
-                                className="absolute top-6 right-6 z-[160] p-3 bg-white/20 backdrop-blur-xl hover:bg-white/40 text-black rounded-full transition-all hidden md:flex border border-white/30"
+                                className="absolute top-6 right-6 z-[160] p-3 bg-white/20 backdrop-blur-xl hover:bg-white/40 text-black rounded-full transition-all hidden md:flex border border-white/30 shadow-sm"
                             >
                                 <X size={24} />
                             </button>
@@ -510,30 +510,37 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                             <div className="md:hidden w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
 
                             {/* Left Side: Post Content & Data */}
-                            <div className="w-full md:w-[60%] flex-1 overflow-y-auto bg-white custom-scrollbar">
+                            <div className="w-full md:w-[60%] shrink-0 md:h-full md:overflow-y-auto bg-white custom-scrollbar">
                                 {/* Image Box */}
                                 {selectedPost.image ? (
-                                    <div className="w-full aspect-[4/3] bg-gray-100 overflow-hidden relative">
+                                    <div className="w-full aspect-video sm:aspect-[4/3] bg-gray-100 overflow-hidden relative">
                                         <img src={selectedPost.image} className="w-full h-full object-cover" alt="Run" />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
 
                                         {/* Mobile Exit Button on Image */}
                                         <button
                                             onClick={() => { setSelectedPost(null); setReplyTo(null); }}
-                                            className="absolute top-4 right-4 z-[110] p-2 bg-black/20 backdrop-blur-md hover:bg-black/40 text-white rounded-full transition-all md:hidden border border-white/20"
+                                            className="absolute top-4 right-4 z-[110] p-2 bg-black/40 backdrop-blur-md text-white rounded-full transition-all md:hidden border border-white/20"
                                         >
                                             <X size={20} />
                                         </button>
                                     </div>
                                 ) : (
-                                    <div className="w-full h-48 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                                    <div className="w-full h-48 sm:h-64 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center relative">
                                         <Activity size={48} className="text-white/20" />
+                                        {/* Mobile Exit Button */}
+                                        <button
+                                            onClick={() => { setSelectedPost(null); setReplyTo(null); }}
+                                            className="absolute top-4 right-4 z-[110] p-2 bg-black/20 backdrop-blur-md text-white rounded-full transition-all md:hidden border border-white/20"
+                                        >
+                                            <X size={20} />
+                                        </button>
                                     </div>
                                 )}
 
-                                <div className="p-8 sm:p-12">
-                                    <div className="flex items-center gap-4 mb-8">
-                                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-indigo-50 shadow-sm bg-gray-100 flex-shrink-0">
+                                <div className="p-6 sm:p-10 md:p-12">
+                                    <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+                                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-indigo-50 shadow-sm bg-gray-100 flex-shrink-0">
                                             {(user?.uid === selectedPost.authorId && profile?.photoURL) ? (
                                                 <img src={profile.photoURL} className="w-full h-full object-cover" alt={profile.displayName} />
                                             ) : (
@@ -545,40 +552,40 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                                             )}
                                         </div>
                                         <div className="min-w-0">
-                                            <h3 className="text-lg font-black text-gray-900 truncate">{(user?.uid === selectedPost.authorId && profile?.displayName) ? profile.displayName : selectedPost.author}</h3>
-                                            <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest">{selectedPost.timestamp.toLocaleDateString()}</p>
+                                            <h3 className="text-base sm:text-lg font-black text-gray-900 truncate">{(user?.uid === selectedPost.authorId && profile?.displayName) ? profile.displayName : selectedPost.author}</h3>
+                                            <p className="text-[10px] sm:text-xs font-bold text-indigo-500 uppercase tracking-widest">{selectedPost.timestamp.toLocaleDateString()}</p>
                                         </div>
 
                                         <div className="ml-auto flex gap-2">
                                             <button
                                                 onClick={(e) => handleToggleLike(e, selectedPost)}
-                                                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-xs transition-all border ${selectedPost.likes?.includes(user?.uid) ? 'bg-red-50 border-red-100 text-red-500' : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500'}`}
+                                                className={`flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs transition-all border ${selectedPost.likes?.includes(user?.uid) ? 'bg-red-50 border-red-100 text-red-500' : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500'}`}
                                             >
-                                                <Heart size={16} fill={selectedPost.likes?.includes(user?.uid) ? "currentColor" : "none"} />
+                                                <Heart size={14} className="sm:w-4 sm:h-4" fill={selectedPost.likes?.includes(user?.uid) ? "currentColor" : "none"} />
                                                 <span>{selectedPost.likes?.length || 0}</span>
                                             </button>
                                         </div>
                                     </div>
 
                                     {/* Stats Grid - High Contrast */}
-                                    <div className="grid grid-cols-3 gap-3 mb-10">
-                                        <div className="bg-indigo-600 p-4 rounded-3xl text-white shadow-lg shadow-indigo-100">
-                                            <p className="text-[10px] font-black opacity-60 uppercase tracking-widest mb-1">DISTANCE</p>
-                                            <p className="text-2xl font-black italic">{selectedPost.distance.toFixed(1)}<span className="text-xs not-italic ml-0.5 opacity-60">KM</span></p>
+                                    <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-8 sm:mb-10">
+                                        <div className="bg-indigo-600 p-3 sm:p-4 rounded-2xl sm:rounded-3xl text-white shadow-lg shadow-indigo-100">
+                                            <p className="text-[9px] sm:text-[10px] font-black opacity-60 uppercase tracking-widest mb-0.5 sm:mb-1">DISTANCE</p>
+                                            <p className="text-xl sm:text-2xl font-black italic">{selectedPost.distance.toFixed(1)}<span className="text-[10px] sm:text-xs not-italic ml-0.5 opacity-60">KM</span></p>
                                         </div>
-                                        <div className="bg-gray-900 p-4 rounded-3xl text-white shadow-lg shadow-gray-100">
-                                            <p className="text-[10px] font-black opacity-60 uppercase tracking-widest mb-1">TIME</p>
-                                            <p className="text-2xl font-black italic">{selectedPost.time || '--:--'}</p>
+                                        <div className="bg-gray-900 p-3 sm:p-4 rounded-2xl sm:rounded-3xl text-white shadow-lg shadow-gray-100">
+                                            <p className="text-[9px] sm:text-[10px] font-black opacity-60 uppercase tracking-widest mb-0.5 sm:mb-1">TIME</p>
+                                            <p className="text-xl sm:text-2xl font-black italic">{selectedPost.time || '--:--'}</p>
                                         </div>
-                                        <div className="bg-gray-50 p-4 rounded-3xl text-gray-900 border border-gray-100">
-                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">PACE</p>
-                                            <p className="text-2xl font-black italic text-indigo-600">{selectedPost.pace || "--'--\""}</p>
+                                        <div className="bg-gray-50 p-3 sm:p-4 rounded-2xl sm:rounded-3xl text-gray-900 border border-gray-100/50">
+                                            <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 sm:mb-1">PACE</p>
+                                            <p className="text-xl sm:text-2xl font-black italic text-indigo-600">{selectedPost.pace || "--'--\""}</p>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-6">
-                                        <h2 className="text-3xl sm:text-4xl font-black text-gray-900 leading-tight tracking-tight whitespace-pre-wrap">{selectedPost.title}</h2>
-                                        <p className="text-gray-600 text-lg leading-relaxed whitespace-pre-wrap font-medium">
+                                    <div className="space-y-4 sm:space-y-6">
+                                        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 leading-tight tracking-tight whitespace-pre-wrap break-keep">{selectedPost.title}</h2>
+                                        <p className="text-gray-600 text-[15px] sm:text-lg leading-relaxed whitespace-pre-wrap font-medium pb-4">
                                             {selectedPost.content}
                                         </p>
                                     </div>
@@ -586,13 +593,13 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                             </div>
 
                             {/* Right Side: Comments Section */}
-                            <div className="w-full md:w-[40%] flex flex-col bg-gray-50/50 md:h-auto overflow-hidden border-l border-gray-100">
-                                <div className="p-6 border-b border-gray-100 bg-white flex items-center justify-between shrink-0">
+                            <div className="w-full md:w-[40%] shrink-0 flex flex-col bg-gray-50/50 md:h-full overflow-hidden border-t md:border-l md:border-t-0 border-gray-100">
+                                <div className="p-4 sm:p-6 border-b border-gray-100 bg-white flex items-center justify-between shrink-0">
                                     <div className="flex items-center gap-2">
-                                        <div className="p-2 bg-indigo-50 rounded-lg">
-                                            <MessageCircle size={18} className="text-indigo-600" />
+                                        <div className="p-1.5 sm:p-2 bg-indigo-50 rounded-lg">
+                                            <MessageCircle size={16} className="text-indigo-600 sm:w-4 sm:h-4 w-3.5 h-3.5" />
                                         </div>
-                                        <span className="font-bold text-gray-900">댓글 <span className="text-indigo-600">{selectedPost.commentCount || 0}</span></span>
+                                        <span className="font-bold text-gray-900 text-sm sm:text-base">댓글 <span className="text-indigo-600">{selectedPost.commentCount || 0}</span></span>
                                     </div>
                                     <button onClick={() => { setSelectedPost(null); setReplyTo(null); }} className="hidden md:block p-1 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
                                         <X size={20} />
