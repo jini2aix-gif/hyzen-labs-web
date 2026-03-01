@@ -11,7 +11,8 @@ import {
 import {
     fetchArbitrumMarketData,
     fetchArbitrumTVL,
-    getWhaleTrackerData
+    getWhaleTrackerData,
+    fetchArbitrumPriceHistory
 } from '../../lib/api-fetcher';
 
 const CustomTooltip = ({ active, payload, label, prefix = '' }) => {
@@ -66,6 +67,7 @@ const CountdownTimer = () => {
 const ArbiscanDashboard = () => {
     const [marketData, setMarketData] = useState(null);
     const [tvlData, setTvlData] = useState([]);
+    const [priceData, setPriceData] = useState([]);
     const [whaleData, setWhaleData] = useState([]);
     const [isLogScale, setIsLogScale] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -76,12 +78,14 @@ const ArbiscanDashboard = () => {
                 const results = await Promise.allSettled([
                     fetchArbitrumMarketData(),
                     fetchArbitrumTVL(),
-                    getWhaleTrackerData()
+                    getWhaleTrackerData(),
+                    fetchArbitrumPriceHistory()
                 ]);
 
                 if (results[0].status === 'fulfilled' && results[0].value) setMarketData(results[0].value);
                 if (results[1].status === 'fulfilled' && results[1].value) setTvlData(results[1].value);
                 if (results[2].status === 'fulfilled' && results[2].value) setWhaleData(results[2].value);
+                if (results[3].status === 'fulfilled' && results[3].value) setPriceData(results[3].value);
 
             } catch (err) {
                 console.error("Dashboard data load error:", err);
@@ -182,13 +186,13 @@ const ArbiscanDashboard = () => {
                 </div>
 
                 {/* Charts Grid */}
-                <div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* 2. TVL Chart */}
-                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm flex flex-col h-[450px]">
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm flex flex-col h-[400px]">
                         <div className="flex justify-between items-center mb-6">
                             <div className="flex items-center gap-3">
                                 <Lock className="text-gray-900" size={20} />
-                                <h2 className="text-base sm:text-lg font-semibold tracking-widest uppercase">Total Value Locked</h2>
+                                <h2 className="text-base sm:text-lg font-semibold tracking-widest uppercase">Active DeFi TVL</h2>
                             </div>
                             <button
                                 onClick={() => setIsLogScale(!isLogScale)}
@@ -233,6 +237,55 @@ const ArbiscanDashboard = () => {
                                         strokeWidth={2}
                                         fillOpacity={1}
                                         fill="url(#tvlColor)"
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* 3. Price History Chart */}
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm flex flex-col h-[400px]">
+                        <div className="flex justify-between items-center mb-6">
+                            <div className="flex items-center gap-3">
+                                <DollarSign className="text-gray-900" size={20} />
+                                <h2 className="text-base sm:text-lg font-semibold tracking-widest uppercase">ARB Price (30D)</h2>
+                            </div>
+                        </div>
+                        <div className="flex-1 min-h-0">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={priceData}>
+                                    <defs>
+                                        <linearGradient id="priceColor" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.2} />
+                                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                                    <XAxis
+                                        dataKey="date"
+                                        stroke="#9ca3af"
+                                        tick={{ fill: '#6b7280', fontSize: 10, fontFamily: 'monospace' }}
+                                        tickMargin={10}
+                                        minTickGap={50}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <YAxis
+                                        domain={['auto', 'auto']}
+                                        stroke="#9ca3af"
+                                        tick={{ fill: '#6b7280', fontSize: 10, fontFamily: 'monospace' }}
+                                        tickFormatter={(value) => `$${value.toFixed(3)}`}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <Tooltip content={<CustomTooltip prefix="$" />} />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="price"
+                                        stroke="#8b5cf6"
+                                        strokeWidth={2}
+                                        fillOpacity={1}
+                                        fill="url(#priceColor)"
                                     />
                                 </AreaChart>
                             </ResponsiveContainer>

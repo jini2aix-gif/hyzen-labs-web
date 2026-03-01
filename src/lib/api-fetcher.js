@@ -110,3 +110,23 @@ export const getWhaleTrackerData = async () => {
         return [];
     }
 };
+
+// 4. Price History (Binance, 30 days daily)
+export const fetchArbitrumPriceHistory = async () => {
+    try {
+        const url = 'https://api.binance.com/api/v3/klines?symbol=ARBUSDT&interval=1d&limit=30';
+        const data = await fetchWithCache(url, 'arb_price_history_v1');
+
+        return data.map(item => {
+            const date = new Date(item[0]);
+            return {
+                timestamp: item[0],
+                date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+                price: Number(item[4]) // Close price
+            };
+        });
+    } catch (e) {
+        console.error("Failed to fetch price history:", e);
+        return [];
+    }
+};
