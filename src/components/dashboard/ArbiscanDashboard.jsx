@@ -72,44 +72,51 @@ const ArbiscanDashboard = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // ── Fast loop: price/market only, every 20 seconds ────────────────
-        const fetchPrice = async () => {
+        // ── [A] PRICE LOOP: every 20 s — Binance has no strict rate-limit ────
+        const refreshPrice = async () => {
             try {
                 const data = await fetchArbitrumMarketData();
                 if (data) setMarketData(data);
             } catch (e) {
-                console.error('Price refresh failed:', e);
+                console.error('[Price] refresh error:', e);
             }
         };
 
-        // ── Slow loop: TVL, whale, price history, every 10 minutes ────────
-        const fetchSlowData = async () => {
+        // ── [B] WHALE LOOP: every 5 min — Dune + Blockscout ─────────────────
+        const refreshWhales = async () => {
             try {
-                const results = await Promise.allSettled([
-                    fetchArbitrumTVL(),
-                    getWhaleTrackerData(),
-                    fetchArbitrumPriceHistory()
-                ]);
-                if (results[0].status === 'fulfilled' && results[0].value?.length) setTvlData(results[0].value);
-                if (results[1].status === 'fulfilled' && results[1].value?.length) setWhaleData(results[1].value);
-                if (results[2].status === 'fulfilled' && results[2].value?.length) setPriceData(results[2].value);
+                const data = await getWhaleTrackerData();
+                if (data?.length) setWhaleData(data);
             } catch (e) {
-                console.error('Slow data refresh failed:', e);
+                console.error('[Whale] refresh error:', e);
+            }
+        };
+
+        // ── [C] CHART LOOP: every 24 h — DeFiLlama & Binance monthly klines ─
+        const refreshCharts = async () => {
+            try {
+                const [tvl, hist] = await Promise.allSettled([
+                    fetchArbitrumTVL(),
+                    fetchArbitrumPriceHistory(),
+                ]);
+                if (tvl.status === 'fulfilled' && tvl.value?.length) setTvlData(tvl.value);
+                if (hist.status === 'fulfilled' && hist.value?.length) setPriceData(hist.value);
+            } catch (e) {
+                console.error('[Charts] refresh error:', e);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        // Initial load
-        fetchPrice();
-        fetchSlowData();
+        // Initial load – run all three immediately, then schedule
+        (async () => {
+            await Promise.all([refreshPrice(), refreshCharts(), refreshWhales()]);
+        })();
 
-        const priceInterval = setInterval(fetchPrice, 20 * 1000);      // 20s – Binance 직접 호출
-        const slowInterval = setInterval(fetchSlowData, 10 * 60 * 1000); // 10min – heavy data
-        return () => {
-            clearInterval(priceInterval);
-            clearInterval(slowInterval);
-        };
+        const pI = setInterval(refreshPrice, REFRESH.PRICE);  // 20 s
+        const wI = setInterval(refreshWhales, REFRESH.WHALE);  // 5 min
+        const cI = setInterval(refreshCharts, REFRESH.SLOW);   // 24 h
+        return () => { clearInterval(pI); clearInterval(wI); clearInterval(cI); };
     }, []);
 
     if (isLoading) {
@@ -120,6 +127,7 @@ const ArbiscanDashboard = () => {
             </div>
         );
     }
+
 
     const { priceUSD = 0, marketCapUSD = 0, priceChange24h = 0, volume24hUSD = 0 } = marketData || {};
 

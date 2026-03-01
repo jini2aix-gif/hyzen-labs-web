@@ -1,28 +1,46 @@
-// Cache TTL constants - tuned per data type
-const PRICE_CACHE_TTL = 0; // 0 = always fresh, no cache for real-time price
-const WHALE_CACHE_TTL = 5 * 60 * 1000;   // 5 minutes
-const TVL_CACHE_TTL = 60 * 60 * 1000;  // 1 hour  (DeFiLlama only updates daily)
-const CHART_CACHE_TTL = 60 * 60 * 1000;  // 1 hour  (monthly chart doesn't change)
-const BLOCKSCOUT_TTL = 5 * 60 * 1000;   // 5 minutes
+/**
+ * API Fetcher – cache TTL tuned to each provider's actual update frequency
+ *
+ * Provider limits (as of 2025):
+ *   Binance      – /ticker/24hr   : near real-time, no strict rate-limit for public endpoints
+ *   CoinGecko    – free tier      : ~30 calls/min, price updates every ~60 s
+ *   DeFiLlama    – /historicalChainTvl : daily snapshot only (updates ~once per day)
+ *   Blockscout   – public API     : best-effort, no hard limit but be polite (~1 req/5 min per address)
+ *   Binance klines (monthly)      : candle data only changes at month boundary
+ */
 
-// ─── Generic fetch with optional localStorage cache ──────────────────────────
+// ─── Cache TTL constants (milliseconds) ─────────────────────────────────────
+const TTL = {
+    PRICE: 0,                    // 0 = bypass cache entirely → always fresh from Binance
+    MARKET_CAP: 60 * 1000,            // 1 min  (CoinGecko free tier)
+    TVL: 24 * 60 * 60 * 1000,  // 24 h   (DeFiLlama updates once per day)
+    WHALE: 5 * 60 * 1000,       // 5 min  (Dune query, reasonable polling)
+    BLOCKSCOUT: 5 * 60 * 1000,       // 5 min  (per-address Blockscout)
+    PRICE_HIST: 24 * 60 * 60 * 1000,  // 24 h   (monthly candles → only change at month close)
+};
+
+// ─── Refresh intervals in the dashboard ─────────────────────────────────────
+export const REFRESH = {
+    PRICE: 20 * 1000,              // 20 s  → ARB Price + 24h change (Binance, no cache)
+    SLOW: 24 * 60 * 60 * 1000,   // 24 h  → TVL chart, price-history chart (DeFiLlama / Binance monthly)
+    WHALE: 5 * 60 * 1000,        // 5 min → Whale tracker
+};
+
+// ─── Core fetch helper ───────────────────────────────────────────────────────
 const fetchWithCache = async (url, cacheKey, ttl = 0, fetchOptions = {}) => {
-    // ttl === 0  →  bypass cache entirely, always fetch fresh
     if (ttl > 0) {
         try {
             const raw = localStorage.getItem(cacheKey);
             if (raw) {
                 const { timestamp, data } = JSON.parse(raw);
-                if (Date.now() - timestamp < ttl) {
-                    return data;
-                }
+                if (Date.now() - timestamp < ttl) return data;
             }
-        } catch (_) { /* ignore parse errors */ }
+        } catch (_) { /* ignore */ }
     }
 
-    const response = await fetch(url, { ...fetchOptions, cache: 'no-store' });
-    if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
-    const data = await response.json();
+    const res = await fetch(url, { ...fetchOptions, cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    const data = await res.json();
 
     if (ttl > 0) {
         try {
@@ -33,41 +51,42 @@ const fetchWithCache = async (url, cacheKey, ttl = 0, fetchOptions = {}) => {
     return data;
 };
 
-// ─── 1. ARB Price & Market – always live from Binance (no cache) ─────────────
+// ─── 1. ARB Price & Market Data ──────────────────────────────────────────────
+//   • priceUSD / priceChange24h → Binance (no cache, always live)
+//   • marketCapUSD / volume24h  → CoinGecko (1-min cache)
 export const fetchArbitrumMarketData = async () => {
     try {
-        // Binance is lightweight and has no strict rate-limit for 24hr ticker
-        const [binanceData, cgData] = await Promise.all([
+        const [binance, cg] = await Promise.all([
             fetchWithCache(
                 'https://api.binance.com/api/v3/ticker/24hr?symbol=ARBUSDT',
-                'arb_binance_v3',
-                PRICE_CACHE_TTL   // 0 → always fetch fresh
+                'arb_binance_v4',
+                TTL.PRICE           // 0 → bypass cache
             ),
             fetchWithCache(
                 'https://api.coingecko.com/api/v3/simple/price?ids=arbitrum&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&include_24hr_change=true',
-                'arb_cg_v3',
-                60 * 1000   // CoinGecko free tier: 1 call/minute is fine for market cap only
-            )
+                'arb_cg_v4',
+                TTL.MARKET_CAP      // 1-min cache
+            ),
         ]);
 
         return {
-            priceUSD: Number(binanceData?.lastPrice) || cgData?.arbitrum?.usd || 0,
-            priceChange24h: Number(binanceData?.priceChangePercent) || cgData?.arbitrum?.usd_24h_change || 0,
-            marketCapUSD: cgData?.arbitrum?.usd_market_cap || 0,
-            volume24hUSD: Number(binanceData?.quoteVolume) || cgData?.arbitrum?.usd_24h_vol || 0,
+            priceUSD: Number(binance?.lastPrice) || cg?.arbitrum?.usd || 0,
+            priceChange24h: Number(binance?.priceChangePercent) || cg?.arbitrum?.usd_24h_change || 0,
+            marketCapUSD: cg?.arbitrum?.usd_market_cap || 0,
+            volume24hUSD: Number(binance?.quoteVolume) || cg?.arbitrum?.usd_24h_vol || 0,
         };
     } catch (e) {
         console.error('fetchArbitrumMarketData failed:', e);
-        // last-resort: return whatever is in CG cache
+        // fallback: stale CG cache
         try {
-            const raw = localStorage.getItem('arb_cg_v3');
+            const raw = localStorage.getItem('arb_cg_v4');
             if (raw) {
-                const { data } = JSON.parse(raw);
+                const { data: cg } = JSON.parse(raw);
                 return {
-                    priceUSD: data?.arbitrum?.usd || 0,
-                    priceChange24h: data?.arbitrum?.usd_24h_change || 0,
-                    marketCapUSD: data?.arbitrum?.usd_market_cap || 0,
-                    volume24hUSD: data?.arbitrum?.usd_24h_vol || 0,
+                    priceUSD: cg?.arbitrum?.usd || 0,
+                    priceChange24h: cg?.arbitrum?.usd_24h_change || 0,
+                    marketCapUSD: cg?.arbitrum?.usd_market_cap || 0,
+                    volume24hUSD: cg?.arbitrum?.usd_24h_vol || 0,
                 };
             }
         } catch (_) { }
@@ -75,26 +94,32 @@ export const fetchArbitrumMarketData = async () => {
     }
 };
 
-// ─── 2. TVL – DeFiLlama (daily updates, 1-hour client cache) ─────────────────
+// ─── 2. TVL – DeFiLlama (24-h cache, data updates once per day) ──────────────
 export const fetchArbitrumTVL = async () => {
-    const url = 'https://api.llama.fi/v2/historicalChainTvl/Arbitrum';
-    const data = await fetchWithCache(url, 'arb_tvl_v3', TVL_CACHE_TTL);
+    const data = await fetchWithCache(
+        'https://api.llama.fi/v2/historicalChainTvl/Arbitrum',
+        'arb_tvl_v4',
+        TTL.TVL
+    );
     return data.map(item => {
         const d = new Date(item.date * 1000);
         return {
             timestamp: item.date * 1000,
             date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
-            tvl: item.tvl
+            tvl: item.tvl,
         };
     });
 };
 
-// ─── 3. Whale Tracker (Dune + Blockscout enrichment) ─────────────────────────
+// ─── 3. Whale Tracker (Dune + Blockscout, 5-min cache) ───────────────────────
 export const getWhaleTrackerData = async () => {
-    // Add timestamp to bust any server-side cache on the proxy
-    const url = `/api/dune?t=${Date.now()}`;
     try {
-        const data = await fetchWithCache(url, 'arb_whale_v3', WHALE_CACHE_TTL, { cache: 'no-store' });
+        const data = await fetchWithCache(
+            `/api/dune?t=${Date.now()}`,
+            'arb_whale_v4',
+            TTL.WHALE,
+            { cache: 'no-store' }
+        );
 
         if (!data?.result?.rows) return [];
 
@@ -111,7 +136,7 @@ export const getWhaleTrackerData = async () => {
         const enriched = await Promise.all(baseWhales.map(async (whale) => {
             try {
                 const txUrl = `https://arbitrum.blockscout.com/api/v2/addresses/${whale.id}/token-transfers?token=0x912CE59144191C1204E64559FE8253a0e49E6548`;
-                const txData = await fetchWithCache(txUrl, `bs_tx_${whale.id}_v3`, BLOCKSCOUT_TTL);
+                const txData = await fetchWithCache(txUrl, `bs_tx_${whale.id}_v4`, TTL.BLOCKSCOUT);
 
                 let bought7d = 0, sold7d = 0;
                 if (txData?.items) {
@@ -134,7 +159,7 @@ export const getWhaleTrackerData = async () => {
                 else if (bought7d === 0 && sold7d === 0) badge = 'Dormant 💤';
 
                 return { ...whale, bought7d, sold7d, netAccumulation7d: net, badge };
-            } catch (e) {
+            } catch (_) {
                 return { ...whale, bought7d: 0, sold7d: 0, netAccumulation7d: 0, badge: 'Data Pending ⏳' };
             }
         }));
@@ -146,17 +171,20 @@ export const getWhaleTrackerData = async () => {
     }
 };
 
-// ─── 4. ARB Price History (Binance monthly, 1-hour cache) ─────────────────────
+// ─── 4. ARB Price History – Binance monthly klines (24-h cache) ───────────────
 export const fetchArbitrumPriceHistory = async () => {
     try {
-        const url = 'https://api.binance.com/api/v3/klines?symbol=ARBUSDT&interval=1M&limit=48';
-        const data = await fetchWithCache(url, 'arb_price_hist_v3', CHART_CACHE_TTL);
+        const data = await fetchWithCache(
+            'https://api.binance.com/api/v3/klines?symbol=ARBUSDT&interval=1M&limit=48',
+            'arb_price_hist_v4',
+            TTL.PRICE_HIST
+        );
         return data.map(item => {
             const d = new Date(item[0]);
             return {
                 timestamp: item[0],
                 date: `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}`,
-                price: Number(item[4]) // Close price
+                price: Number(item[4]),   // close price
             };
         });
     } catch (e) {
