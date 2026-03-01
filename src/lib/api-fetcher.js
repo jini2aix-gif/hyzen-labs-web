@@ -86,27 +86,68 @@ export const fetchArbitrumTVL = async () => {
     });
 };
 
-// 3. Whale Tracker Real Data (Dune Analytics API)
+// 3. Whale Tracker Real Data (Dune Analytics API + Blockscout Enrichment)
 export const getWhaleTrackerData = async () => {
     // Vercel Serverless Function proxy call
-    // This solves the CORS limits from browser to Dune, and hides the API keys
     const url = `/api/dune?t=${Date.now()}`;
 
     try {
         const data = await fetchWithCache(url, 'arb_whale_data_final_v1', { cache: 'no-store' });
 
         if (data && data.result && data.result.rows) {
-            return data.result.rows.map(row => ({
+            let baseWhales = data.result.rows.map(row => ({
                 id: row.wallet_address || row.address || 'Unknown',
                 currentBalance: row.balance_arb || row.balance || 0,
                 increase24h: row.increase_24h_pct || row.increase24h || 0
-            })).sort((a, b) => b.increase24h - a.increase24h);
+            })).sort((a, b) => b.increase24h - a.increase24h).slice(0, 10);
+
+            // 🌟 Enrichment: Fetch 7D On-Chain Data from Blockscout for Top 10
+            const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+            // Execute in parallel chunks if needed, but 10 requests is usually fine.
+            const enrichedWhales = await Promise.all(baseWhales.map(async (whale) => {
+                try {
+                    const txUrl = `https://arbitrum.blockscout.com/api/v2/addresses/${whale.id}/token-transfers?token=0x912CE59144191C1204E64559FE8253a0e49E6548`;
+                    const txData = await fetchWithCache(txUrl, `arb_tx_${whale.id}_v2`); // Cache to avoid Blockscout rate-limits
+
+                    let bought7d = 0;
+                    let sold7d = 0;
+
+                    if (txData && txData.items) {
+                        txData.items.forEach(tx => {
+                            const txTime = new Date(tx.timestamp).getTime();
+                            if (txTime >= sevenDaysAgo && tx.total && tx.total.value) {
+                                const amount = Number(tx.total.value) / 1e18; // ARB has 18 decimals
+                                const isReceiver = tx.to && tx.to.hash && tx.to.hash.toLowerCase() === whale.id.toLowerCase();
+                                const isSender = tx.from && tx.from.hash && tx.from.hash.toLowerCase() === whale.id.toLowerCase();
+
+                                if (isReceiver) bought7d += amount;
+                                if (isSender) sold7d += amount;
+                            }
+                        });
+                    }
+
+                    const netAccumulation7d = bought7d - sold7d;
+                    let badge = "Steady Accumulator";
+                    if (sold7d === 0 && bought7d > 0) badge = "Diamond Hands 💎";
+                    else if (bought7d > 500000) badge = "Aggressive 🚀";
+                    else if (sold7d > bought7d) badge = "Distributing ⚠️";
+                    else if (bought7d === 0 && sold7d === 0) badge = "Dormant 💤";
+
+                    return { ...whale, bought7d, sold7d, netAccumulation7d, badge };
+                } catch (e) {
+                    console.error("Blockscout Enrichment Error for", whale.id, e);
+                    return { ...whale, bought7d: 0, sold7d: 0, netAccumulation7d: Number(whale.currentBalance) * (whale.increase24h / 100), badge: "Data Pending ⏳" };
+                }
+            }));
+
+            return enrichedWhales;
         } else if (data && data.error) {
             console.error("Dune Backend API error:", data.error);
         }
         return [];
     } catch (e) {
-        console.error("Failed to fetch from Dune proxy:", e);
+        console.error("Failed to fetch from Dune/Blockscout proxy:", e);
         return [];
     }
 };

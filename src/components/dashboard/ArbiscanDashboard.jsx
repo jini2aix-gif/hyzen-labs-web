@@ -110,6 +110,18 @@ const ArbiscanDashboard = () => {
 
     const { priceUSD = 0, marketCapUSD = 0, priceChange24h = 0, volume24hUSD = 0 } = marketData || {};
 
+    // Calculate global sentiment for top whales
+    const totalBought7D = whaleData.reduce((acc, w) => acc + (w.bought7d || 0), 0);
+    const totalSold7D = whaleData.reduce((acc, w) => acc + (w.sold7d || 0), 0);
+    const totalActivity = totalBought7D + totalSold7D;
+    const accumulationSentiment = totalActivity > 0 ? (totalBought7D / totalActivity) * 100 : 50;
+
+    // Whale list sorted by 7D net accumulation
+    const sortedWhales = [...whaleData].sort((a, b) => (b.netAccumulation7d || 0) - (a.netAccumulation7d || 0));
+
+    // Dynamic Max for visual bar width
+    const maxAbsNet = Math.max(...sortedWhales.map(w => Math.abs(w.netAccumulation7d || 0)), 1);
+
     return (
         <section className="bg-gray-50 min-h-screen pt-20 sm:pt-24 pb-20 sm:pb-32 px-4 md:px-10 text-gray-900 font-sans overflow-x-hidden">
             <div className="max-w-[1400px] mx-auto space-y-4 sm:space-y-8">
@@ -294,44 +306,78 @@ const ArbiscanDashboard = () => {
                 </div>
 
                 {/* 4. Whale Tracker Section */}
-                <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 border border-gray-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-4 sm:mb-6">
-                        <BarChart2 className="text-gray-900" size={20} />
-                        <h2 className="text-base sm:text-lg font-semibold tracking-widest uppercase">Top 10 Accumulators (24H)</h2>
+                <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 border border-gray-200 shadow-sm mb-4 sm:mb-8">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6 sm:mb-8">
+                        <div>
+                            <div className="flex items-center gap-3 mb-2 sm:mb-3">
+                                <BarChart2 className="text-gray-900" size={20} />
+                                <h2 className="text-base sm:text-lg font-semibold tracking-widest uppercase">Smart Money Accumulators (7D)</h2>
+                            </div>
+                            <p className="text-xs sm:text-sm text-gray-500 leading-relaxed max-w-xl">
+                                Live on-chain tracking of top wallets. Identifies smart money behavioral patterns based on their latest 7-day Arbitrum transactions on Arbiscan.
+                            </p>
+                        </div>
+
+                        {/* Overall Sentiment Progress Bar */}
+                        <div className="w-full md:w-72 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                            <div className="flex justify-between items-center text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-2.5">
+                                <span>Whale Sentiment</span>
+                                <span className={accumulationSentiment >= 50 ? 'text-blue-600' : 'text-red-500'}>
+                                    {accumulationSentiment >= 50 ? 'Accumulating' : 'Distributing'} ({accumulationSentiment.toFixed(1)}%)
+                                </span>
+                            </div>
+                            <div className="h-2 w-full bg-red-100 rounded-full overflow-hidden flex relative">
+                                <div className="h-full bg-blue-600 transition-all duration-1000 ease-out z-10" style={{ width: `${accumulationSentiment}%` }} />
+                                {/* Center Line Indicator */}
+                                <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white bg-opacity-70 z-20" />
+                            </div>
+                            <div className="flex justify-between text-[9px] font-semibold text-gray-400 mt-1.5 uppercase tracking-wider">
+                                <span>Buying Pressure</span>
+                                <span>Selling Pressure</span>
+                            </div>
+                        </div>
                     </div>
-                    <p className="text-sm text-gray-500 mb-8 leading-relaxed max-w-2xl">
-                        Real-time filtering isolating pure individual whale wallets, excluding CEX and foundation addresses. Ranked by 24-hour balance increase.
-                    </p>
 
                     <div className="space-y-3">
-                        {whaleData.slice(0, 10).map((whale, idx) => {
+                        {sortedWhales.slice(0, 10).map((whale, idx) => {
                             const address = whale.id || 'Unknown Wallet';
 
+                            // Visual bar mapped to netAccumulation7d
+                            const isPositive = (whale.netAccumulation7d || 0) >= 0;
+                            const barColor = isPositive ? 'bg-blue-100/50' : 'bg-red-100/50';
+                            const barWidth = (Math.abs(whale.netAccumulation7d || 0) / maxAbsNet) * 100;
+
                             return (
-                                <div key={whale.id || idx} className="flex relative overflow-hidden items-center justify-between p-4 sm:p-5 bg-gray-50 rounded-2xl border border-gray-100 transition-all hover:bg-gray-100 hover:shadow-md group">
+                                <div key={whale.id || idx} className="flex relative overflow-hidden flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 bg-gray-50 rounded-2xl border border-gray-100 transition-all hover:bg-gray-100 hover:shadow-md group gap-4">
                                     {/* Visual Bar Background for Increase */}
                                     <div
-                                        className="absolute left-0 top-0 bottom-0 bg-blue-100/50 transition-all duration-1000 ease-out"
-                                        style={{ width: `${Math.min((Number(whale.increase24h) || 0) / 50, 100)}%` }}
+                                        className={`absolute left-0 top-0 bottom-0 ${barColor} transition-all duration-1000 ease-out`}
+                                        style={{ width: `${barWidth}%` }}
                                     />
 
                                     <div className="flex items-center gap-3 sm:gap-5 overflow-hidden relative z-10 flex-1 pr-2">
-                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0 bg-white flex items-center justify-center font-medium text-sm sm:text-base text-gray-700 border border-gray-200 shadow-sm">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0 bg-white flex items-center justify-center font-bold text-sm sm:text-base text-gray-700 border border-gray-200 shadow-sm">
                                             {idx + 1}
                                         </div>
                                         <div className="min-w-0 pr-2">
-                                            <p className="font-mono text-gray-900 text-xs sm:text-sm font-medium truncate leading-tight mb-0.5" title={address}>
-                                                {address}
-                                            </p>
+                                            <div className="flex items-center gap-2 mb-1 sm:mb-1.5 flex-wrap">
+                                                <p className="font-mono text-gray-900 text-xs sm:text-sm font-semibold truncate leading-tight" title={address}>
+                                                    {address.length > 15 ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : address}
+                                                </p>
+                                                <span className="px-2 py-0.5 whitespace-nowrap bg-white rounded-md text-[9px] sm:text-[10px] uppercase font-bold text-gray-700 border border-gray-200 shadow-sm">
+                                                    {whale.badge || 'Pending'}
+                                                </span>
+                                            </div>
                                             <p className="text-[10px] sm:text-[11px] text-gray-500 uppercase tracking-widest font-medium">
                                                 Holdings: {Number(whale.currentBalance || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} ARB
                                             </p>
                                         </div>
                                     </div>
 
-                                    <div className={`flex-shrink-0 relative z-10 text-right font-mono text-xs sm:text-sm font-semibold ${Number(whale.increase24h) >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
-                                        <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-gray-100 shadow-sm inline-block">
-                                            {Number(whale.increase24h) > 0 ? '+' : ''}{Number(whale.increase24h || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}%
+                                    <div className={`flex-shrink-0 relative z-10 sm:text-right font-mono text-xs sm:text-sm font-bold pl-11 sm:pl-0 ${isPositive ? 'text-blue-600' : 'text-red-500'}`}>
+                                        <div className="bg-white/90 backdrop-blur-sm px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-gray-100 shadow-sm inline-block min-w-[140px] text-right">
+                                            <span className="text-[9px] sm:text-[10px] uppercase text-gray-400 mr-2 sm:mr-3 font-sans tracking-widest font-semibold">7D Net Flow</span>
+                                            {isPositive ? '+' : ''}{Number(whale.netAccumulation7d || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} ARB
                                         </div>
                                     </div>
                                 </div>
