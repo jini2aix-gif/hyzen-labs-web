@@ -15,8 +15,8 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
     const [newComment, setNewComment] = useState("");
     const [replyTo, setReplyTo] = useState(null); // { id, author }
     const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
-    const postsPerPage = 10;
+    const [visibleCount, setVisibleCount] = useState(10);
+    const incrementCount = 10;
 
     useEffect(() => {
         if (onModalChange) onModalChange(isModalOpen || !!selectedPost);
@@ -358,11 +358,9 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
         );
     };
 
-    // Pagination logic
-    const indexOfLastPost = currentPage * postsPerPage;
-    const indexOfFirstPost = indexOfLastPost - postsPerPage;
-    const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
-    const totalPages = Math.ceil(posts.length / postsPerPage);
+    // Load More logic
+    const currentPosts = posts.slice(0, visibleCount);
+    const hasMore = visibleCount < posts.length;
 
     return (
         <section className="min-h-screen bg-gray-50/50 pt-20 lg:pt-24 pb-32 px-4 md:px-10 relative overflow-hidden">
@@ -598,33 +596,15 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                                     ))}
                                 </AnimatePresence>
 
-                                {/* Pagination Controls */}
-                                {totalPages > 1 && (
-                                    <div className="flex justify-center items-center gap-4 pt-8">
+                                {/* Load More Button */}
+                                {hasMore && (
+                                    <div className="flex justify-center pt-8">
                                         <button
-                                            disabled={currentPage === 1}
-                                            onClick={() => setCurrentPage(prev => prev - 1)}
-                                            className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                            onClick={() => setVisibleCount(prev => prev + incrementCount)}
+                                            className="flex items-center gap-2 px-8 py-3.5 bg-white border border-gray-200 rounded-full text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 hover:border-indigo-100 transition-all shadow-sm"
                                         >
-                                            <ChevronLeft size={20} />
-                                        </button>
-                                        <div className="flex gap-2">
-                                            {[...Array(totalPages)].map((_, i) => (
-                                                <button
-                                                    key={i}
-                                                    onClick={() => setCurrentPage(i + 1)}
-                                                    className={`w-8 h-8 rounded-full text-xs font-bold transition-all ${currentPage === i + 1 ? 'bg-black text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
-                                                >
-                                                    {i + 1}
-                                                </button>
-                                            ))}
-                                        </div>
-                                        <button
-                                            disabled={currentPage === totalPages}
-                                            onClick={() => setCurrentPage(prev => prev + 1)}
-                                            className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                        >
-                                            <ChevronRight size={20} />
+                                            <Activity size={16} />
+                                            더보기 ({visibleCount} / {posts.length})
                                         </button>
                                     </div>
                                 )}
