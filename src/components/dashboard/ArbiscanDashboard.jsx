@@ -73,15 +73,16 @@ const ArbiscanDashboard = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [market, tvl, whales] = await Promise.all([
+                const results = await Promise.allSettled([
                     fetchArbitrumMarketData(),
                     fetchArbitrumTVL(),
                     getWhaleTrackerData()
                 ]);
 
-                setMarketData(market);
-                setTvlData(tvl);
-                setWhaleData(whales);
+                if (results[0].status === 'fulfilled' && results[0].value) setMarketData(results[0].value);
+                if (results[1].status === 'fulfilled' && results[1].value) setTvlData(results[1].value);
+                if (results[2].status === 'fulfilled' && results[2].value) setWhaleData(results[2].value);
+
             } catch (err) {
                 console.error("Dashboard data load error:", err);
             } finally {
@@ -103,7 +104,7 @@ const ArbiscanDashboard = () => {
         );
     }
 
-    const { priceUSD, marketCapUSD, priceChange24h, volume24hUSD } = marketData || {};
+    const { priceUSD = 0, marketCapUSD = 0, priceChange24h = 0, volume24hUSD = 0 } = marketData || {};
 
     return (
         <section className="bg-gray-50 min-h-screen pt-24 pb-32 px-4 md:px-10 text-gray-900 font-sans overflow-x-hidden">

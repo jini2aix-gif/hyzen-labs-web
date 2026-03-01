@@ -1,26 +1,47 @@
-export const CACHE_DURATION = 60 * 1000; // 1 minute
+export const CACHE_DURATION = 30 * 1000; // 30 seconds
 
 const fetchWithCache = async (url, cacheKey, options = {}) => {
-    const cachedItem = localStorage.getItem(cacheKey);
-    if (cachedItem) {
-        const { timestamp, data } = JSON.parse(cachedItem);
-        if (Date.now() - timestamp < CACHE_DURATION) {
-            return data;
+    try {
+        const cachedItem = localStorage.getItem(cacheKey);
+        if (cachedItem) {
+            const { timestamp, data } = JSON.parse(cachedItem);
+            if (Date.now() - timestamp < CACHE_DURATION) {
+                return data;
+            }
         }
+    } catch (e) {
+        console.warn('Cache read error', e);
     }
 
-    const response = await fetch(url, options);
-    if (!response.ok) {
-        throw new Error(`Failed to fetch ${url}`);
+    try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        try {
+            localStorage.setItem(cacheKey, JSON.stringify({
+                timestamp: Date.now(),
+                data
+            }));
+        } catch (e) {
+            console.warn('Cache write error', e);
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Fetch failed for', url, error);
+        // Try to return stale data if available
+        try {
+            const cachedItem = localStorage.getItem(cacheKey);
+            if (cachedItem) {
+                const { data } = JSON.parse(cachedItem);
+                return data;
+            }
+        } catch (e) { }
+        throw error;
     }
-    const data = await response.json();
-
-    localStorage.setItem(cacheKey, JSON.stringify({
-        timestamp: Date.now(),
-        data
-    }));
-
-    return data;
 };
 
 // 1. Price & Market Cap (CoinGecko)
