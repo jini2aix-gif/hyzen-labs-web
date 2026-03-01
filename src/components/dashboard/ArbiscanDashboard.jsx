@@ -177,8 +177,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal }) => {
                         ARBISCAN
                     </h2>
                     <p className="text-gray-500 text-sm leading-relaxed mb-8">
-                        온체인 인텔리전스 대시보드는 <br className="hidden sm:block" />
-                        <span className="font-semibold text-gray-700">Hyzen Labs 멤버</span>에게만 공개됩니다.
+                        Hyzen Labs 회원 로그인 후 확인 가능합니다.
                     </p>
 
                     <button
@@ -186,12 +185,12 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal }) => {
                         className="w-full flex items-center justify-center gap-2.5 bg-gray-900 hover:bg-blue-600 text-white font-bold text-sm py-4 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-blue-500/25 hover:scale-[1.02] active:scale-[0.98]"
                     >
                         <LogIn size={18} />
-                        로그인하고 대시보드 보기
+                        회원 로그인
                     </button>
 
                     <p className="mt-5 text-xs text-gray-400">
                         계정이 없으신가요?{' '}
-                        <button onClick={onOpenLoginModal} className="text-blue-600 font-semibold hover:underline">무료로 가입하기 →</button>
+                        <button onClick={onOpenLoginModal} className="text-blue-600 font-semibold hover:underline">가입하러 가기 →</button>
                     </p>
                 </motion.div>
             </section>

@@ -120,7 +120,7 @@ const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegist
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-bold text-gray-900 font-brand tracking-tight">
-                                        {mode === 'login' ? '다시 오셨군요!' : '하이젠 랩스 시작하기'}
+                                        {mode === 'login' ? '환영합니다.' : '하이젠 랩스 시작하기'}
                                     </h2>
                                     <p className="text-[10px] text-gray-400 font-tech uppercase tracking-[0.2em]">Hyzen Labs Digital ID</p>
                                 </div>
