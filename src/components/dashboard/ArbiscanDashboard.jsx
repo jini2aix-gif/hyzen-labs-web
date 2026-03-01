@@ -91,7 +91,7 @@ const ArbiscanDashboard = () => {
         };
 
         loadData();
-        const interval = setInterval(loadData, 60 * 1000); // 1 minute auto-refresh
+        const interval = setInterval(loadData, 15 * 1000); // 15 seconds auto-refresh
         return () => clearInterval(interval);
     }, []);
 
@@ -139,7 +139,7 @@ const ArbiscanDashboard = () => {
                             <h3 className="text-xs font-medium uppercase tracking-widest">ARB Price</h3>
                         </div>
                         <div className="flex items-end gap-3">
-                            <span className="text-3xl sm:text-4xl font-mono font-semibold text-gray-900">${priceUSD?.toFixed(3)}</span>
+                            <span className="text-3xl sm:text-4xl font-mono font-semibold text-gray-900">${priceUSD?.toFixed(4)}</span>
                             <span className={`text-sm font-medium mb-1 ${priceChange24h >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
                                 {priceChange24h >= 0 ? '+' : ''}{priceChange24h?.toFixed(2)}%
                             </span>

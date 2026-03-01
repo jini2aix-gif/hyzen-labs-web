@@ -1,4 +1,4 @@
-export const CACHE_DURATION = 30 * 1000; // 30 seconds
+export const CACHE_DURATION = 15 * 1000; // 15 seconds
 
 const fetchWithCache = async (url, cacheKey, options = {}) => {
     try {
@@ -44,17 +44,30 @@ const fetchWithCache = async (url, cacheKey, options = {}) => {
     }
 };
 
-// 1. Price & Market Cap (CoinGecko)
+// 1. Price & Market Cap (Real-time Binance + CoinGecko)
 export const fetchArbitrumMarketData = async () => {
-    const url = 'https://api.coingecko.com/api/v3/coins/arbitrum?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false';
-    const data = await fetchWithCache(url, 'arb_market_data');
+    try {
+        const [binanceData, cgData] = await Promise.all([
+            fetchWithCache('https://api.binance.com/api/v3/ticker/24hr?symbol=ARBUSDT', 'arb_binance_data_v2'),
+            fetchWithCache('https://api.coingecko.com/api/v3/simple/price?ids=arbitrum&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&include_24hr_change=true', 'arb_cg_data_v2')
+        ]);
 
-    return {
-        priceUSD: data.market_data.current_price.usd,
-        marketCapUSD: data.market_data.market_cap.usd,
-        priceChange24h: data.market_data.price_change_percentage_24h,
-        volume24hUSD: data.market_data.total_volume.usd,
-    };
+        return {
+            priceUSD: Number(binanceData?.lastPrice) || cgData?.arbitrum?.usd || 0,
+            priceChange24h: Number(binanceData?.priceChangePercent) || cgData?.arbitrum?.usd_24h_change || 0,
+            marketCapUSD: cgData?.arbitrum?.usd_market_cap || 0,
+            volume24hUSD: cgData?.arbitrum?.usd_24h_vol || Number(binanceData?.quoteVolume) || 0,
+        };
+    } catch (e) {
+        console.warn("Falling back to old coingecko method:", e);
+        const data = await fetchWithCache('https://api.coingecko.com/api/v3/coins/arbitrum?localization=false&sparkline=false', 'arb_market_legacy');
+        return {
+            priceUSD: data.market_data.current_price.usd,
+            marketCapUSD: data.market_data.market_cap.usd,
+            priceChange24h: data.market_data.price_change_percentage_24h,
+            volume24hUSD: data.market_data.total_volume.usd,
+        };
+    }
 };
 
 // 2. TVL (DeFiLlama)
