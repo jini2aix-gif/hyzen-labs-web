@@ -512,103 +512,109 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                             <div className="md:hidden w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
 
                             {/* Left Side: Post Content & Data */}
-                            <div className="w-full md:w-[60%] h-[55%] md:h-full shrink-0 overflow-y-auto bg-white custom-scrollbar border-b md:border-b-0 border-gray-100 relative">
-                                {/* Image Box */}
-                                {selectedPost.image ? (
-                                    <div className="w-full aspect-video sm:aspect-[4/3] bg-gray-100 overflow-hidden relative flex shrink-0">
-                                        <motion.img
-                                            src={selectedPost.image}
-                                            className="w-full h-full object-cover"
-                                            alt="Run"
-                                            animate={{
-                                                scale: [1, 1.25, 1.25, 1.25, 1],
-                                                y: ["0%", "10%", "-10%", "0%", "0%"]
-                                            }}
-                                            transition={{
-                                                duration: 3,
-                                                times: [0, 0.2, 0.5, 0.8, 1],
-                                                ease: "easeInOut"
-                                            }}
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+                            <div className="w-full md:w-[60%] h-[60%] md:h-full shrink-0 flex flex-col bg-white border-b md:border-b-0 border-gray-100 relative overflow-hidden">
 
-                                        {/* Mobile Exit Button on Image */}
-                                        <button
-                                            onClick={() => { setSelectedPost(null); setReplyTo(null); }}
-                                            className="absolute top-4 right-4 z-[110] p-2 bg-black/40 backdrop-blur-md text-white rounded-full transition-all md:hidden border border-white/20"
-                                        >
-                                            <X size={20} />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="w-full h-48 sm:h-64 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center relative">
-                                        <Activity size={48} className="text-white/20" />
-                                        {/* Mobile Exit Button */}
-                                        <button
-                                            onClick={() => { setSelectedPost(null); setReplyTo(null); }}
-                                            className="absolute top-4 right-4 z-[110] p-2 bg-black/20 backdrop-blur-md text-white rounded-full transition-all md:hidden border border-white/20"
-                                        >
-                                            <X size={20} />
-                                        </button>
-                                    </div>
-                                )}
+                                {/* Fixed Top Section: Image, Profile, Stats, Title */}
+                                <div className="shrink-0 flex flex-col bg-white relative z-10 border-b border-gray-100 shadow-[0_5px_15px_-10px_rgba(0,0,0,0.05)]">
+                                    {/* Image Box */}
+                                    {selectedPost.image ? (
+                                        <div className="w-full h-[180px] md:h-auto md:aspect-[4/3] bg-gray-100 overflow-hidden relative flex shrink-0">
+                                            <motion.img
+                                                src={selectedPost.image}
+                                                className="w-full h-full object-cover"
+                                                alt="Run"
+                                                animate={{
+                                                    scale: [1, 1.25, 1.25, 1.25, 1],
+                                                    y: ["0%", "10%", "-10%", "0%", "0%"]
+                                                }}
+                                                transition={{
+                                                    duration: 3,
+                                                    times: [0, 0.2, 0.5, 0.8, 1],
+                                                    ease: "easeInOut"
+                                                }}
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
 
-                                <div className="p-5 sm:p-10 md:p-12 shrink-0">
-                                    <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8">
-                                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-indigo-50 shadow-sm bg-gray-100 flex-shrink-0">
-                                            {(user?.uid === selectedPost.authorId && profile?.photoURL) ? (
-                                                <img src={profile.photoURL} className="w-full h-full object-cover" alt={profile.displayName} />
-                                            ) : (
-                                                selectedPost.authorPhoto ? (
-                                                    <img src={selectedPost.authorPhoto} className="w-full h-full object-cover" alt={selectedPost.author} />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center font-bold text-gray-400 bg-gray-100">{selectedPost.author.charAt(0)}</div>
-                                                )
-                                            )}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <h3 className="text-base sm:text-lg font-black text-gray-900 truncate">{(user?.uid === selectedPost.authorId && profile?.displayName) ? profile.displayName : selectedPost.author}</h3>
-                                            <p className="text-[10px] sm:text-xs font-bold text-indigo-500 uppercase tracking-widest">{selectedPost.timestamp.toLocaleDateString()}</p>
-                                        </div>
-
-                                        <div className="ml-auto flex gap-2">
+                                            {/* Mobile Exit Button on Image */}
                                             <button
-                                                onClick={(e) => handleToggleLike(e, selectedPost)}
-                                                className={`flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs transition-all border ${selectedPost.likes?.includes(user?.uid) ? 'bg-red-50 border-red-100 text-red-500' : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500'}`}
+                                                onClick={() => { setSelectedPost(null); setReplyTo(null); }}
+                                                className="absolute top-4 right-4 z-[110] p-2 bg-black/40 backdrop-blur-md text-white rounded-full transition-all md:hidden border border-white/20"
                                             >
-                                                <Heart size={14} className="sm:w-4 sm:h-4" fill={selectedPost.likes?.includes(user?.uid) ? "currentColor" : "none"} />
-                                                <span>{selectedPost.likes?.length || 0}</span>
+                                                <X size={20} />
                                             </button>
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <div className="w-full h-[180px] md:h-auto md:aspect-[4/3] md:min-h-[400px] bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center relative">
+                                            <Activity size={48} className="text-white/20" />
+                                            {/* Mobile Exit Button */}
+                                            <button
+                                                onClick={() => { setSelectedPost(null); setReplyTo(null); }}
+                                                className="absolute top-4 right-4 z-[110] p-2 bg-black/20 backdrop-blur-md text-white rounded-full transition-all md:hidden border border-white/20"
+                                            >
+                                                <X size={20} />
+                                            </button>
+                                        </div>
+                                    )}
 
-                                    {/* Stats Grid - Compact */}
-                                    <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6 sm:mb-8">
-                                        <div className="bg-indigo-600 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-white shadow-sm flex flex-col justify-center">
-                                            <p className="text-[8px] sm:text-[9px] font-black opacity-80 uppercase tracking-widest mb-0.5 sm:mb-1 leading-none">DIST</p>
-                                            <p className="text-lg sm:text-xl font-black italic leading-none">{selectedPost.distance.toFixed(1)}<span className="text-[9px] sm:text-[10px] not-italic ml-0.5 opacity-60">KM</span></p>
-                                        </div>
-                                        <div className="bg-gray-900 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-white shadow-sm flex flex-col justify-center">
-                                            <p className="text-[8px] sm:text-[9px] font-black opacity-80 uppercase tracking-widest mb-0.5 sm:mb-1 leading-none">TIME</p>
-                                            <p className="text-lg sm:text-xl font-black italic leading-none">{selectedPost.time || '--:--'}</p>
-                                        </div>
-                                        <div className="bg-gray-50 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-gray-900 border border-gray-100/50 flex flex-col justify-center">
-                                            <p className="text-[8px] sm:text-[9px] font-black text-gray-500 uppercase tracking-widest mb-0.5 sm:mb-1 leading-none">PACE</p>
-                                            <p className="text-lg sm:text-xl font-black italic text-indigo-600 leading-none">{selectedPost.pace || "--'--\""}</p>
-                                        </div>
-                                    </div>
+                                    <div className="px-5 pt-5 pb-3 sm:px-10 sm:pt-8 md:px-12 shrink-0">
+                                        <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5">
+                                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-indigo-50 shadow-sm bg-gray-100 flex-shrink-0">
+                                                {(user?.uid === selectedPost.authorId && profile?.photoURL) ? (
+                                                    <img src={profile.photoURL} className="w-full h-full object-cover" alt={profile.displayName} />
+                                                ) : (
+                                                    selectedPost.authorPhoto ? (
+                                                        <img src={selectedPost.authorPhoto} className="w-full h-full object-cover" alt={selectedPost.author} />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center font-bold text-gray-400 bg-gray-100">{selectedPost.author.charAt(0)}</div>
+                                                    )
+                                                )}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h3 className="text-base sm:text-lg font-black text-gray-900 truncate">{(user?.uid === selectedPost.authorId && profile?.displayName) ? profile.displayName : selectedPost.author}</h3>
+                                                <p className="text-[10px] sm:text-xs font-bold text-indigo-500 uppercase tracking-widest">{selectedPost.timestamp.toLocaleDateString()}</p>
+                                            </div>
 
-                                    <div className="space-y-4 sm:space-y-6">
-                                        <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-gray-900 leading-tight tracking-tight whitespace-pre-wrap break-keep">{selectedPost.title}</h2>
-                                        <p className="text-gray-600 text-[14px] sm:text-lg leading-relaxed whitespace-pre-wrap font-medium pb-8">
-                                            {selectedPost.content}
-                                        </p>
+                                            <div className="ml-auto flex gap-2">
+                                                <button
+                                                    onClick={(e) => handleToggleLike(e, selectedPost)}
+                                                    className={`flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs transition-all border ${selectedPost.likes?.includes(user?.uid) ? 'bg-red-50 border-red-100 text-red-500' : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500'}`}
+                                                >
+                                                    <Heart size={14} className="sm:w-4 sm:h-4" fill={selectedPost.likes?.includes(user?.uid) ? "currentColor" : "none"} />
+                                                    <span>{selectedPost.likes?.length || 0}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Stats Grid - Compact */}
+                                        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-5">
+                                            <div className="bg-indigo-600 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-white shadow-sm flex flex-col justify-center">
+                                                <p className="text-[8px] sm:text-[9px] font-black opacity-80 uppercase tracking-widest mb-0.5 sm:mb-1 leading-none">DIST</p>
+                                                <p className="text-lg sm:text-xl font-black italic leading-none">{selectedPost.distance.toFixed(1)}<span className="text-[9px] sm:text-[10px] not-italic ml-0.5 opacity-60">KM</span></p>
+                                            </div>
+                                            <div className="bg-gray-900 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-white shadow-sm flex flex-col justify-center">
+                                                <p className="text-[8px] sm:text-[9px] font-black opacity-80 uppercase tracking-widest mb-0.5 sm:mb-1 leading-none">TIME</p>
+                                                <p className="text-lg sm:text-xl font-black italic leading-none">{selectedPost.time || '--:--'}</p>
+                                            </div>
+                                            <div className="bg-gray-50 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-gray-900 border border-gray-100/50 flex flex-col justify-center">
+                                                <p className="text-[8px] sm:text-[9px] font-black text-gray-500 uppercase tracking-widest mb-0.5 sm:mb-1 leading-none">PACE</p>
+                                                <p className="text-lg sm:text-xl font-black italic text-indigo-600 leading-none">{selectedPost.pace || "--'--\""}</p>
+                                            </div>
+                                        </div>
+
+                                        <h2 className="text-lg sm:text-2xl md:text-3xl font-black text-gray-900 leading-tight tracking-tight whitespace-pre-wrap break-keep">{selectedPost.title}</h2>
                                     </div>
+                                </div>
+
+                                {/* Scrollable Content Section */}
+                                <div className="flex-1 overflow-y-auto custom-scrollbar px-5 py-4 sm:px-10 sm:py-6 md:px-12 bg-gray-50/20">
+                                    <p className="text-gray-600 text-[14px] sm:text-lg leading-relaxed whitespace-pre-wrap font-medium pb-8">
+                                        {selectedPost.content}
+                                    </p>
                                 </div>
                             </div>
 
                             {/* Right Side: Comments Section */}
-                            <div className="w-full md:w-[40%] h-[45%] md:h-full shrink-0 flex flex-col bg-gray-50/50 overflow-hidden md:border-l border-gray-100 relative">
+                            <div className="w-full md:w-[40%] h-[40%] md:h-full shrink-0 flex flex-col bg-gray-50/50 overflow-hidden md:border-l border-gray-100 relative">
                                 <div className="p-4 sm:p-6 border-b border-gray-100 bg-white flex items-center justify-between shrink-0 top-0 sticky z-20">
                                     <div className="flex items-center gap-2">
                                         <div className="p-1.5 sm:p-2 bg-indigo-50 rounded-lg">
