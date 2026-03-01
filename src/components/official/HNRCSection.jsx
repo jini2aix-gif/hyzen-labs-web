@@ -381,62 +381,72 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                                             exit={{ opacity: 0, scale: 0.95 }}
                                             transition={{ delay: idx * 0.05 }}
                                             onClick={() => setSelectedPost(post)}
-                                            className="bg-white rounded-[32px] p-5 sm:p-6 border border-gray-100 shadow-sm hover:shadow-xl hover:translate-y-[-4px] transition-all cursor-pointer flex items-center gap-6 group"
+                                            className="relative bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-2xl hover:translate-y-[-4px] transition-all cursor-pointer flex flex-row overflow-hidden group min-h-[160px]"
                                         >
-                                            <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                <div className="flex items-center gap-2 mb-3">
-                                                    <div className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center font-bold text-gray-500 text-[10px]">
-                                                        {(user?.uid === post.authorId && profile?.photoURL) ? <img src={profile.photoURL} className="w-full h-full object-cover" /> : (post.authorPhoto ? <img src={post.authorPhoto} className="w-full h-full object-cover" /> : (post.author || 'Guest').charAt(0).toUpperCase())}
-                                                    </div>
-                                                    <span className="font-bold text-gray-800 text-[11px]">{(user?.uid === post.authorId && profile?.displayName) ? profile.displayName : post.author}</span>
-                                                    <span className="text-gray-400 text-[10px]">{post.timestamp.toLocaleDateString()}</span>
+                                            {/* Right Image Background with Gradient Blend */}
+                                            {post.image && (
+                                                <div className="absolute right-0 top-0 bottom-0 w-[45%] h-full z-0 overflow-hidden">
+                                                    <div className="absolute inset-0 z-10 bg-gradient-to-r from-white via-white/80 to-transparent"></div>
+                                                    <img
+                                                        src={post.image}
+                                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                        alt="Run record"
+                                                    />
+                                                </div>
+                                            )}
 
-                                                    {user && user.uid === post.authorId && (
-                                                        <div className="ml-auto flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <button onClick={(e) => handleEditClick(e, post)} className="text-gray-400 hover:text-indigo-500 p-1">
-                                                                <Edit2 size={12} />
-                                                            </button>
-                                                            <button onClick={(e) => handleDeleteRecord(e, post.id)} className="text-gray-400 hover:text-red-500 p-1">
-                                                                <Trash2 size={12} />
-                                                            </button>
+                                            {/* Left Content - Elevated with Z-index */}
+                                            <div className="relative z-20 flex-1 min-w-0 flex flex-col justify-between">
+                                                <div className="w-full">
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <div className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center font-bold text-gray-500 text-[10px] border border-white">
+                                                            {(user?.uid === post.authorId && profile?.photoURL) ? <img src={profile.photoURL} className="w-full h-full object-cover" /> : (post.authorPhoto ? <img src={post.authorPhoto} className="w-full h-full object-cover" /> : (post.author || 'Guest').charAt(0).toUpperCase())}
                                                         </div>
-                                                    )}
+                                                        <span className="font-bold text-gray-800 text-[11px] tracking-tight">{(user?.uid === post.authorId && profile?.displayName) ? profile.displayName : post.author}</span>
+                                                        <span className="text-gray-400 text-[10px] font-medium">{post.timestamp.toLocaleDateString()}</span>
+
+                                                        {user && user.uid === post.authorId && (
+                                                            <div className="ml-auto flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <button onClick={(e) => handleEditClick(e, post)} className="text-gray-400 hover:text-indigo-500 p-1 bg-white/80 rounded-full backdrop-blur-sm">
+                                                                    <Edit2 size={12} />
+                                                                </button>
+                                                                <button onClick={(e) => handleDeleteRecord(e, post.id)} className="text-gray-400 hover:text-red-500 p-1 bg-white/80 rounded-full backdrop-blur-sm">
+                                                                    <Trash2 size={12} />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <h3 className="text-lg font-black text-gray-900 truncate mb-1 leading-tight">{post.title}</h3>
+                                                    <p className="text-gray-500 text-[13px] line-clamp-2 leading-relaxed mb-4 max-w-[85%]">{post.content}</p>
                                                 </div>
 
-                                                <h3 className="text-lg font-black text-gray-900 truncate mb-1">{post.title}</h3>
-                                                <p className="text-gray-500 text-xs line-clamp-2 leading-relaxed mb-4">{post.content}</p>
-
-                                                <div className="flex items-center gap-4">
-                                                    <div className="flex items-center gap-1.5 text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-50">
+                                                <div className="flex items-center gap-3 mt-auto">
+                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/40 backdrop-blur-xl border border-white/50 shadow-sm text-indigo-600 transition-all hover:bg-white/60">
                                                         <MapPin size={12} />
-                                                        <span className="font-black italic text-sm">{post.distance.toFixed(1)} <span className="text-[10px] not-italic text-indigo-400">KM</span></span>
+                                                        <span className="font-black italic text-sm">{post.distance.toFixed(1)} <span className="text-[10px] not-italic text-indigo-400 opacity-60">KM</span></span>
                                                     </div>
-                                                    <div className="flex items-center gap-1.5 text-gray-600 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+                                                    <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/40 backdrop-blur-xl border border-white/50 shadow-sm text-gray-600">
                                                         <Zap size={12} className="text-gray-400" />
                                                         <span className="font-black italic text-sm">{post.pace || "--'--\""}</span>
                                                     </div>
 
-                                                    <div className="flex items-center gap-3 ml-auto">
+                                                    <div className="flex items-center gap-2 ml-auto px-3 py-1.5 rounded-2xl bg-white/40 backdrop-blur-xl border border-white/50 shadow-sm">
                                                         <button
                                                             onClick={(e) => handleToggleLike(e, post)}
-                                                            className={`flex items-center gap-1 px-2 py-1 rounded-full transition-colors ${post.likes?.includes(user?.uid) ? 'text-red-500 bg-red-50' : 'text-gray-400 hover:text-red-500'}`}
+                                                            className={`flex items-center gap-1 transition-colors ${post.likes?.includes(user?.uid) ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
                                                         >
                                                             <Heart size={14} fill={post.likes?.includes(user?.uid) ? "currentColor" : "none"} />
-                                                            <span className="text-[10px] font-black">{post.likes?.length || 0}</span>
+                                                            <span className="text-[11px] font-black">{post.likes?.length || 0}</span>
                                                         </button>
+                                                        <div className="w-[1px] h-3 bg-gray-200/50 mx-1"></div>
                                                         <div className="flex items-center gap-1 text-gray-400">
                                                             <MessageSquare size={14} />
-                                                            <span className="text-[10px] font-black">{post.commentCount || 0}</span>
+                                                            <span className="text-[11px] font-black">{post.commentCount || 0}</span>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-
-                                            {post.image && (
-                                                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl shrink-0 overflow-hidden bg-gray-100 border border-gray-50">
-                                                    <img src={post.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Run record" />
-                                                </div>
-                                            )}
                                         </motion.article>
                                     ))}
                                 </AnimatePresence>
