@@ -2,8 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShieldCheck, Mail, Lock, User, AtSign, CheckCircle2, AlertCircle, ArrowRight, LogIn } from 'lucide-react';
 
-const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegister }) => {
-    const [mode, setMode] = useState('login'); // 'login' | 'register'
+const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegister, initialMode = 'login' }) => {
+    const [mode, setMode] = useState(initialMode); // 'login' | 'register'
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -12,6 +12,11 @@ const AuthModal = ({ isOpen, onClose, onGoogleLogin, onEmailLogin, onEmailRegist
     });
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    // Sync mode every time the modal opens (e.g. 'register' from Arbiscan gate)
+    React.useEffect(() => {
+        if (isOpen) setMode(initialMode);
+    }, [isOpen, initialMode]);
 
     // Validation Regex
     const passwordRegex = useMemo(() => /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?])[A-Za-z\d@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]{6,}$/, []);

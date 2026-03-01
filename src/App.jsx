@@ -32,6 +32,7 @@ const App = () => {
   const [isPulseDashOpen, setIsPulseDashOpen] = useState(false);
   const [isHNRCModalOpen, setIsHNRCModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authInitialMode, setAuthInitialMode] = useState('login');
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
@@ -42,6 +43,12 @@ const App = () => {
   }, []);
 
   const handleOpenAuthModal = useCallback(() => {
+    setAuthInitialMode('login');
+    setIsAuthModalOpen(true);
+  }, []);
+
+  const handleOpenRegisterModal = useCallback(() => {
+    setAuthInitialMode('register');
     setIsAuthModalOpen(true);
   }, []);
 
@@ -240,7 +247,7 @@ const App = () => {
                   </div>
                 ) : (
                   <div className="h-full overflow-y-auto bg-gray-50 scroll-smooth">
-                    <ArbiscanDashboard user={user} onOpenLoginModal={handleOpenAuthModal} />
+                    <ArbiscanDashboard user={user} onOpenLoginModal={handleOpenAuthModal} onOpenRegisterModal={handleOpenRegisterModal} />
                   </div>
                 )}
               </React.Suspense>
@@ -314,6 +321,7 @@ const App = () => {
             onGoogleLogin={handleGoogleLogin}
             onEmailLogin={loginWithEmail}
             onEmailRegister={registerWithEmail}
+            initialMode={authInitialMode}
           />
         </React.Suspense>
       </div>

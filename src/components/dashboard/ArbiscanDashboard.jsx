@@ -65,7 +65,7 @@ const CountdownTimer = () => {
     );
 };
 
-const ArbiscanDashboard = ({ user, onOpenLoginModal }) => {
+const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
     const [marketData, setMarketData] = useState(null);
     const [tvlData, setTvlData] = useState([]);
     const [priceData, setPriceData] = useState([]);
@@ -190,7 +190,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal }) => {
 
                     <p className="mt-5 text-xs text-gray-400">
                         계정이 없으신가요?{' '}
-                        <button onClick={onOpenLoginModal} className="text-blue-600 font-semibold hover:underline">가입하러 가기 →</button>
+                        <button onClick={onOpenRegisterModal} className="text-blue-600 font-semibold hover:underline">가입하러 가기 →</button>
                     </p>
                 </motion.div>
             </section>
