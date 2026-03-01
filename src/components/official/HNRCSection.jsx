@@ -522,7 +522,7 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
                                                 y: ["0%", "10%", "-10%", "0%", "0%"]
                                             }}
                                             transition={{
-                                                duration: 6,
+                                                duration: 3,
                                                 times: [0, 0.2, 0.5, 0.8, 1],
                                                 ease: "easeInOut"
                                             }}
@@ -597,7 +597,7 @@ const HNRCSection = ({ user, profile, onModalChange }) => {
 
                                     <div className="space-y-4 sm:space-y-6">
                                         <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-gray-900 leading-tight tracking-tight whitespace-pre-wrap break-keep">{selectedPost.title}</h2>
-                                        <p className="text-gray-600 text-[14px] sm:text-lg leading-relaxed whitespace-pre-wrap font-medium pb-4">
+                                        <p className="text-gray-600 text-[14px] sm:text-lg leading-relaxed whitespace-pre-wrap font-medium pb-8">
                                             {selectedPost.content}
                                         </p>
                                     </div>
