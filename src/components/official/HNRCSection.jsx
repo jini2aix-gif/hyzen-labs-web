@@ -363,10 +363,14 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
     const hasMore = visibleCount < posts.length;
 
     return (
-        <section className="min-h-screen bg-gray-50/50 pt-20 lg:pt-24 pb-32 px-4 md:px-10 relative overflow-hidden">
+        <section className="min-h-screen bg-[#F8FAFC] pt-20 lg:pt-24 pb-32 px-4 md:px-10 relative overflow-hidden">
             <HNRCHeroCanvas />
 
-            <div className="w-full relative z-10">
+            {/* Ambient Trendy Glows */}
+            <div className="absolute top-[20%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
+            <div className="absolute bottom-[10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
+
+            <div className="w-full relative z-10 max-w-[1600px] mx-auto">
                 <div className="w-full">
                     {/* Header Profile / Title Area */}
                     <div className="flex items-start justify-between mb-8 md:mb-12 pt-4">
@@ -396,7 +400,7 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.1 }}
-                                className="bg-white rounded-[32px] p-6 sm:p-8 border border-blue-50 shadow-xl shadow-blue-900/5 relative overflow-hidden"
+                                className="bg-white/70 backdrop-blur-2xl rounded-[40px] p-6 sm:p-8 border border-white shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] relative overflow-hidden"
                             >
                                 <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                                     <Trophy size={80} />
@@ -435,7 +439,7 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
                                                             <span className="font-black italic text-gray-500 text-[9px]">{monthlyLeaderboard[1].totalKm.toFixed(1)}<span className="text-[6px] ml-0.5">KM</span></span>
                                                         </div>
                                                     </div>
-                                                    <div className="w-full bg-gray-100 rounded-t-xl flex items-start justify-center pt-2 grow border-t border-x border-white shadow-inner">
+                                                    <div className="w-full bg-gradient-to-t from-gray-100 to-gray-50/50 backdrop-blur-sm rounded-t-2xl flex items-start justify-center pt-2 grow border-t border-white shadow-[inset_0_2px_10px_rgba(255,255,255,0.8)]">
                                                         <span className="font-black text-gray-400 text-sm">2</span>
                                                     </div>
                                                 </div>
@@ -452,8 +456,8 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
                                                             <span className="font-black italic text-yellow-700 text-[11px]">{monthlyLeaderboard[0].totalKm.toFixed(1)}<span className="text-[7px] ml-0.5">KM</span></span>
                                                         </div>
                                                     </div>
-                                                    <div className="w-full bg-gradient-to-b from-yellow-400 to-yellow-500 rounded-t-xl flex items-start justify-center pt-3 grow shadow-lg border-t-2 border-x-2 border-yellow-200">
-                                                        <span className="font-black text-yellow-900 text-xl">1</span>
+                                                    <div className="w-full bg-gradient-to-t from-yellow-100 to-yellow-50 rounded-t-2xl flex items-start justify-center pt-3 grow border-t border-white shadow-[inset_0_4px_20px_rgba(255,255,255,0.9),0_-4px_20px_rgba(234,179,8,0.15)] relative">
+                                                        <span className="font-black text-yellow-500 text-xl drop-shadow-sm">1</span>
                                                     </div>
                                                 </div>
                                             )}
@@ -470,8 +474,8 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
                                                             <span className="font-black italic text-gray-500 text-[9px]">{monthlyLeaderboard[2].totalKm.toFixed(1)}<span className="text-[6px] ml-0.5">KM</span></span>
                                                         </div>
                                                     </div>
-                                                    <div className="w-full bg-gray-50 rounded-t-xl flex items-start justify-center pt-2 grow border-t border-x border-white shadow-inner">
-                                                        <span className="font-black text-gray-400 text-xs">3</span>
+                                                    <div className="w-full bg-gradient-to-t from-orange-50/50 to-white/50 backdrop-blur-sm rounded-t-2xl flex items-start justify-center pt-2 grow border-t border-white shadow-[inset_0_2px_10px_rgba(255,255,255,0.8)]">
+                                                        <span className="font-black text-orange-200 text-xs text-shadow-sm">3</span>
                                                     </div>
                                                 </div>
                                             )}
@@ -484,27 +488,28 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
                         {/* Right: Main Feed (8 cols) */}
                         <div className="lg:col-span-8">
                             {/* Feed Section Header */}
-                            <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-8">
-                                <div className="flex items-center gap-2">
-                                    <Activity size={18} className="text-gray-400" />
-                                    <h4 className="font-bold tracking-widest text-xs text-gray-400 uppercase">최신 피드</h4>
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex flex-col">
+                                    <h4 className="font-black tracking-tight text-3xl text-gray-900">Live Feed</h4>
+                                    <p className="text-gray-400 text-xs mt-1 font-bold tracking-wide">러닝 크루들의 최신 기록</p>
                                 </div>
                                 <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
                                     onClick={() => {
                                         if (!user) { onOpenLoginModal?.(); return; }
                                         setEditingRecord(null);
                                         setIsModalOpen(true);
                                     }}
-                                    className="p-2 bg-black text-white rounded-full hover:bg-gray-800 transition-colors shadow-md"
+                                    className="px-5 py-3 bg-black text-white rounded-full hover:bg-gray-800 transition-colors shadow-xl shadow-black/10 flex items-center gap-2 font-bold text-xs"
                                 >
-                                    <Plus size={20} />
+                                    <Plus size={16} />
+                                    <span>기록하기</span>
                                 </motion.button>
                             </div>
 
                             {/* Posts List */}
-                            <div className="space-y-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                 <AnimatePresence mode="popLayout">
                                     {posts.length === 0 && (
                                         <motion.div
@@ -525,71 +530,80 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
                                             exit={{ opacity: 0, scale: 0.95 }}
                                             transition={{ delay: idx * 0.05 }}
                                             onClick={() => setSelectedPost(post)}
-                                            className="relative bg-white rounded-[32px] p-5 border border-gray-100 shadow-sm hover:shadow-2xl hover:translate-y-[-4px] transition-all cursor-pointer flex flex-row overflow-hidden group min-h-[180px]"
+                                            className="relative bg-gray-900 rounded-[32px] overflow-hidden group aspect-[4/5] sm:aspect-square flex flex-col justify-end cursor-pointer border border-gray-800 shadow-2xl hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] transition-all hover:-translate-y-1"
                                         >
-                                            {/* Right Image Background - Expanded Area */}
-                                            {post.image && (
-                                                <div className="absolute right-0 top-0 bottom-0 w-[60%] h-full z-0 overflow-hidden">
-                                                    <div className="absolute inset-0 z-10 bg-gradient-to-r from-white via-white/40 to-transparent"></div>
+                                            {/* Background Image with Dark Gradient Overlay */}
+                                            {post.image ? (
+                                                <div className="absolute inset-0 z-0 overflow-hidden bg-black">
                                                     <img
                                                         src={post.image}
-                                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100"
                                                         alt="Run record"
                                                     />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-black/10 transition-opacity"></div>
+                                                </div>
+                                            ) : (
+                                                <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-br from-indigo-950 via-gray-900 to-black">
+                                                    {/* Abstract shape for posts without image */}
+                                                    <div className="absolute top-[-20%] right-[-20%] w-[80%] h-[80%] rounded-full bg-indigo-500/20 blur-3xl group-hover:bg-indigo-500/30 transition-colors duration-700"></div>
                                                 </div>
                                             )}
 
-                                            {/* Left Content Area */}
-                                            <div className="relative z-20 w-[50%] flex flex-col justify-between">
-                                                <div className="w-full pr-4">
-                                                    <div className="flex items-center gap-2 mb-3">
-                                                        <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center font-bold text-gray-500 text-[10px] border border-white shrink-0">
-                                                            {(user?.uid === post.authorId && profile?.photoURL) ? <img src={profile.photoURL} className="w-full h-full object-cover" /> : (post.authorPhoto ? <img src={post.authorPhoto} className="w-full h-full object-cover" /> : (post.author || 'Guest').charAt(0).toUpperCase())}
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <p className="font-bold text-gray-900 text-[11px] truncate tracking-tight">{(user?.uid === post.authorId && profile?.displayName) ? profile.displayName : post.author}</p>
-                                                            <p className="text-gray-400 text-[10px] font-medium leading-none">{post.timestamp.toLocaleDateString()}</p>
-                                                        </div>
+                                            {/* Top Actions (Edit/Delete) */}
+                                            {user && user.uid === post.authorId && (
+                                                <div className="absolute top-4 right-4 z-20 flex gap-1.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                                                    <button onClick={(e) => handleEditClick(e, post)} className="p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full text-white/80 hover:text-white transition-all shadow-lg">
+                                                        <Edit2 size={14} className="w-4 h-4" />
+                                                    </button>
+                                                    <button onClick={(e) => handleDeleteRecord(e, post.id)} className="p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full text-white/80 hover:text-red-400 transition-all shadow-lg">
+                                                        <Trash2 size={14} className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            )}
 
-                                                        {user && user.uid === post.authorId && (
-                                                            <div className="ml-auto flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                                                                <button onClick={(e) => handleEditClick(e, post)} className="text-gray-400 hover:text-indigo-500 p-1.5 lg:p-1 bg-gray-100 lg:bg-white/90 rounded-full backdrop-blur-sm shadow-sm transition-colors" title="수정">
-                                                                    <Edit2 size={12} className="w-3.5 h-3.5 lg:w-3 lg:h-3" />
-                                                                </button>
-                                                                <button onClick={(e) => handleDeleteRecord(e, post.id)} className="text-gray-400 hover:text-red-500 p-1.5 lg:p-1 bg-gray-100 lg:bg-white/90 rounded-full backdrop-blur-sm shadow-sm transition-colors" title="삭제">
-                                                                    <Trash2 size={12} className="w-3.5 h-3.5 lg:w-3 lg:h-3" />
-                                                                </button>
-                                                            </div>
-                                                        )}
+                                            {/* Content Area */}
+                                            <div className="relative z-10 w-full p-5 sm:p-6 flex flex-col gap-3">
+                                                {/* Author Profile */}
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <div className="w-7 h-7 rounded-full overflow-hidden bg-white/20 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white text-[10px] font-bold shadow-sm">
+                                                        {(user?.uid === post.authorId && profile?.photoURL) ? <img src={profile.photoURL} className="w-full h-full object-cover" /> : (post.authorPhoto ? <img src={post.authorPhoto} className="w-full h-full object-cover" /> : (post.author || 'Guest').charAt(0).toUpperCase())}
                                                     </div>
-
-                                                    <h3 className="text-base font-black text-gray-900 truncate mb-1 leading-tight">{post.title}</h3>
-                                                    <p className="text-gray-500 text-[12px] line-clamp-2 leading-tight mb-4">{post.content}</p>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-white text-xs truncate max-w-[140px] drop-shadow-md">{(user?.uid === post.authorId && profile?.displayName) ? profile.displayName : post.author}</span>
+                                                        <span className="text-white/60 text-[9px] drop-shadow-md">{post.timestamp.toLocaleDateString()}</span>
+                                                    </div>
                                                 </div>
 
-                                                <div className="space-y-2 pb-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="flex items-center gap-1 px-2 py-1 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 shadow-sm">
-                                                            <MapPin size={10} />
-                                                            <span className="font-black italic text-xs">{post.distance.toFixed(1)} <span className="text-[9px] not-italic opacity-60">KM</span></span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1 px-2 py-1 rounded-xl bg-gray-50 border border-gray-100 text-gray-600">
-                                                            <Zap size={10} className="text-gray-400" />
-                                                            <span className="font-black italic text-xs">{post.pace || "--'--\""}</span>
-                                                        </div>
-                                                    </div>
+                                                {/* Title & Desc */}
+                                                <div>
+                                                    <h3 className="text-xl font-black text-white leading-tight mb-1 truncate drop-shadow-lg">{post.title}</h3>
+                                                    <p className="text-white/70 text-[13px] line-clamp-2 leading-snug drop-shadow-md">{post.content}</p>
+                                                </div>
 
-                                                    <div className="flex items-center gap-3 text-gray-400 pl-1">
-                                                        <div
-                                                            className={`flex items-center gap-1 ${post.likes?.includes(user?.uid) ? 'text-red-500' : 'text-gray-400'}`}
-                                                        >
-                                                            <Heart size={14} fill={post.likes?.includes(user?.uid) ? "currentColor" : "none"} />
-                                                            <span className="text-[10px] font-black">{post.likes?.length || 0}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1">
-                                                            <MessageSquare size={14} />
-                                                            <span className="text-[10px] font-black">{post.commentCount || 0}</span>
-                                                        </div>
+                                                {/* Stats Badges */}
+                                                <div className="flex flex-wrap gap-2 mt-2">
+                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white shadow-lg">
+                                                        <MapPin size={12} className="text-indigo-400" />
+                                                        <span className="font-black italic text-sm">{post.distance.toFixed(1)} <span className="text-[10px] not-italic opacity-70">Km</span></span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white shadow-lg">
+                                                        <Zap size={12} className="text-yellow-400" />
+                                                        <span className="font-black italic text-[11px]">{post.pace || "--'--\""}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Meta Info (Likes, Comments) */}
+                                                <div className="flex items-center gap-4 text-white/60 mt-2 pt-3 border-t border-white/10">
+                                                    <button
+                                                        onClick={(e) => handleToggleLike(e, post)}
+                                                        className={`flex items-center gap-1.5 transition-colors ${post.likes?.includes(user?.uid) ? 'text-red-500 hover:text-red-400' : 'hover:text-white'}`}
+                                                    >
+                                                        <Heart size={14} fill={post.likes?.includes(user?.uid) ? "currentColor" : "none"} className="drop-shadow-md" />
+                                                        <span className="text-xs font-bold drop-shadow-md">{post.likes?.length || 0}</span>
+                                                    </button>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <MessageSquare size={14} className="drop-shadow-md" />
+                                                        <span className="text-xs font-bold drop-shadow-md">{post.commentCount || 0}</span>
                                                     </div>
                                                 </div>
                                             </div>
