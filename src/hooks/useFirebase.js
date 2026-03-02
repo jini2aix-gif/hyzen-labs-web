@@ -60,6 +60,7 @@ export const useFirebase = () => {
                     // Only use Google photo if no custom photo is stored
                     photoURL: existingPhoto || user.photoURL,
                     provider: 'google',
+                    isForceWithdrawn: existing.exists() && existing.data().isForceWithdrawn !== undefined ? existing.data().isForceWithdrawn : false,
                     lastLoginAt: new Date().toISOString()
                 }, { merge: true });
             }
@@ -88,6 +89,7 @@ export const useFirebase = () => {
                     displayName: nickname,
                     photoURL: null,
                     provider: 'email',
+                    isForceWithdrawn: false,
                     lastLoginAt: new Date().toISOString()
                 }, { merge: true });
             }
