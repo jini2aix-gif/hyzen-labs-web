@@ -14,6 +14,7 @@ import {
     fetchArbitrumHistoricalTVL,
     fetchArbitrumSupply,
     fetchArbitrumPriceHistory,
+    fetchArbitrumMonthlyPriceHistory,
     getCleanWhaleData,
     REFRESH
 } from '../../lib/api-fetcher';
@@ -98,22 +99,23 @@ const ValueMetricCard = ({ title, value, subValue, change, icon: Icon, colorClas
 const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
     const [data, setData] = useState({
         market: null, tvlData: null, supply: null,
-        histPrice: [], histTvl: [], whales: []
+        histPrice: [], histTvl: [], whales: [], monthlyPrice: []
     });
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const loadAllData = async () => {
             try {
-                const [market, tvlData, supply, histPrice, histTvl, whales] = await Promise.all([
+                const [market, tvlData, supply, histPrice, histTvl, whales, monthlyPrice] = await Promise.all([
                     fetchMarketComparison(),
                     fetchChainTVLs(),
                     fetchArbitrumSupply(),
                     fetchArbitrumPriceHistory(),
                     fetchArbitrumHistoricalTVL(),
-                    getCleanWhaleData()
+                    getCleanWhaleData(),
+                    fetchArbitrumMonthlyPriceHistory()
                 ]);
-                setData({ market, tvlData, supply, histPrice, histTvl, whales });
+                setData({ market, tvlData, supply, histPrice, histTvl, whales, monthlyPrice });
             } catch (e) {
                 console.error("Dashboard Data Load Error", e);
             } finally {
@@ -180,49 +182,12 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
         };
     });
 
-    const HYZEN_ARB = 130766;
-    const TARGET_KRW = 800000000;
-    const currentHyzenKRW = HYZEN_ARB * arb.priceKRW;
-    const progressPct = Math.min((currentHyzenKRW / TARGET_KRW) * 100, 100);
-
     return (
         <section className="bg-[#050505] min-h-screen text-gray-200 font-sans pt-24 pb-20 px-4 md:px-8">
             <div className="max-w-[1400px] mx-auto">
 
-                {/* Global Command Bar */}
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col md:flex-row items-center justify-between bg-[#111111] border border-gray-800 rounded-2xl p-4 md:p-6 mb-8 shadow-lg"
-                >
-                    <div className="flex items-center gap-4 mb-4 md:mb-0">
-                        <div className="w-12 h-12 bg-[#00D1FF]/10 text-[#00D1FF] flex items-center justify-center rounded-xl border border-[#00D1FF]/20">
-                            <Target size={24} />
-                        </div>
-                        <div>
-                            <h2 className="text-[10px] text-gray-500 font-mono tracking-widest uppercase mb-1">Hyzen Labs Asset target</h2>
-                            <div className="text-xl md:text-2xl font-bold text-white flex items-center gap-3">
-                                {HYZEN_ARB.toLocaleString()} ARB
-                                <span className="text-[#28A745] font-mono text-lg">({(currentHyzenKRW / 1e8).toFixed(1)}억 / 8억 ₩)</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="w-full md:w-1/3">
-                        <div className="flex justify-between text-xs text-gray-400 mb-2 font-mono">
-                            <span>Mission Progress</span>
-                            <span>{progressPct.toFixed(1)}%</span>
-                        </div>
-                        <div className="h-2 w-full bg-gray-900 rounded-full overflow-hidden">
-                            <motion.div
-                                initial={{ width: 0 }} animate={{ width: `${progressPct}%` }}
-                                transition={{ duration: 1.5, ease: "easeOut" }}
-                                className="h-full bg-gradient-to-r from-[#00D1FF] to-[#0070FF]"
-                            />
-                        </div>
-                    </div>
-                </motion.div>
-
                 {/* Top Metrics Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 mt-4">
                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}>
                         <ValueMetricCard
                             title="ARB Price (Live)"
@@ -350,6 +315,39 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                         </div>
                     </motion.div>
 
+                </div>
+
+                {/* Monthly Price Chart */}
+                <div className="mt-6">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
+                        className="bg-[#111111] border border-gray-800 rounded-3xl p-6 shadow-xl"
+                    >
+                        <div className="mb-6 border-b border-gray-800 pb-4">
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2 tracking-tight">
+                                <BarChart2 size={20} className="text-[#00D1FF]" />
+                                ARB Monthly Price Action
+                            </h3>
+                            <p className="text-xs text-gray-500 mt-1 font-mono">Long-term monthly closing prices.</p>
+                        </div>
+                        <div className="h-[300px] w-full mt-4">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={data.monthlyPrice} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorMonthly" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#28A745" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#28A745" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+                                    <XAxis dataKey="date" stroke="#555" tick={{ fill: '#777', fontSize: 12 }} tickMargin={10} minTickGap={20} />
+                                    <YAxis stroke="#28A745" tick={{ fill: '#28A745', fontSize: 12 }} tickFormatter={(val) => `$${val.toFixed(2)}`} domain={['dataMin - 0.1', 'dataMax + 0.1']} />
+                                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#444', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                                    <Area type="monotone" dataKey="price" name="Monthly Close" stroke="#28A745" strokeWidth={3} fillOpacity={1} fill="url(#colorMonthly)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </motion.div>
                 </div>
             </div>
         </section>

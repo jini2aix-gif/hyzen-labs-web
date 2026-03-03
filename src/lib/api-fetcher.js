@@ -86,15 +86,15 @@ export const fetchChainTVLs = async () => {
 
     const ds = await fetchWithCache('https://api.llama.fi/v2/chains', 'chains_tvl', TTL.MEDIUM, defaultChains);
 
-    const findTVL = (name) => {
+    const findTVL = (name, fallback) => {
         const chain = ds.find(c => c.name.toLowerCase() === name.toLowerCase());
-        return chain ? chain.tvl : 0;
+        return chain && chain.tvl > 0 ? chain.tvl : fallback;
     };
 
     return {
-        arb: findTVL('Arbitrum'),
-        op: findTVL('Optimism'),
-        base: findTVL('Base') // Base TVL as proxy benchmark
+        arb: findTVL('Arbitrum', 2500000000),
+        op: findTVL('Optimism', 750000000),
+        base: findTVL('Base', 1200000000) // Base TVL as proxy benchmark
     };
 };
 
@@ -158,6 +158,29 @@ export const fetchArbitrumPriceHistory = async () => {
         return {
             timestamp: item[0],
             date: `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`,
+            price: Number(item[4]),
+        };
+    });
+};
+
+export const fetchArbitrumMonthlyPriceHistory = async () => {
+    // Generate mock if fails
+    const mock = Array.from({ length: 24 }).map((_, i) => [
+        Date.now() - (24 - i) * 30 * 86400 * 1000, 0, 0, 0, (0.5 + Math.random() * 0.5).toString()
+    ]);
+
+    const data = await fetchWithCache(
+        'https://api.binance.com/api/v3/klines?symbol=ARBUSDT&interval=1M&limit=24',
+        'arb_monthly_hist',
+        TTL.LONG,
+        mock
+    );
+
+    return data.map(item => {
+        const d = new Date(item[0]);
+        return {
+            timestamp: item[0],
+            date: `${d.getFullYear().toString().slice(-2)}.${String(d.getMonth() + 1).padStart(2, '0')}`,
             price: Number(item[4]),
         };
     });
