@@ -233,7 +233,7 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
     const renderCommentsList = () => {
         if (!selectedPost) return null;
         return (
-            <div className="flex-1 overflow-y-auto p-0 md:p-6 space-y-6 custom-scrollbar min-h-0 bg-transparent mb-auto w-full">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-0 md:p-6 space-y-6 custom-scrollbar min-h-0 bg-transparent mb-auto w-full" style={{ touchAction: 'pan-y' }}>
                 {comments.length === 0 ? (
                     <div className="h-40 flex flex-col items-center justify-center text-gray-400 gap-2">
                         <MessageSquare size={32} className="opacity-10" />
@@ -658,7 +658,7 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
                             <div className="md:hidden w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
 
                             {/* Left Side: Post Content & Data (Scrolls naturally) */}
-                            <div className="w-full md:w-[60%] h-full shrink-0 flex flex-col bg-white border-b md:border-b-0 border-gray-100 md:border-r overflow-y-auto custom-scrollbar relative">
+                            <div className="w-full md:w-[60%] h-full shrink-0 flex flex-col bg-white border-b md:border-b-0 border-gray-100 md:border-r overflow-y-auto overflow-x-hidden custom-scrollbar relative" style={{ touchAction: 'pan-y' }}>
                                 {/* Image Box */}
                                 {selectedPost.image ? (
                                     <div className="w-full bg-gray-100 flex shrink-0 justify-center bg-black relative">

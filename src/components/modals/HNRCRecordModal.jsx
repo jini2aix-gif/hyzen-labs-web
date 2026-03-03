@@ -37,8 +37,8 @@ const WheelPicker = ({ items, value, onChange, label }) => {
                 <div
                     ref={scrollRef}
                     onScroll={handleScroll}
-                    className="w-full h-full overflow-y-scroll snap-y snap-mandatory py-[40px] scrollbar-hide"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
+                    className="w-full h-full overflow-y-scroll overflow-x-hidden snap-y snap-mandatory py-[40px] scrollbar-hide"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
                 >
                     {items.map((item, i) => (
                         <div
@@ -185,7 +185,7 @@ const HNRCRecordModal = ({ isOpen, onClose, user, onSubmit, initialData }) => {
                         </button>
                     </div>
 
-                    <div className="p-6 overflow-y-auto custom-scrollbar">
+                    <div className="p-6 overflow-y-auto overflow-x-hidden custom-scrollbar" style={{ touchAction: 'pan-y' }}>
                         <form id="hnrc-form" onSubmit={handleSubmit} className="space-y-6">
 
                             {/* Stats Display Pane */}
