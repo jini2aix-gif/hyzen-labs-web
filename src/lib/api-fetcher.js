@@ -188,23 +188,40 @@ export const fetchArbitrumMonthlyPriceHistory = async () => {
 
 // ─── 5. Whale Tracker Mock (Filtering logic simulated) ───────────────────────
 export const getCleanWhaleData = async () => {
-    // Since Arbiscan Top 100 requires API Key/Pro, we use a calculated realistic mock 
-    // that simulates the "Known Exchange filter + Inactive filter + 72h Active" logic requested.
+    // Fetch from Vercel Serverless Function proxy call (Dune Analytics API)
+    const url = `/api/dune?t=${Date.now()}`;
 
-    // In a real env, you would query Arbiscan contract token holders, then filter out addresses 
-    // labeled as Binance, Coinbase, Arbitrum Bridge, etc.
-    const mockWhales = [
-        { id: "0x7a2...4c9", type: "Individual Whale", balance: 1450200, lastActive: "2h ago", net72h: 52000, badge: "Aggressive Accumulator 🚀" },
-        { id: "0x1b9...ef2", type: "Smart Money", balance: 890000, lastActive: "12h ago", net72h: 12500, badge: "Steady Buyer 🟢" },
-        { id: "0x9c3...11a", type: "Fund/VC", balance: 5200000, lastActive: "41h ago", net72h: -250000, badge: "Distributing ⚠️" },
-        { id: "0x3d4...88b", type: "Individual Whale", balance: 670000, lastActive: "5h ago", net72h: 8900, badge: "Diamond Hands 💎" },
-        { id: "0xfa1...23c", type: "Smart Money", balance: 340000, lastActive: "1h ago", net72h: 45000, badge: "Aggressive Accumulator 🚀" },
-        { id: "0x22a...90d", type: "Fund/VC", balance: 2100000, lastActive: "18h ago", net72h: -10000, badge: "Slight Trim 🟡" },
-        { id: "0x44b...77e", type: "Individual Whale", balance: 560000, lastActive: "60h ago", net72h: 1200, badge: "Steady Buyer 🟢" },
-        { id: "0x55c...66f", type: "Smart Money", balance: 410000, lastActive: "4h ago", net72h: 0, badge: "Holding 🛡️" },
-    ];
+    try {
+        const data = await fetchWithCache(url, 'arb_whale_data_final_v1', { cache: 'no-store' });
 
-    // Simulate API delay
-    await new Promise(r => setTimeout(r, 600));
-    return mockWhales;
+        if (data && data.result && data.result.rows && data.result.rows.length > 0) {
+            // Map the real Dune data to the new dashboard's UI format
+            return data.result.rows.map(row => {
+                const balance = row.balance_arb || row.balance || 0;
+                const increase24hPct = row.increase_24h_pct || row.increase24h || 0;
+
+                let badge = 'Holding 🛡️';
+                if (increase24hPct > 10) badge = 'Aggressive Accumulator 🚀';
+                else if (increase24hPct > 2) badge = 'Steady Buyer 🟢';
+                else if (increase24hPct < -10) badge = 'Distributing ⚠️';
+                else if (increase24hPct < -2) badge = 'Slight Trim 🟡';
+
+                return {
+                    id: row.wallet_address || row.address || 'Unknown',
+                    type: "Active Wallet",
+                    balance: balance,
+                    lastActive: "24h window",
+                    net24hPct: increase24hPct, // Passing the real 24h pct
+                    badge: badge
+                };
+            }).sort((a, b) => b.net24hPct - a.net24hPct);
+        } else if (data && data.error) {
+            console.error("Dune Backend API error:", data.error);
+        }
+    } catch (e) {
+        console.error("Failed to fetch from Dune proxy:", e);
+    }
+
+    // Fallback if Dune API fails or is empty
+    return [];
 };

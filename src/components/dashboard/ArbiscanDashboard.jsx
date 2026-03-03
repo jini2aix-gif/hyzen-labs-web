@@ -331,8 +331,8 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                                             </div>
                                             <div className="text-right">
                                                 <span className="text-gray-300 font-mono text-sm block">{(whale.balance / 1000).toFixed(0)}k ARB</span>
-                                                <span className={`text-[10px] font-bold mt-1 ${whale.net72h > 0 ? 'text-[#28A745]' : whale.net72h < 0 ? 'text-[#DC3545]' : 'text-gray-500'}`}>
-                                                    {whale.net72h > 0 ? '+' : ''}{whale.net72h.toLocaleString()} (72h)
+                                                <span className={`text-[10px] font-bold mt-1 ${whale.net24hPct > 0 ? 'text-[#28A745]' : whale.net24hPct < 0 ? 'text-[#DC3545]' : 'text-gray-500'}`}>
+                                                    {whale.net24hPct > 0 ? '+' : ''}{whale.net24hPct.toFixed(2)}% (24h)
                                                 </span>
                                             </div>
                                         </div>
