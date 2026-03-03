@@ -1,0 +1,19 @@
+﻿51f0829 fix(vercel): add COOP same-origin-allow-popups to allow google login popup
+c3f300a fix(auth): revert to signInWithPopup to resolve auth/internal-error and redirect reload loop
+a659c8c fix(auth): implement signInWithRedirect instead of signInWithPopup to fix internal-error on mobile and strict browsers
+e7206bb feat(auth): make google button text dynamic based on mode
+22abeb7 feat(admin): admin panel + profile photo fix (custom photo preserved on Google re-login)
+66e37d2 feat: google sign up text, visitor counter size, mobile debris scale, SEO meta update
+ab47dee feat(auth): 媛?낇븯??媛湲???register mode 吏곸젒 ?곌껐
+8397013 chore(copy): update wording ???섏쁺?⑸땲?? ?뚯썝 濡쒓렇?? 媛?낇븯??媛湲?8255d69 feat(auth): members-only gate ??arbiscan blur overlay, game+HNRC login guard
+93a5e66 style(arbiscan): match hero font to HNRC ??font-black tracking-tighter
+b9aebc8 chore(arbiscan): update hero text to ARBISCAN + On-Chain Intelligence
+0506969 fix(arbiscan): add missing REFRESH import from api-fetcher
+8f5d78b fix(arbiscan): align refresh intervals to actual API update frequencies
+a96832d fix(arbiscan): bypass cache for price, dual-interval refresh, correct API rate limits
+888a10f fix(arbiscan): remove log scale tvl button, fix 15s refresh cache bug
+ffe3645 feat(hnrc): replace page numbers with load more infinite-scroll mechanism
+eb0e483 fix(hnrc): resolve mobile double-tap bug and broken delete function
+2fc5a5c feat(arbiscan): revamp whale section with 7D on-chain accumulation data and sentiment UI
+52e6d11 feat(arbiscan): update price history to monthly and improve mobile layout
+3367e67 feat(arbiscan): add 30-day ARB price history chart from Binance and rename TVL chart to Active DeFi TVL

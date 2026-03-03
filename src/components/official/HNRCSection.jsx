@@ -98,6 +98,16 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
         setIsModalOpen(true);
     };
 
+    // Sync selectedPost with the latest posts data to reflect likes and comments changes immediately
+    useEffect(() => {
+        if (selectedPost) {
+            const updatedPost = posts.find(p => p.id === selectedPost.id);
+            if (updatedPost && (updatedPost.likes?.length !== selectedPost.likes?.length || updatedPost.commentCount !== selectedPost.commentCount)) {
+                setSelectedPost(updatedPost);
+            }
+        }
+    }, [posts]);
+
     // --- Likes & Comments Logic ---
     const handleToggleLike = async (e, post) => {
         e.stopPropagation();
@@ -208,7 +218,7 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
                     runnerStats[post.author] = {
                         name: post.author,
                         totalKm: 0,
-                        photo: post.authorPhoto
+                        photo: (user?.uid === post.authorId && profile?.photoURL) ? profile.photoURL : post.authorPhoto
                     };
                 }
                 runnerStats[post.author].totalKm += (parseFloat(post.distance) || 0);
@@ -220,53 +230,74 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
             .slice(0, 3);
     }, [posts]);
 
-    const renderCommentsContent = () => {
+    const renderCommentsList = () => {
         if (!selectedPost) return null;
         return (
-            <div className="flex flex-col h-full bg-gray-50/50">
-                <div className="p-4 sm:p-6 border-b border-gray-100 bg-white flex items-center justify-between shrink-0 md:top-0 md:sticky z-20">
-                    <div className="flex items-center gap-2">
-                        <div className="p-1.5 sm:p-2 bg-indigo-50 rounded-lg">
-                            <MessageCircle size={16} className="text-indigo-600 sm:w-4 sm:h-4 w-3.5 h-3.5" />
-                        </div>
-                        <span className="font-bold text-gray-900 text-sm sm:text-base">댓글 <span className="text-indigo-600">{selectedPost.commentCount || 0}</span></span>
+            <div className="flex-1 overflow-y-auto p-0 md:p-6 space-y-6 custom-scrollbar min-h-0 bg-transparent mb-auto w-full">
+                {comments.length === 0 ? (
+                    <div className="h-40 flex flex-col items-center justify-center text-gray-400 gap-2">
+                        <MessageSquare size={32} className="opacity-10" />
+                        <p className="text-sm font-medium">아직 댓글이 없습니다.</p>
                     </div>
-                    <button onClick={() => { setSelectedPost(null); setReplyTo(null); }} className="hidden md:block p-1 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
-                        <X size={20} />
-                    </button>
-                </div>
+                ) : (
+                    comments.filter(c => !c.parentId).map(comment => (
+                        <div key={comment.id} className="space-y-4">
+                            {/* Parent Comment */}
+                            <div className="flex gap-3">
+                                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-100">
+                                    {comment.authorPhoto ? <img src={comment.authorPhoto} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400">{comment.author.charAt(0)}</div>}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                        <span className="font-bold text-gray-900 text-sm">{comment.author}</span>
+                                        <span className="text-[10px] text-gray-400">{comment.timestamp.toLocaleDateString()}</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 leading-relaxed mb-2 break-all">{comment.text}</p>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => setReplyTo({ id: comment.id, author: comment.author })}
+                                            className="text-[10px] font-bold text-indigo-600 hover:underline"
+                                        >
+                                            답글 달기
+                                        </button>
+                                        {user?.uid === comment.authorId && (
+                                            <button
+                                                onClick={() => handleDeleteComment(comment.id)}
+                                                className="text-[10px] font-bold text-gray-400 hover:text-red-500"
+                                            >
+                                                삭제
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
 
-                <div className="flex-1 overflow-y-visible md:overflow-y-auto p-6 space-y-6 custom-scrollbar min-h-0 bg-gray-50/10 mb-auto">
-                    {comments.length === 0 ? (
-                        <div className="h-40 flex flex-col items-center justify-center text-gray-400 gap-2">
-                            <MessageSquare size={32} className="opacity-10" />
-                            <p className="text-sm font-medium">아직 댓글이 없습니다.</p>
-                        </div>
-                    ) : (
-                        comments.filter(c => !c.parentId).map(comment => (
-                            <div key={comment.id} className="space-y-4">
-                                {/* Parent Comment */}
-                                <div className="flex gap-3">
-                                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-100">
-                                        {comment.authorPhoto ? <img src={comment.authorPhoto} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400">{comment.author.charAt(0)}</div>}
+                            {/* Replies */}
+                            {comments.filter(reply => reply.parentId === comment.id).map(reply => (
+                                <div key={reply.id} className="flex gap-3 ml-8 pl-4 border-l-2 border-gray-100">
+                                    <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-100">
+                                        {reply.authorPhoto ? <img src={reply.authorPhoto} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-gray-400">{reply.author.charAt(0)}</div>}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between gap-2 mb-1">
-                                            <span className="font-bold text-gray-900 text-sm">{comment.author}</span>
-                                            <span className="text-[10px] text-gray-400">{comment.timestamp.toLocaleDateString()}</span>
+                                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                                            <span className="font-bold text-gray-900 text-[13px]">{reply.author}</span>
+                                            <span className="text-[9px] text-gray-400">{reply.timestamp.toLocaleDateString()}</span>
                                         </div>
-                                        <p className="text-sm text-gray-600 leading-relaxed mb-2">{comment.text}</p>
-                                        <div className="flex items-center gap-3">
+                                        <p className="text-[13px] text-gray-600 leading-relaxed break-all">
+                                            {reply.replyToAuthor && <span className="text-indigo-600 font-bold mr-1">@{reply.replyToAuthor}</span>}
+                                            {reply.text}
+                                        </p>
+                                        <div className="flex items-center gap-3 mt-1.5">
                                             <button
-                                                onClick={() => setReplyTo({ id: comment.id, author: comment.author })}
-                                                className="text-[10px] font-bold text-indigo-600 hover:underline"
+                                                onClick={() => setReplyTo({ id: comment.id, author: reply.author })}
+                                                className="text-[9px] font-bold text-indigo-600 hover:underline"
                                             >
                                                 답글 달기
                                             </button>
-                                            {user?.uid === comment.authorId && (
+                                            {user?.uid === reply.authorId && (
                                                 <button
-                                                    onClick={() => handleDeleteComment(comment.id)}
-                                                    className="text-[10px] font-bold text-gray-400 hover:text-red-500"
+                                                    onClick={() => handleDeleteComment(reply.id)}
+                                                    className="text-[9px] font-bold text-gray-400 hover:text-red-500"
                                                 >
                                                     삭제
                                                 </button>
@@ -274,93 +305,61 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
                                         </div>
                                     </div>
                                 </div>
+                            ))}
+                        </div>
+                    ))
+                )}
+            </div>
+        );
+    };
 
-                                {/* Replies */}
-                                {comments.filter(reply => reply.parentId === comment.id).map(reply => (
-                                    <div key={reply.id} className="flex gap-3 ml-8 pl-4 border-l-2 border-gray-50">
-                                        <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-100">
-                                            {reply.authorPhoto ? <img src={reply.authorPhoto} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-gray-400">{reply.author.charAt(0)}</div>}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between gap-2 mb-0.5">
-                                                <span className="font-bold text-gray-900 text-[13px]">{reply.author}</span>
-                                                <span className="text-[9px] text-gray-400">{reply.timestamp.toLocaleDateString()}</span>
-                                            </div>
-                                            <p className="text-[13px] text-gray-600 leading-relaxed">
-                                                {reply.replyToAuthor && <span className="text-indigo-600 font-bold mr-1">@{reply.replyToAuthor}</span>}
-                                                {reply.text}
-                                            </p>
-                                            <div className="flex items-center gap-3 mt-1.5">
-                                                <button
-                                                    onClick={() => setReplyTo({ id: comment.id, author: reply.author })}
-                                                    className="text-[9px] font-bold text-indigo-600 hover:underline"
-                                                >
-                                                    답글 달기
-                                                </button>
-                                                {user?.uid === reply.authorId && (
-                                                    <button
-                                                        onClick={() => handleDeleteComment(reply.id)}
-                                                        className="text-[9px] font-bold text-gray-400 hover:text-red-500"
-                                                    >
-                                                        삭제
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ))
-                    )}
-                </div>
-
-                {/* Persistent Comment Input Area */}
-                <div className="p-4 border-t border-gray-100 bg-white sticky bottom-0 z-30 mt-auto border-t">
-                    <AnimatePresence>
-                        {replyTo && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
-                                className="mb-2 px-3 py-1.5 bg-gray-50 rounded-lg flex items-center justify-between"
-                            >
-                                <span className="text-[11px] font-bold text-indigo-600 flex items-center gap-1">
-                                    <CornerDownRight size={12} />
-                                    {replyTo.author}님에게 답글 남기는 중...
-                                </span>
-                                <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-gray-600">
-                                    <X size={14} />
-                                </button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    <form onSubmit={handleAddComment} className="relative">
-                        <textarea
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            placeholder={user ? "댓글을 입력하세요..." : "로그인이 필요합니다"}
-                            disabled={!user || isSubmittingComment}
-                            className="w-full bg-gray-50 rounded-2xl p-4 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none min-h-[50px] max-h-[150px] placeholder:text-gray-400"
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleAddComment(e);
-                                }
-                            }}
-                        />
-                        <button
-                            type="submit"
-                            disabled={!user || !newComment.trim() || isSubmittingComment}
-                            className="absolute right-3 bottom-3 p-2 bg-black text-white rounded-xl disabled:bg-gray-200 disabled:text-gray-400 transition-all hover:scale-105 active:scale-95"
+    const renderCommentForm = () => {
+        return (
+            <div className="p-3 sm:p-4 border-gray-100 bg-white w-full shadow-[0_-10px_30px_rgba(0,0,0,0.05)] md:shadow-none z-30">
+                <AnimatePresence>
+                    {replyTo && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="mb-2 px-3 py-1.5 bg-gray-50 rounded-lg flex items-center justify-between"
                         >
-                            {isSubmittingComment ? <Loader2 size={16} className="animate-spin" /> : <Send size={18} />}
-                        </button>
-                    </form>
-                    {!user && (
-                        <p className="text-[10px] text-gray-400 text-center mt-2">이메일/구글 계정으로 로그인 후 이용 가능합니다.</p>
+                            <span className="text-[11px] font-bold text-indigo-600 flex items-center gap-1">
+                                <CornerDownRight size={12} />
+                                {replyTo.author}님에게 답글 남기는 중...
+                            </span>
+                            <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-gray-600">
+                                <X size={14} />
+                            </button>
+                        </motion.div>
                     )}
-                </div>
+                </AnimatePresence>
+
+                <form onSubmit={handleAddComment} className="relative">
+                    <textarea
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder={user ? "댓글을 입력하세요..." : "로그인이 필요합니다"}
+                        disabled={!user || isSubmittingComment}
+                        className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 pr-12 text-sm focus:outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none min-h-[50px] max-h-[120px] placeholder:text-gray-400 custom-scrollbar"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleAddComment(e);
+                            }
+                        }}
+                    />
+                    <button
+                        type="submit"
+                        disabled={!user || !newComment.trim() || isSubmittingComment}
+                        className="absolute right-3 bottom-3 p-2 bg-black text-white rounded-xl disabled:bg-gray-200 disabled:text-gray-400 transition-all hover:scale-105 active:scale-95"
+                    >
+                        {isSubmittingComment ? <Loader2 size={16} className="animate-spin" /> : <Send size={18} />}
+                    </button>
+                </form>
+                {!user && (
+                    <p className="text-[10px] text-gray-400 text-center mt-2">이메일/구글 계정으로 로그인 후 이용 가능합니다.</p>
+                )}
             </div>
         );
     };
@@ -658,120 +657,140 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
                             {/* Mobile Pull Indicator */}
                             <div className="md:hidden w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
 
-                            {/* Left Side: Post Content & Data */}
-                            <div className="w-full md:w-[60%] h-full shrink-0 flex flex-col bg-white border-b md:border-b-0 border-gray-100 relative overflow-hidden">
-
-                                {/* Fixed Top Section: Image, Profile, Stats, Title */}
-                                <div className="shrink-0 flex flex-col bg-white relative z-10 border-b border-gray-100 shadow-[0_5px_15px_-10px_rgba(0,0,0,0.05)]">
-                                    {/* Image Box */}
-                                    {selectedPost.image ? (
-                                        <div className="w-full h-[180px] md:h-auto md:aspect-[4/3] bg-gray-100 overflow-hidden relative flex shrink-0">
-                                            <motion.img
-                                                src={selectedPost.image}
-                                                className="w-full h-full object-cover"
-                                                alt="Run"
-                                                animate={{
-                                                    scale: [1, 1.25, 1.25, 1.25, 1],
-                                                    y: ["0%", "10%", "-10%", "0%", "0%"]
-                                                }}
-                                                transition={{
-                                                    duration: 3,
-                                                    times: [0, 0.2, 0.5, 0.8, 1],
-                                                    ease: "easeInOut"
-                                                }}
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
-
-                                            {/* Mobile Exit Button on Image */}
-                                            <button
-                                                onClick={() => { setSelectedPost(null); setReplyTo(null); }}
-                                                className="absolute top-4 right-4 z-[110] p-2 bg-black/40 backdrop-blur-md text-white rounded-full transition-all md:hidden border border-white/20"
-                                            >
-                                                <X size={20} />
-                                            </button>
+                            {/* Left Side: Post Content & Data (Scrolls naturally) */}
+                            <div className="w-full md:w-[60%] h-full shrink-0 flex flex-col bg-white border-b md:border-b-0 border-gray-100 md:border-r overflow-y-auto custom-scrollbar relative">
+                                {/* Image Box */}
+                                {selectedPost.image ? (
+                                    <div className="w-full bg-gray-100 flex shrink-0 justify-center bg-black relative">
+                                        <motion.img
+                                            src={selectedPost.image}
+                                            className="w-full max-h-[45vh] md:max-h-[55vh] object-cover md:object-contain relative z-10"
+                                            alt="Run"
+                                            animate={{
+                                                scale: [1, 1.02, 1],
+                                            }}
+                                            transition={{
+                                                duration: 15,
+                                                ease: "linear",
+                                                repeat: Infinity,
+                                                repeatType: "reverse"
+                                            }}
+                                        />
+                                        {/* Blurred background for contain */}
+                                        <div className="absolute inset-0 z-0 opacity-50 blur-xl overflow-hidden">
+                                            <img src={selectedPost.image} className="w-full h-full object-cover" />
                                         </div>
-                                    ) : (
-                                        <div className="w-full h-[180px] md:h-auto md:aspect-[4/3] md:min-h-[400px] bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center relative">
-                                            <Activity size={48} className="text-white/20" />
-                                            {/* Mobile Exit Button */}
-                                            <button
-                                                onClick={() => { setSelectedPost(null); setReplyTo(null); }}
-                                                className="absolute top-4 right-4 z-[110] p-2 bg-black/20 backdrop-blur-md text-white rounded-full transition-all md:hidden border border-white/20"
-                                            >
-                                                <X size={20} />
-                                            </button>
-                                        </div>
-                                    )}
 
-                                    <div className="px-5 pt-5 pb-3 sm:px-10 sm:pt-8 md:px-12 shrink-0">
-                                        <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5">
-                                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-indigo-50 shadow-sm bg-gray-100 flex-shrink-0">
-                                                {(user?.uid === selectedPost.authorId && profile?.photoURL) ? (
-                                                    <img src={profile.photoURL} className="w-full h-full object-cover" alt={profile.displayName} />
+                                        {/* Mobile Exit Button on Image */}
+                                        <button
+                                            onClick={() => { setSelectedPost(null); setReplyTo(null); }}
+                                            className="absolute top-4 right-4 z-[110] p-2 bg-black/40 backdrop-blur-md text-white rounded-full transition-all md:hidden border border-white/20 shadow-lg"
+                                        >
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="w-full h-[180px] md:h-[250px] bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center relative shrink-0">
+                                        <Activity size={48} className="text-white/20" />
+                                        {/* Mobile Exit Button */}
+                                        <button
+                                            onClick={() => { setSelectedPost(null); setReplyTo(null); }}
+                                            className="absolute top-4 right-4 z-[110] p-2 bg-black/20 backdrop-blur-md text-white rounded-full transition-all md:hidden border border-white/20 shadow-lg"
+                                        >
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                )}
+
+                                <div className="px-5 py-6 sm:px-10 sm:py-8 md:px-12 flex flex-col shrink-0">
+                                    <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-6">
+                                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-indigo-50 shadow-sm bg-gray-100 flex-shrink-0">
+                                            {(user?.uid === selectedPost.authorId && profile?.photoURL) ? (
+                                                <img src={profile.photoURL} className="w-full h-full object-cover" alt={profile.displayName} />
+                                            ) : (
+                                                selectedPost.authorPhoto ? (
+                                                    <img src={selectedPost.authorPhoto} className="w-full h-full object-cover" alt={selectedPost.author} />
                                                 ) : (
-                                                    selectedPost.authorPhoto ? (
-                                                        <img src={selectedPost.authorPhoto} className="w-full h-full object-cover" alt={selectedPost.author} />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center font-bold text-gray-400 bg-gray-100">{selectedPost.author.charAt(0)}</div>
-                                                    )
-                                                )}
-                                            </div>
-                                            <div className="min-w-0">
-                                                <h3 className="text-base sm:text-lg font-black text-gray-900 truncate">{(user?.uid === selectedPost.authorId && profile?.displayName) ? profile.displayName : selectedPost.author}</h3>
-                                                <p className="text-[10px] sm:text-xs font-bold text-indigo-500 uppercase tracking-widest">{selectedPost.timestamp.toLocaleDateString()}</p>
-                                            </div>
-
-                                            <div className="ml-auto flex gap-2">
-                                                <button
-                                                    onClick={(e) => handleToggleLike(e, selectedPost)}
-                                                    className={`flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs transition-all border ${selectedPost.likes?.includes(user?.uid) ? 'bg-red-50 border-red-100 text-red-500' : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500'}`}
-                                                >
-                                                    <Heart size={14} className="sm:w-4 sm:h-4" fill={selectedPost.likes?.includes(user?.uid) ? "currentColor" : "none"} />
-                                                    <span>{selectedPost.likes?.length || 0}</span>
-                                                </button>
-                                            </div>
+                                                    <div className="w-full h-full flex items-center justify-center font-bold text-gray-400 bg-gray-100">{selectedPost.author.charAt(0)}</div>
+                                                )
+                                            )}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h3 className="text-base sm:text-lg font-black text-gray-900 truncate">{(user?.uid === selectedPost.authorId && profile?.displayName) ? profile.displayName : selectedPost.author}</h3>
+                                            <p className="text-[10px] sm:text-xs font-bold text-indigo-500 uppercase tracking-widest">{selectedPost.timestamp.toLocaleDateString()}</p>
                                         </div>
 
-                                        {/* Stats Grid - Compact */}
-                                        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-5">
-                                            <div className="bg-indigo-600 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-white shadow-sm flex flex-col justify-center">
-                                                <p className="text-[8px] sm:text-[9px] font-black opacity-80 uppercase tracking-widest mb-0.5 sm:mb-1 leading-none">DIST</p>
-                                                <p className="text-lg sm:text-xl font-black italic leading-none">{selectedPost.distance.toFixed(1)}<span className="text-[9px] sm:text-[10px] not-italic ml-0.5 opacity-60">KM</span></p>
-                                            </div>
-                                            <div className="bg-gray-900 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-white shadow-sm flex flex-col justify-center">
-                                                <p className="text-[8px] sm:text-[9px] font-black opacity-80 uppercase tracking-widest mb-0.5 sm:mb-1 leading-none">TIME</p>
-                                                <p className="text-lg sm:text-xl font-black italic leading-none">{selectedPost.time || '--:--'}</p>
-                                            </div>
-                                            <div className="bg-gray-50 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-gray-900 border border-gray-100/50 flex flex-col justify-center">
-                                                <p className="text-[8px] sm:text-[9px] font-black text-gray-500 uppercase tracking-widest mb-0.5 sm:mb-1 leading-none">PACE</p>
-                                                <p className="text-lg sm:text-xl font-black italic text-indigo-600 leading-none">{selectedPost.pace || "--'--\""}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-1.5 h-6 sm:h-8 bg-indigo-600 rounded-full shrink-0"></div>
-                                            <h2 className="text-lg sm:text-2xl md:text-3xl font-black text-gray-900 leading-tight tracking-tight whitespace-pre-wrap break-keep">{selectedPost.title}</h2>
+                                        <div className="ml-auto flex gap-2">
+                                            <button
+                                                onClick={(e) => handleToggleLike(e, selectedPost)}
+                                                className={`flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs transition-all border ${selectedPost.likes?.includes(user?.uid) ? 'bg-red-50 border-red-100 text-red-500' : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500'}`}
+                                            >
+                                                <Heart size={14} className="sm:w-4 sm:h-4" fill={selectedPost.likes?.includes(user?.uid) ? "currentColor" : "none"} />
+                                                <span>{selectedPost.likes?.length || 0}</span>
+                                            </button>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Scrollable Content Section */}
-                                {/* Scrollable Content Section & Mobile Comments */}
-                                <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/20 flex flex-col relative w-full h-full">
-                                    <div className="px-5 py-4 sm:px-10 sm:py-6 md:px-12 shrink-0">
-                                        <p className="text-gray-600 text-[14px] sm:text-lg leading-relaxed whitespace-pre-wrap font-medium pb-8">
-                                            {selectedPost.content}
-                                        </p>
+                                    {/* Stats Grid - Compact */}
+                                    <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6 sm:mb-8">
+                                        <div className="bg-indigo-600 py-3 sm:py-4 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-white shadow-sm flex flex-col justify-center">
+                                            <p className="text-[9px] sm:text-[10px] font-black opacity-80 uppercase tracking-widest mb-1 leading-none">DIST</p>
+                                            <p className="text-xl sm:text-2xl font-black italic leading-none">{selectedPost.distance.toFixed(1)}<span className="text-[10px] sm:text-[11px] not-italic ml-0.5 opacity-60">KM</span></p>
+                                        </div>
+                                        <div className="bg-gray-900 py-3 sm:py-4 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-white shadow-sm flex flex-col justify-center">
+                                            <p className="text-[9px] sm:text-[10px] font-black opacity-80 uppercase tracking-widest mb-1 leading-none">TIME</p>
+                                            <p className="text-xl sm:text-2xl font-black italic leading-none">{selectedPost.time || '--:--'}</p>
+                                        </div>
+                                        <div className="bg-gray-50 py-3 sm:py-4 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-gray-900 border border-gray-100/50 flex flex-col justify-center">
+                                            <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 leading-none">PACE</p>
+                                            <p className="text-xl sm:text-2xl font-black italic text-indigo-600 leading-none">{selectedPost.pace || "--'--\""}</p>
+                                        </div>
                                     </div>
-                                    <div className="md:hidden flex flex-col border-t border-gray-100 flex-none relative bg-gray-50/50">
-                                        {renderCommentsContent()}
+
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="w-1.5 h-6 sm:h-8 bg-indigo-600 rounded-full shrink-0"></div>
+                                        <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 leading-tight tracking-tight whitespace-pre-wrap break-keep">{selectedPost.title}</h2>
+                                    </div>
+
+                                    <p className="text-gray-600 text-[15px] sm:text-lg leading-relaxed whitespace-pre-wrap font-medium pb-8 border-b-2 border-dashed border-gray-100">
+                                        {selectedPost.content}
+                                    </p>
+
+                                    {/* Mobile Comments Inline */}
+                                    <div className="md:hidden mt-6 pb-28">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <div className="p-1.5 bg-indigo-50 rounded-lg">
+                                                <MessageCircle size={16} className="text-indigo-600 w-3.5 h-3.5" />
+                                            </div>
+                                            <span className="font-bold text-gray-900 text-sm">댓글 <span className="text-indigo-600">{selectedPost.commentCount || 0}</span></span>
+                                        </div>
+                                        {renderCommentsList()}
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Right Side: Comments Section */}
-                            <div className="hidden md:flex w-full md:w-[40%] md:h-full shrink-0 flex-col bg-gray-50/50 overflow-hidden md:border-l border-gray-100 relative">
-                                {renderCommentsContent()}
+                            {/* Right Side: Comments Section (Desktop) */}
+                            <div className="hidden md:flex w-full md:w-[40%] md:h-full shrink-0 flex-col bg-gray-50/50 relative">
+                                <div className="p-4 sm:p-6 border-b border-gray-100 bg-white flex items-center justify-between shrink-0 z-20">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-2 bg-indigo-50 rounded-lg">
+                                            <MessageCircle size={16} className="text-indigo-600 w-4 h-4" />
+                                        </div>
+                                        <span className="font-bold text-gray-900 text-base">댓글 <span className="text-indigo-600">{selectedPost.commentCount || 0}</span></span>
+                                    </div>
+                                    <button onClick={() => { setSelectedPost(null); setReplyTo(null); }} className="p-1 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
+                                        <X size={20} />
+                                    </button>
+                                </div>
+                                {renderCommentsList()}
+                                <div className="border-t border-gray-200 shrink-0">
+                                    {renderCommentForm()}
+                                </div>
+                            </div>
+
+                            {/* Mobile Fixed Comment Form */}
+                            <div className="md:hidden absolute bottom-0 left-0 right-0 z-[10]">
+                                {renderCommentForm()}
                             </div>
                         </motion.div>
                     </div>
