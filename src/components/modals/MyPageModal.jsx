@@ -129,7 +129,13 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20 backdrop-blur-md p-4" onClick={onClose}>
+        <div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20 backdrop-blur-md p-4"
+            onClick={onClose}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+        >
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}

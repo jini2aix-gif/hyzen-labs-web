@@ -638,7 +638,13 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
             {/* Post View Modal (Social/Blog Style Popup) */}
             <AnimatePresence>
                 {selectedPost && (
-                    <div className="fixed inset-0 z-[150] flex flex-col justify-end sm:justify-center items-center p-0 sm:p-6 pt-16 sm:pt-24 bg-black/60 backdrop-blur-md" onClick={() => { setSelectedPost(null); setReplyTo(null); }}>
+                    <div
+                        className="fixed inset-0 z-[150] flex flex-col justify-end sm:justify-center items-center p-0 sm:p-6 pt-16 sm:pt-24 bg-black/60 backdrop-blur-md"
+                        onClick={() => { setSelectedPost(null); setReplyTo(null); }}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        onTouchMove={(e) => e.stopPropagation()}
+                        onTouchEnd={(e) => e.stopPropagation()}
+                    >
                         <motion.div
                             initial={{ opacity: 0, y: "100%" }}
                             animate={{ opacity: 1, y: 0 }}

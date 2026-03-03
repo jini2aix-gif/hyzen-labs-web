@@ -173,7 +173,12 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center overflow-hidden touch-none font-sans">
+        <div
+            className="fixed inset-0 z-[100] bg-black flex items-center justify-center overflow-hidden touch-none font-sans"
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+        >
 
             {/* Audio Toggle (Global) */}
             <button
