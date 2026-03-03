@@ -196,30 +196,36 @@ export const getCleanWhaleData = async () => {
 
         if (data && data.result && data.result.rows && data.result.rows.length > 0) {
             // Map the real Dune data to the new dashboard's UI format
-            return data.result.rows.map(row => {
-                const balance = row.balance_arb || row.balance || 0;
-                const increase24hPct = row.increase_24h_pct || row.increase24h || 0;
+            return data.result.rows
+                .map(row => {
+                    // Dune output column names can vary based on the specific query used
+                    const balance = Number(row.balance_arb || row.balance || row.current_balance || 0);
+                    const increase24hPct = Number(row.increase_24h_pct || row.increase24h || row.pct_change || 0);
 
-                let badge = 'Holding 🛡️';
-                if (increase24hPct > 10) badge = 'Aggressive Accumulator 🚀';
-                else if (increase24hPct > 2) badge = 'Steady Buyer 🟢';
-                else if (increase24hPct < -10) badge = 'Distributing ⚠️';
-                else if (increase24hPct < -2) badge = 'Slight Trim 🟡';
+                    if (isNaN(balance) || (balance === 0 && increase24hPct === 0)) return null;
 
-                // Normalize huge percentage values (e.g., if balance was 0 and now 100k, pct is Inf or huge)
-                let displayPct = increase24hPct;
-                if (displayPct > 100) displayPct = 100;
-                if (displayPct < -100) displayPct = -100;
+                    let badge = 'Holding 🛡️';
+                    if (increase24hPct > 10) badge = 'Aggressive Accumulator 🚀';
+                    else if (increase24hPct > 2) badge = 'Steady Buyer 🟢';
+                    else if (increase24hPct < -10) badge = 'Distributing ⚠️';
+                    else if (increase24hPct < -2) badge = 'Slight Trim 🟡';
 
-                return {
-                    id: row.wallet_address || row.address || 'Unknown',
-                    type: "Active Wallet",
-                    balance: balance,
-                    lastActive: "24h window",
-                    net24hPct: displayPct,
-                    badge: badge
-                };
-            }).sort((a, b) => b.net24hPct - a.net24hPct);
+                    // Normalize huge percentage values
+                    let displayPct = increase24hPct;
+                    if (displayPct > 100) displayPct = 100;
+                    if (displayPct < -100) displayPct = -100;
+
+                    return {
+                        id: row.wallet_address || row.address || 'Unknown',
+                        type: "Active Wallet",
+                        balance: balance,
+                        lastActive: "24h window",
+                        net24hPct: displayPct,
+                        badge: badge
+                    };
+                })
+                .filter(Boolean)
+                .sort((a, b) => b.net24hPct - a.net24hPct);
         } else if (data && data.error) {
             console.error("Dune Backend API error:", data.error);
         }
