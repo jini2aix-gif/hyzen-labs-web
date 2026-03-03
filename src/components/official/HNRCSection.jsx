@@ -536,7 +536,7 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
                                             exit={{ opacity: 0, scale: 0.95 }}
                                             transition={{ delay: idx * 0.05 }}
                                             onClick={() => setSelectedPost(post)}
-                                            className="relative bg-gray-900 rounded-[32px] overflow-hidden group aspect-[4/5] sm:aspect-square flex flex-col justify-end cursor-pointer border border-gray-800 shadow-2xl hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] transition-all hover:-translate-y-1"
+                                            className="relative bg-gray-900 rounded-[32px] overflow-hidden group aspect-[4/5] sm:aspect-square flex flex-col justify-end cursor-pointer shadow-2xl hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] transition-all hover:-translate-y-1"
                                         >
                                             {/* Background Image with Dark Gradient Overlay */}
                                             {post.image ? (

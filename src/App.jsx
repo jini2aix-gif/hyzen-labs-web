@@ -106,7 +106,23 @@ const App = () => {
     setTouchStart({ x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY });
   };
 
-  const onTouchMove = (e) => setTouchEnd({ x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY });
+  const onTouchMove = (e) => {
+    const currentEnd = { x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY };
+    setTouchEnd(currentEnd);
+
+    // Prevent browser swipe-to-go-back/forward at navigation boundaries
+    if (touchStart) {
+      const distanceX = touchStart.x - currentEnd.x;
+      const distanceY = touchStart.y - currentEnd.y;
+      const isHorizontalSwipe = Math.abs(distanceX) > Math.abs(distanceY);
+      if (isHorizontalSwipe) {
+        // Block right swipe on first page (would trigger browser back)
+        if (distanceX < 0 && viewIndex === 0) e.preventDefault();
+        // Block left swipe on last page (would trigger browser forward)
+        if (distanceX > 0 && viewIndex === 2) e.preventDefault();
+      }
+    }
+  };
 
   const handleNavigate = (newIndex) => {
     if (newIndex === viewIndex || isNavigating.current) return;
@@ -183,6 +199,12 @@ const App = () => {
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
+          ref={(el) => {
+            if (el) {
+              // Must be non-passive to allow preventDefault() on touchmove
+              el.addEventListener('touchmove', onTouchMove, { passive: false, capture: false });
+            }
+          }}
         >
           <AnimatePresence mode="popLayout" initial={false} custom={direction}>
             <motion.div

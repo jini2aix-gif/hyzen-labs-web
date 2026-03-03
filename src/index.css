@@ -22,6 +22,11 @@ body {
   overflow-x: hidden;
 }
 
+html {
+  overscroll-behavior-x: none;
+  overflow-x: hidden;
+}
+
 ::selection {
   background-color: #000000;
   color: #ffffff;
