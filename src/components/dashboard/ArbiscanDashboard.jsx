@@ -324,23 +324,28 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                             <div className="space-y-4">
                                 {data.whales.map((whale, idx) => (
                                     <div key={idx} className="bg-[#1A1A1A] p-4 rounded-xl border border-gray-800 hover:border-gray-700 transition-colors">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <span className="text-white font-mono font-bold text-sm">{whale.id}</span>
+                                        <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-2">
+                                            <div className="min-w-0 w-full sm:w-auto">
+                                                <span className="text-white font-mono font-bold text-sm block truncate pr-2">{whale.id}</span>
                                                 <span className="block text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">{whale.type}</span>
                                             </div>
-                                            <div className="text-right">
-                                                <span className="text-gray-300 font-mono text-sm block">{(whale.balance / 1000).toFixed(0)}k ARB</span>
-                                                <span className={`text-[10px] font-bold mt-1 ${whale.net24hPct > 0 ? 'text-[#28A745]' : whale.net24hPct < 0 ? 'text-[#DC3545]' : 'text-gray-500'}`}>
-                                                    {whale.net24hPct > 0 ? '+' : ''}{whale.net24hPct.toFixed(2)}% (24h)
+                                            <div className="flex flex-row sm:flex-col justify-between items-center sm:items-end w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-800">
+                                                <span className="text-gray-300 font-mono text-sm block">
+                                                    {whale.balance > 1000000
+                                                        ? `${(whale.balance / 1000000).toFixed(1)}M`
+                                                        : `${(whale.balance / 1000).toFixed(0)}k`
+                                                    } ARB
+                                                </span>
+                                                <span className={`text-[10px] font-bold sm:mt-1 ${whale.net24hPct > 0 ? 'text-[#28A745]' : whale.net24hPct < 0 ? 'text-[#DC3545]' : 'text-gray-500'}`}>
+                                                    {whale.net24hPct > 0 ? '+' : ''}{whale.net24hPct.toFixed(1)}%
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-800/50">
-                                            <span className="text-xs font-semibold px-2 py-1 rounded bg-[#050505] text-gray-400">
+                                            <span className="text-[10px] font-semibold px-2 py-1 rounded bg-[#050505] text-gray-400">
                                                 {whale.badge}
                                             </span>
-                                            <span className="text-[10px] text-gray-600 font-mono">Active {whale.lastActive}</span>
+                                            <span className="text-[10px] text-gray-600 font-mono">24H Active</span>
                                         </div>
                                     </div>
                                 ))}

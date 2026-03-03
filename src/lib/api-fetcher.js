@@ -206,12 +206,17 @@ export const getCleanWhaleData = async () => {
                 else if (increase24hPct < -10) badge = 'Distributing ⚠️';
                 else if (increase24hPct < -2) badge = 'Slight Trim 🟡';
 
+                // Normalize huge percentage values (e.g., if balance was 0 and now 100k, pct is Inf or huge)
+                let displayPct = increase24hPct;
+                if (displayPct > 100) displayPct = 100;
+                if (displayPct < -100) displayPct = -100;
+
                 return {
                     id: row.wallet_address || row.address || 'Unknown',
                     type: "Active Wallet",
                     balance: balance,
                     lastActive: "24h window",
-                    net24hPct: increase24hPct, // Passing the real 24h pct
+                    net24hPct: displayPct,
                     badge: badge
                 };
             }).sort((a, b) => b.net24hPct - a.net24hPct);
