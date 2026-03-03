@@ -227,6 +227,39 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                     </motion.div>
                 </div>
 
+                {/* Monthly Price Chart */}
+                <div className="mb-6">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+                        className="bg-[#111111] border border-gray-800 rounded-3xl p-6 shadow-xl"
+                    >
+                        <div className="mb-6 border-b border-gray-800 pb-4">
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2 tracking-tight">
+                                <BarChart2 size={20} className="text-[#00D1FF]" />
+                                ARB Monthly Price Action
+                            </h3>
+                            <p className="text-xs text-gray-500 mt-1 font-mono">Long-term monthly closing prices.</p>
+                        </div>
+                        <div className="h-[300px] w-full mt-4">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={data.monthlyPrice} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorMonthly" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#28A745" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#28A745" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+                                    <XAxis dataKey="date" stroke="#555" tick={{ fill: '#777', fontSize: 12 }} tickMargin={10} minTickGap={20} />
+                                    <YAxis stroke="#28A745" tick={{ fill: '#28A745', fontSize: 12 }} tickFormatter={(val) => `$${val.toFixed(2)}`} domain={['dataMin - 0.1', 'dataMax + 0.1']} />
+                                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#444', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                                    <Area type="monotone" dataKey="price" name="Monthly Close" stroke="#28A745" strokeWidth={3} fillOpacity={1} fill="url(#colorMonthly)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </motion.div>
+                </div>
+
                 {/* Dual Layout: Chart & Whales */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -315,39 +348,6 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                         </div>
                     </motion.div>
 
-                </div>
-
-                {/* Monthly Price Chart */}
-                <div className="mt-6">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
-                        className="bg-[#111111] border border-gray-800 rounded-3xl p-6 shadow-xl"
-                    >
-                        <div className="mb-6 border-b border-gray-800 pb-4">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2 tracking-tight">
-                                <BarChart2 size={20} className="text-[#00D1FF]" />
-                                ARB Monthly Price Action
-                            </h3>
-                            <p className="text-xs text-gray-500 mt-1 font-mono">Long-term monthly closing prices.</p>
-                        </div>
-                        <div className="h-[300px] w-full mt-4">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={data.monthlyPrice} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="colorMonthly" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#28A745" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#28A745" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
-                                    <XAxis dataKey="date" stroke="#555" tick={{ fill: '#777', fontSize: 12 }} tickMargin={10} minTickGap={20} />
-                                    <YAxis stroke="#28A745" tick={{ fill: '#28A745', fontSize: 12 }} tickFormatter={(val) => `$${val.toFixed(2)}`} domain={['dataMin - 0.1', 'dataMax + 0.1']} />
-                                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#444', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                                    <Area type="monotone" dataKey="price" name="Monthly Close" stroke="#28A745" strokeWidth={3} fillOpacity={1} fill="url(#colorMonthly)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </motion.div>
                 </div>
             </div>
         </section>
