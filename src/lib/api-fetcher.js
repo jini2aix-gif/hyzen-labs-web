@@ -98,6 +98,24 @@ export const fetchChainTVLs = async () => {
     };
 };
 
+// ─── 2b. USD/KRW Exchange Rate (ExchangeRate-API free tier) ──────────────────
+export const fetchKRWRate = async () => {
+    try {
+        // CoinGecko already gives us arb.krw / arb.usd — derive rate from that
+        const ds = await fetchWithCache(
+            'https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd,krw',
+            'usd_krw_rate',
+            TTL.SHORT,
+            { tether: { usd: 1, krw: 1350 } }
+        );
+        const usd = ds?.tether?.usd || 1;
+        const krw = ds?.tether?.krw || 1350;
+        return krw / usd; // ~1350
+    } catch {
+        return 1350;
+    }
+};
+
 export const fetchArbitrumHistoricalTVL = async () => {
     // Generate mock historical if fails
     const mock = Array.from({ length: 30 }).map((_, i) => ({
