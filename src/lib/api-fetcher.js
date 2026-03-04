@@ -204,53 +204,110 @@ export const fetchArbitrumMonthlyPriceHistory = async () => {
     });
 };
 
-// ─── 5. Whale Tracker Mock (Filtering logic simulated) ───────────────────────
-export const getCleanWhaleData = async () => {
-    // Fetch from Vercel Serverless Function proxy call (Dune Analytics API)
-    const url = `/api/dune?t=${Date.now()}`;
+// ─── 5. Top Protocols on Arbitrum (DeFiLlama) ─────────────────────────────────
+const PROTOCOL_FALLBACK = [
+    { name: 'GMX', tvl: 380000000, change1d: 0.5 },
+    { name: 'AAVE V3', tvl: 290000000, change1d: -0.3 },
+    { name: 'Pendle', tvl: 180000000, change1d: 1.2 },
+    { name: 'Radiant V2', tvl: 120000000, change1d: 0.0 },
+    { name: 'Uniswap V3', tvl: 95000000, change1d: 0.8 },
+    { name: 'Camelot', tvl: 60000000, change1d: -1.1 },
+];
 
+export const fetchArbitrumProtocols = async () => {
     try {
-        const data = await fetchWithCache(url, 'arb_whale_data_final_v1', { cache: 'no-store' });
+        const data = await fetchWithCache(
+            'https://api.llama.fi/protocols',
+            'arb_protocols_v2',
+            TTL.MEDIUM,
+            null
+        );
+        if (!data || !Array.isArray(data)) return PROTOCOL_FALLBACK;
 
-        if (data && data.result && data.result.rows && data.result.rows.length > 0) {
-            // Map the real Dune data to the new dashboard's UI format
-            return data.result.rows
-                .map(row => {
-                    // Dune output column names can vary based on the specific query used
-                    const balance = Number(row.balance_arb || row.balance || row.current_balance || 0);
-                    const increase24hPct = Number(row.increase_24h_pct || row.increase24h || row.pct_change || 0);
-
-                    if (isNaN(balance) || (balance === 0 && increase24hPct === 0)) return null;
-
-                    let badge = 'Holding 🛡️';
-                    if (increase24hPct > 10) badge = 'Aggressive Accumulator 🚀';
-                    else if (increase24hPct > 2) badge = 'Steady Buyer 🟢';
-                    else if (increase24hPct < -10) badge = 'Distributing ⚠️';
-                    else if (increase24hPct < -2) badge = 'Slight Trim 🟡';
-
-                    // Normalize huge percentage values
-                    let displayPct = increase24hPct;
-                    if (displayPct > 100) displayPct = 100;
-                    if (displayPct < -100) displayPct = -100;
-
-                    return {
-                        id: row.wallet_address || row.address || 'Unknown',
-                        type: "Active Wallet",
-                        balance: balance,
-                        lastActive: "24h window",
-                        net24hPct: displayPct,
-                        badge: badge
-                    };
-                })
-                .filter(Boolean)
-                .sort((a, b) => b.net24hPct - a.net24hPct);
-        } else if (data && data.error) {
-            console.error("Dune Backend API error:", data.error);
-        }
-    } catch (e) {
-        console.error("Failed to fetch from Dune proxy:", e);
+        return data
+            .filter(p => p.chains && p.chains.includes('Arbitrum') && p.tvl > 0)
+            .sort((a, b) => (b.chainTvls?.Arbitrum || 0) - (a.chainTvls?.Arbitrum || 0))
+            .slice(0, 6)
+            .map(p => ({
+                name: p.name,
+                slug: p.slug,
+                tvl: p.chainTvls?.Arbitrum || p.tvl || 0,
+                change1d: p.change_1d || 0,
+                category: p.category || 'DeFi',
+            }));
+    } catch {
+        return PROTOCOL_FALLBACK;
     }
+};
 
-    // Fallback if Dune API fails or is empty
-    return [];
+// ─── 6. Stablecoin Supply on Arbitrum (DeFiLlama) ────────────────────────
+export const fetchArbitrumStablecoins = async () => {
+    try {
+        const data = await fetchWithCache(
+            'https://stablecoins.llama.fi/stablecoins?includePrices=true',
+            'arb_stablecoins_v1',
+            TTL.MEDIUM,
+            null
+        );
+        if (!data?.peggedAssets) return { total: 3200000000, top: [] };
+
+        // Each asset has circulating amounts per chain
+        let total = 0;
+        const breakdown = [];
+
+        for (const asset of data.peggedAssets) {
+            const chainData = asset.chainCirculating?.Arbitrum;
+            if (!chainData) continue;
+            const amount = chainData.current?.peggedUSD || 0;
+            if (amount > 0) {
+                total += amount;
+                breakdown.push({ name: asset.name, symbol: asset.symbol, amount });
+            }
+        }
+
+        return {
+            total,
+            top: breakdown.sort((a, b) => b.amount - a.amount).slice(0, 4)
+        };
+    } catch {
+        return {
+            total: 3200000000,
+            top: [
+                { name: 'USDC', symbol: 'USDC', amount: 1600000000 },
+                { name: 'Bridged USDT', symbol: 'USDT', amount: 900000000 },
+                { name: 'DAI', symbol: 'DAI', amount: 300000000 },
+                { name: 'FRAX', symbol: 'FRAX', amount: 180000000 },
+            ]
+        };
+    }
+};
+
+// ─── 7. Top Yield Pools on Arbitrum (DeFiLlama) ──────────────────────────
+export const fetchArbitrumYields = async () => {
+    try {
+        const data = await fetchWithCache(
+            'https://yields.llama.fi/pools',
+            'arb_yields_v1',
+            TTL.MEDIUM,
+            null
+        );
+        if (!data?.data) return [];
+
+        return data.data
+            .filter(p =>
+                p.chain === 'Arbitrum' &&
+                p.apy > 0 && p.apy < 300 && // exclude unrealistic APY
+                p.tvlUsd > 1_000_000           // min $1M TVL
+            )
+            .sort((a, b) => b.apy - a.apy)
+            .slice(0, 5)
+            .map(p => ({
+                project: p.project,
+                symbol: p.symbol,
+                apy: p.apy,
+                tvlUsd: p.tvlUsd,
+            }));
+    } catch {
+        return [];
+    }
 };

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Activity, TrendingUp, DollarSign, Database,
-    Lock, Clock, BarChart2, ShieldAlert, LogIn, Target, ChevronRight, Zap
+    Lock, Clock, BarChart2, LogIn, Target, ChevronRight, Zap
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -15,7 +15,9 @@ import {
     fetchArbitrumSupply,
     fetchArbitrumPriceHistory,
     fetchArbitrumMonthlyPriceHistory,
-    getCleanWhaleData,
+    fetchArbitrumProtocols,
+    fetchArbitrumStablecoins,
+    fetchArbitrumYields,
     fetchKRWRate,
     REFRESH
 } from '../../lib/api-fetcher';
@@ -276,7 +278,8 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate }) => {
 const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
     const [data, setData] = useState({
         market: null, tvlData: null, supply: null,
-        histPrice: [], histTvl: [], whales: [], monthlyPrice: [],
+        histPrice: [], histTvl: [], monthlyPrice: [],
+        protocols: [], stablecoins: { total: 0, top: [] }, yields: [],
         krwRate: 1350
     });
     const [isLoading, setIsLoading] = useState(true);
@@ -284,17 +287,19 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
     useEffect(() => {
         const loadAllData = async () => {
             try {
-                const [market, tvlData, supply, histPrice, histTvl, whales, monthlyPrice, krwRate] = await Promise.all([
+                const [market, tvlData, supply, histPrice, histTvl, monthlyPrice, protocols, stablecoins, yields, krwRate] = await Promise.all([
                     fetchMarketComparison(),
                     fetchChainTVLs(),
                     fetchArbitrumSupply(),
                     fetchArbitrumPriceHistory(),
                     fetchArbitrumHistoricalTVL(),
-                    getCleanWhaleData(),
                     fetchArbitrumMonthlyPriceHistory(),
+                    fetchArbitrumProtocols(),
+                    fetchArbitrumStablecoins(),
+                    fetchArbitrumYields(),
                     fetchKRWRate()
                 ]);
-                setData({ market, tvlData, supply, histPrice, histTvl, whales, monthlyPrice, krwRate });
+                setData({ market, tvlData, supply, histPrice, histTvl, monthlyPrice, protocols, stablecoins, yields, krwRate });
             } catch (e) {
                 console.error("Dashboard Data Load Error", e);
             } finally {
@@ -498,13 +503,13 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                     </motion.div>
                 </div>
 
-                {/* Value Gap Index + Whale Tracker row */}
+                {/* ─── Value Gap Index + Ecosystem Monitor ─── */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
 
                     {/* Value Gap Index */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}
-                        className="bg-[#111111] border border-gray-800 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center"
+                        className="bg-[#111111] border border-gray-800 rounded-3xl p-6 shadow-xl flex flex-col"
                         style={{ borderColor: valueGapIndex >= 1 ? 'rgba(40,167,69,0.3)' : 'rgba(100,100,100,0.3)' }}
                     >
                         <div className="w-full mb-4 border-b border-gray-800 pb-4">
@@ -514,9 +519,9 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                             </h3>
                             <p className="text-xs text-gray-500 mt-1 font-mono">OP Mcap/TVL ÷ ARB Mcap/TVL. &gt;1 = ARB Underpriced</p>
                         </div>
-                        <div className="flex-1 flex flex-col items-center justify-center w-full py-4">
+                        <div className="flex-1 flex flex-col items-center justify-center w-full py-2">
                             <ValueGapGauge index={valueGapIndex} />
-                            <div className="mt-6 w-full grid grid-cols-2 gap-3">
+                            <div className="mt-4 w-full grid grid-cols-2 gap-3">
                                 <div className="rounded-xl p-3 bg-[#0A0A0A] border border-gray-800 text-center">
                                     <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">ARB Mcap/TVL</div>
                                     <div className="font-mono font-black text-white">{arbMcapTvlRatio.toFixed(2)}x</div>
@@ -527,55 +532,122 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                                 </div>
                             </div>
                             {valueGapIndex >= 1 && (
-                                <div className="mt-4 w-full bg-[#28A745]/10 border border-[#28A745]/30 text-[#28A745] px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider text-center animate-pulse">
-                                    🟢 ARB is {valueGapIndex.toFixed(2)}x Cheaper than Optimism per TVL $
+                                <div className="mt-3 w-full bg-[#28A745]/10 border border-[#28A745]/30 text-[#28A745] px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-center animate-pulse">
+                                    🟢 {valueGapIndex.toFixed(2)}x Cheaper than OP per TVL $
                                 </div>
                             )}
                         </div>
                     </motion.div>
 
-                    {/* Whale Tracker */}
+                    {/* Ecosystem Monitor — 2 cols */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
-                        className="lg:col-span-2 bg-[#111111] border border-gray-800 rounded-3xl p-6 shadow-xl flex flex-col"
+                        className="lg:col-span-2 bg-[#111111] border border-gray-800 rounded-3xl p-6 shadow-xl flex flex-col gap-6"
                     >
-                        <div className="mb-6 border-b border-gray-800 pb-4">
+                        {/* Header */}
+                        <div className="border-b border-gray-800 pb-4">
                             <h3 className="text-lg font-bold text-white flex items-center gap-2 tracking-tight">
-                                <ShieldAlert size={20} className="text-[#28A745]" />
-                                Clean Whale Tracker (72h)
+                                <Activity size={20} className="text-[#00D1FF]" />
+                                ARB Ecosystem Monitor
                             </h3>
-                            <p className="text-xs text-gray-500 mt-1 font-mono">Excluding CEX/Bridges. Smart Money active.</p>
+                            <p className="text-xs text-gray-500 mt-1 font-mono">Live on-chain metrics · DeFiLlama</p>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {data.whales.length === 0 ? (
-                                    <p className="text-gray-600 text-sm font-mono col-span-2 text-center py-8">No whale data available.</p>
-                                ) : data.whales.map((whale, idx) => (
-                                    <div key={idx} className="bg-[#1A1A1A] p-4 rounded-xl border border-gray-800 hover:border-gray-700 transition-colors">
-                                        <div className="flex flex-col justify-between items-start gap-3 mb-2">
-                                            <div className="min-w-0 w-full">
-                                                <span className="text-white font-mono font-bold text-sm block truncate pr-2">{whale.id}</span>
-                                                <span className="block text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">{whale.type}</span>
+                        {/* Top row: Protocols + Stablecoins */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+                            {/* Top Protocols */}
+                            <div>
+                                <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-3">Top Protocols by TVL</div>
+                                <div className="space-y-2.5">
+                                    {(() => {
+                                        const maxTvl = data.protocols[0]?.tvl || 1;
+                                        const catColor = {
+                                            'Dexes': '#00D1FF', 'Lending': '#F0A500',
+                                            'Derivatives': '#28A745', 'Yield': '#9B59B6',
+                                            'Liquid Staking': '#3498DB'
+                                        };
+                                        return data.protocols.map((p, i) => (
+                                            <div key={i}>
+                                                <div className="flex justify-between items-baseline mb-1">
+                                                    <span className="text-xs font-bold text-white truncate max-w-[130px]">{p.name}</span>
+                                                    <span className="text-xs font-mono text-gray-400">${(p.tvl / 1e6).toFixed(0)}M</span>
+                                                </div>
+                                                <div className="relative h-1.5 rounded-full bg-gray-800 overflow-hidden">
+                                                    <div
+                                                        className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
+                                                        style={{
+                                                            width: `${(p.tvl / maxTvl) * 100}%`,
+                                                            background: catColor[p.category] || '#00D1FF',
+                                                            boxShadow: `0 0 6px ${catColor[p.category] || '#00D1FF'}80`
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="flex justify-between mt-0.5">
+                                                    <span className="text-[9px] text-gray-700 font-mono">{p.category}</span>
+                                                    <span className={`text-[9px] font-mono font-bold ${p.change1d >= 0 ? 'text-[#28A745]' : 'text-[#DC3545]'}`}>
+                                                        {p.change1d >= 0 ? '+' : ''}{p.change1d.toFixed(1)}%
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div className="flex flex-row justify-between items-center w-full">
-                                                <span className="text-gray-300 font-mono text-sm block">
-                                                    {whale.balance > 1000000
-                                                        ? `${(whale.balance / 1000000).toFixed(1)}M`
-                                                        : `${(whale.balance / 1000).toFixed(0)}k`
-                                                    } ARB
-                                                </span>
-                                                <span className={`text-xs font-bold px-2 py-1 rounded-lg ${whale.net24hPct > 0 ? 'bg-[#28A745]/20 text-[#28A745]' : whale.net24hPct < 0 ? 'bg-[#DC3545]/20 text-[#DC3545]' : 'bg-gray-800 text-gray-500'}`}>
-                                                    {whale.net24hPct > 0 ? '+' : ''}{whale.net24hPct.toFixed(1)}%
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-800/50">
-                                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#050505] text-gray-400">{whale.badge}</span>
-                                            <span className="text-[10px] text-gray-600 font-mono">24H Active</span>
+                                        ));
+                                    })()}
+                                </div>
+                            </div>
+
+                            {/* Stablecoins + Yields */}
+                            <div className="flex flex-col gap-4">
+
+                                {/* Stablecoin supply */}
+                                <div>
+                                    <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-3">Stablecoin Supply</div>
+                                    <div className="text-2xl font-black text-white font-mono">
+                                        ${(data.stablecoins.total / 1e9).toFixed(2)}B
+                                    </div>
+                                    <p className="text-[10px] text-gray-600 font-mono mb-2">Total stablecoins on Arbitrum</p>
+                                    <div className="space-y-1.5">
+                                        {data.stablecoins.top.map((s, i) => {
+                                            const colors = ['#2ECC71', '#3498DB', '#E67E22', '#9B59B6'];
+                                            const pct = data.stablecoins.total > 0
+                                                ? (s.amount / data.stablecoins.total * 100).toFixed(1)
+                                                : 0;
+                                            return (
+                                                <div key={i} className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: colors[i % 4] }} />
+                                                        <span className="text-[11px] text-gray-400 font-mono">{s.symbol}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[11px] text-gray-500 font-mono">${(s.amount / 1e9).toFixed(2)}B</span>
+                                                        <span className="text-[10px] text-gray-700 font-mono">{pct}%</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Top Yields */}
+                                {data.yields.length > 0 && (
+                                    <div>
+                                        <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-3">Top Yield Opportunities</div>
+                                        <div className="space-y-1.5">
+                                            {data.yields.slice(0, 4).map((y, i) => (
+                                                <div key={i} className="flex items-center justify-between bg-[#0A0A0A] rounded-lg px-3 py-2">
+                                                    <div className="min-w-0">
+                                                        <span className="text-[11px] text-white font-mono font-bold truncate block max-w-[120px]">{y.symbol}</span>
+                                                        <span className="text-[9px] text-gray-600 font-mono capitalize">{y.project}</span>
+                                                    </div>
+                                                    <div className="text-right shrink-0 ml-2">
+                                                        <div className="text-sm font-black font-mono text-[#28A745]">{y.apy.toFixed(1)}%</div>
+                                                        <div className="text-[9px] text-gray-700 font-mono">${(y.tvlUsd / 1e6).toFixed(0)}M TVL</div>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
-                                ))}
+                                )}
+
                             </div>
                         </div>
                     </motion.div>
