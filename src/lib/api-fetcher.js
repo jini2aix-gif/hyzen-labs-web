@@ -311,3 +311,33 @@ export const fetchArbitrumYields = async () => {
         return [];
     }
 };
+
+// ─── 8. Stablecoin Inflow History on Arbitrum (DeFiLlama) ────────────────
+export const fetchArbitrumStablecoinHistory = async () => {
+    try {
+        const raw = await fetchWithCache(
+            'https://stablecoins.llama.fi/stablecoincharts/Arbitrum',
+            'arb_stable_history_v2',
+            TTL.MEDIUM,
+            null
+        );
+        if (!Array.isArray(raw) || raw.length === 0) return [];
+
+        // Take last 90 days of data
+        const recent = raw.slice(-90);
+
+        return recent.map(item => {
+            const ts = Number(item.date) * 1000;
+            const d = new Date(ts);
+            const total = (item.totalCirculatingUSD?.peggedUSD || 0) +
+                (item.totalCirculatingUSD?.peggedEUR || 0);
+            return {
+                date: `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`,
+                value: total,           // raw USD value
+                valueB: +(total / 1e9).toFixed(3), // in Billions
+            };
+        });
+    } catch {
+        return [];
+    }
+};

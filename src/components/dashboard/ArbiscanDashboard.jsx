@@ -18,6 +18,7 @@ import {
     fetchArbitrumProtocols,
     fetchArbitrumStablecoins,
     fetchArbitrumYields,
+    fetchArbitrumStablecoinHistory,
     fetchKRWRate,
     REFRESH
 } from '../../lib/api-fetcher';
@@ -237,14 +238,16 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
         market: null, tvlData: null, supply: null,
         histPrice: [], histTvl: [], monthlyPrice: [],
         protocols: [], stablecoins: { total: 0, top: [] }, yields: [],
+        stablecoinHistory: [],
         krwRate: 1350
     });
+    const [stableTrendDays, setStableTrendDays] = useState(30);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const loadAllData = async () => {
             try {
-                const [market, tvlData, supply, histPrice, histTvl, monthlyPrice, protocols, stablecoins, yields, krwRate] = await Promise.all([
+                const [market, tvlData, supply, histPrice, histTvl, monthlyPrice, protocols, stablecoins, yields, stablecoinHistory, krwRate] = await Promise.all([
                     fetchMarketComparison(),
                     fetchChainTVLs(),
                     fetchArbitrumSupply(),
@@ -254,9 +257,10 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                     fetchArbitrumProtocols(),
                     fetchArbitrumStablecoins(),
                     fetchArbitrumYields(),
+                    fetchArbitrumStablecoinHistory(),
                     fetchKRWRate()
                 ]);
-                setData({ market, tvlData, supply, histPrice, histTvl, monthlyPrice, protocols, stablecoins, yields, krwRate });
+                setData({ market, tvlData, supply, histPrice, histTvl, monthlyPrice, protocols, stablecoins, yields, stablecoinHistory, krwRate });
             } catch (e) {
                 console.error("Dashboard Data Load Error", e);
             } finally {
@@ -510,7 +514,103 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                             <p className="text-xs text-gray-500 mt-1 font-mono">Live on-chain metrics · DeFiLlama</p>
                         </div>
 
-                        {/* Top row: Protocols + Stablecoins */}
+                        {/* ── Stablecoin Inflow Trend Chart ── */}
+                        {(() => {
+                            const days = stableTrendDays;
+                            const sliced = data.stablecoinHistory.slice(-days);
+                            if (sliced.length < 2) return null;
+
+                            const first = sliced[0]?.valueB || 0;
+                            const last = sliced[sliced.length - 1]?.valueB || 0;
+                            const pctChange = first > 0 ? ((last - first) / first) * 100 : 0;
+                            const isUp = pctChange >= 0;
+                            const trendColor = isUp ? '#2ECC71' : '#EF4444';
+                            const trendBg = isUp ? 'rgba(46,204,113,0.08)' : 'rgba(239,68,68,0.08)';
+
+                            // thin ticks: every ~15 days show a label
+                            const tickInterval = days <= 30 ? 6 : 14;
+
+                            return (
+                                <div className="border border-gray-800 rounded-2xl p-4 bg-[#0A0A0A]">
+                                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                                        <div>
+                                            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">Stablecoin Inflow Trend · Arbitrum</div>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-lg font-black text-white font-mono">${last.toFixed(2)}B</span>
+                                                <span
+                                                    className="text-[11px] font-bold px-2 py-0.5 rounded-full font-mono"
+                                                    style={{ color: trendColor, background: trendBg }}
+                                                >
+                                                    {isUp ? '▲' : '▼'} {Math.abs(pctChange).toFixed(1)}% ({days}d)
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-1">
+                                            {[30, 90].map(d => (
+                                                <button
+                                                    key={d}
+                                                    onClick={() => setStableTrendDays(d)}
+                                                    className={`text-[10px] font-mono px-2.5 py-1 rounded-lg border transition-all ${days === d
+                                                            ? 'bg-[#00D1FF]/20 border-[#00D1FF]/50 text-[#00D1FF]'
+                                                            : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500'
+                                                        }`}
+                                                >{d}D</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <ResponsiveContainer width="100%" height={120}>
+                                        <AreaChart data={sliced} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                                            <defs>
+                                                <linearGradient id="stableGrad" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor={trendColor} stopOpacity={0.35} />
+                                                    <stop offset="100%" stopColor={trendColor} stopOpacity={0.02} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#1A1A1A" />
+                                            <XAxis
+                                                dataKey="date"
+                                                tick={{ fill: '#4B5563', fontSize: 9, fontFamily: 'monospace' }}
+                                                interval={tickInterval}
+                                                tickLine={false}
+                                                axisLine={false}
+                                            />
+                                            <YAxis
+                                                tick={{ fill: '#4B5563', fontSize: 9, fontFamily: 'monospace' }}
+                                                tickFormatter={v => `$${v.toFixed(1)}B`}
+                                                tickLine={false}
+                                                axisLine={false}
+                                                width={50}
+                                            />
+                                            <Tooltip
+                                                content={({ active, payload, label }) => {
+                                                    if (!active || !payload?.length) return null;
+                                                    return (
+                                                        <div className="bg-[#111111] border border-gray-700 rounded-xl px-3 py-2 shadow-2xl">
+                                                            <p className="text-gray-500 text-[10px] font-mono mb-1">{label}</p>
+                                                            <p className="text-white font-black font-mono text-sm">
+                                                                ${payload[0].value?.toFixed(3)}B
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                }}
+                                            />
+                                            <Area
+                                                type="monotone"
+                                                dataKey="valueB"
+                                                name="Stablecoin Supply"
+                                                stroke={trendColor}
+                                                strokeWidth={2}
+                                                fill="url(#stableGrad)"
+                                                dot={false}
+                                                activeDot={{ r: 4, fill: trendColor, strokeWidth: 0 }}
+                                            />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Top row: Protocols + Stablecoins + Yields */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
                             {/* Top Protocols */}
@@ -555,9 +655,9 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                             {/* Stablecoins + Yields */}
                             <div className="flex flex-col gap-4">
 
-                                {/* Stablecoin supply */}
+                                {/* Stablecoin supply breakdown */}
                                 <div>
-                                    <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-3">Stablecoin Supply</div>
+                                    <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-3">Stablecoin Composition</div>
                                     <div className="text-2xl font-black text-white font-mono">
                                         ${(data.stablecoins.total / 1e9).toFixed(2)}B
                                     </div>
