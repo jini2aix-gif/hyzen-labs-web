@@ -173,13 +173,17 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
                 return;
             }
 
-            // Delete Firestore user document first
+            // Delete Firestore user document (best-effort — don't block auth deletion if this fails)
             if (db && appId) {
-                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', freshUser.uid);
-                await deleteDoc(userRef);
+                try {
+                    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', freshUser.uid);
+                    await deleteDoc(userRef);
+                } catch (fsError) {
+                    console.warn('Firestore user doc deletion failed (continuing):', fsError.code, fsError.message);
+                }
             }
 
-            // Delete Firebase Auth account using the freshest user
+            // Delete Firebase Auth account using the freshest currentUser
             await deleteUser(freshUser);
 
             setShowDeleteConfirm(false);
