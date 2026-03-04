@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, User, Save, Loader2, Activity, Camera, Trash2, AlertTriangle } from 'lucide-react';
 import { updateProfile, deleteUser, reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider, GoogleAuthProvider } from 'firebase/auth';
 import { collection, query, where, getDocs, getCountFromServer, doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { db, appId } from '../../hooks/useFirebase';
+import { db, appId, auth } from '../../hooks/useFirebase';
 import { compressImage } from '../../utils/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -142,39 +142,58 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
         setDeleteError('');
 
         try {
-            // Re-authenticate before deletion (Firebase requires this)
+            // Always use auth.currentUser (never stale props user)
+            const currentUser = auth?.currentUser;
+            if (!currentUser) {
+                setDeleteError('세션이 만료되었습니다. 다시 로그인해 주세요.');
+                setIsDeleting(false);
+                return;
+            }
+
+            // Re-authenticate before deletion (Firebase always requires this for sensitive ops)
             if (isGoogle) {
                 const provider = new GoogleAuthProvider();
-                await reauthenticateWithPopup(user, provider);
+                provider.setCustomParameters({ prompt: 'select_account' });
+                await reauthenticateWithPopup(currentUser, provider);
             } else if (isEmailPassword) {
                 if (!deletePasswordInput.trim()) {
                     setDeleteError('비밀번호를 입력해 주세요.');
                     setIsDeleting(false);
                     return;
                 }
-                const credential = EmailAuthProvider.credential(user.email, deletePasswordInput);
-                await reauthenticateWithCredential(user, credential);
+                const credential = EmailAuthProvider.credential(currentUser.email, deletePasswordInput);
+                await reauthenticateWithCredential(currentUser, credential);
             }
 
-            // Delete Firestore user document
+            // After reauth, re-fetch currentUser (it may have refreshed)
+            const freshUser = auth?.currentUser;
+            if (!freshUser) {
+                setDeleteError('세션이 만료되었습니다. 다시 로그인해 주세요.');
+                setIsDeleting(false);
+                return;
+            }
+
+            // Delete Firestore user document first
             if (db && appId) {
-                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', freshUser.uid);
                 await deleteDoc(userRef);
             }
 
-            // Delete Firebase Auth account (triggers auth state change → logout)
-            await deleteUser(user);
+            // Delete Firebase Auth account using the freshest user
+            await deleteUser(freshUser);
 
             setShowDeleteConfirm(false);
             onClose();
         } catch (error) {
-            console.error('Account deletion error:', error);
+            console.error('Account deletion error:', error.code, error.message);
             if (error.code === 'auth/requires-recent-login') {
                 setDeleteError('보안을 위해 다시 로그인 후 시도해 주세요.');
             } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
                 setDeleteError('비밀번호가 올바르지 않습니다.');
-            } else if (error.code === 'auth/popup-closed-by-user') {
+            } else if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
                 setDeleteError('인증 창이 닫혔습니다. 다시 시도해 주세요.');
+            } else if (error.code === 'auth/popup-blocked') {
+                setDeleteError('팝업 창이 차단되었습니다. 브라우저 설정에서 팝업 허용 후 다시 시도해 주세요.');
             } else {
                 setDeleteError('오류가 발생했습니다: ' + (error.message || error.code));
             }
