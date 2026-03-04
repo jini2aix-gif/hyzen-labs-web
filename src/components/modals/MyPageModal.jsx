@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, User, Save, Loader2, Activity, Camera, Trash2, AlertTriangle } from 'lucide-react';
-import { updateProfile, deleteUser, reauthenticateWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { updateProfile, deleteUser, reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider, GoogleAuthProvider } from 'firebase/auth';
 import { collection, query, where, getDocs, getCountFromServer, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db, appId } from '../../hooks/useFirebase';
 import { compressImage } from '../../utils/image';
@@ -16,7 +16,9 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
 
     // ── Delete Account State ──
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleteStep, setDeleteStep] = useState(1); // 1: email confirm, 2: password (email users)
     const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
+    const [deletePasswordInput, setDeletePasswordInput] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState('');
 
@@ -117,10 +119,22 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
     };
 
     // ── Delete Account ──
+    const isGoogle = user?.providerData?.some(p => p.providerId === 'google.com');
+    const isEmailPassword = user?.providerData?.some(p => p.providerId === 'password');
+
     const handleDeleteAccount = async () => {
         if (!user) return;
-        if (deleteConfirmInput.trim() !== user.email) {
+
+        // Step 1: verify email matches
+        if (deleteConfirmInput.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
             setDeleteError('이메일 주소가 일치하지 않습니다.');
+            return;
+        }
+
+        // Step 1 → Step 2 for email/password users: ask for password
+        if (isEmailPassword && deleteStep === 1) {
+            setDeleteStep(2);
+            setDeleteError('');
             return;
         }
 
@@ -128,11 +142,18 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
         setDeleteError('');
 
         try {
-            // Re-authenticate if needed (Google accounts)
-            const isGoogle = user.providerData?.some(p => p.providerId === 'google.com');
+            // Re-authenticate before deletion (Firebase requires this)
             if (isGoogle) {
                 const provider = new GoogleAuthProvider();
                 await reauthenticateWithPopup(user, provider);
+            } else if (isEmailPassword) {
+                if (!deletePasswordInput.trim()) {
+                    setDeleteError('비밀번호를 입력해 주세요.');
+                    setIsDeleting(false);
+                    return;
+                }
+                const credential = EmailAuthProvider.credential(user.email, deletePasswordInput);
+                await reauthenticateWithCredential(user, credential);
             }
 
             // Delete Firestore user document
@@ -150,12 +171,24 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
             console.error('Account deletion error:', error);
             if (error.code === 'auth/requires-recent-login') {
                 setDeleteError('보안을 위해 다시 로그인 후 시도해 주세요.');
+            } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                setDeleteError('비밀번호가 올바르지 않습니다.');
+            } else if (error.code === 'auth/popup-closed-by-user') {
+                setDeleteError('인증 창이 닫혔습니다. 다시 시도해 주세요.');
             } else {
-                setDeleteError('오류가 발생했습니다: ' + error.message);
+                setDeleteError('오류가 발생했습니다: ' + (error.message || error.code));
             }
         } finally {
             setIsDeleting(false);
         }
+    };
+
+    const openDeleteModal = () => {
+        setShowDeleteConfirm(true);
+        setDeleteStep(1);
+        setDeleteConfirmInput('');
+        setDeletePasswordInput('');
+        setDeleteError('');
     };
 
     if (!isOpen) return null;
@@ -304,7 +337,7 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
                                         </p>
                                     </div>
                                     <button
-                                        onClick={() => { setShowDeleteConfirm(true); setDeleteConfirmInput(''); setDeleteError(''); }}
+                                        onClick={openDeleteModal}
                                         className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 text-red-500 text-xs font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
                                     >
                                         <Trash2 size={13} />
@@ -354,22 +387,44 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
 
                             {/* Confirmation input area */}
                             <div className="p-6">
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                                    확인을 위해 이메일 주소를 입력하세요
-                                </label>
-                                {/* Readonly email hint */}
-                                <div className="text-xs text-gray-400 font-mono bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-3 select-all cursor-text">
-                                    {user?.email}
+                                {/* Step 1: Email confirmation */}
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                        확인을 위해 이메일 주소를 입력하세요
+                                    </label>
+                                    <div className="text-xs text-gray-400 font-mono bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-3 select-all cursor-text">
+                                        {user?.email}
+                                    </div>
+                                    <input
+                                        type="email"
+                                        value={deleteConfirmInput}
+                                        onChange={e => { setDeleteConfirmInput(e.target.value); setDeleteError(''); }}
+                                        placeholder="이메일 주소 입력"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none text-sm transition-all font-mono"
+                                        autoComplete="off"
+                                        disabled={isDeleting}
+                                    />
                                 </div>
-                                <input
-                                    type="email"
-                                    value={deleteConfirmInput}
-                                    onChange={e => { setDeleteConfirmInput(e.target.value); setDeleteError(''); }}
-                                    placeholder="이메일 주소 입력"
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none text-sm transition-all font-mono"
-                                    autoComplete="off"
-                                    disabled={isDeleting}
-                                />
+
+                                {/* Step 2: Password (email/password users only) */}
+                                {isEmailPassword && deleteStep === 2 && (
+                                    <div className="mt-4">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                            비밀번호를 입력하세요
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={deletePasswordInput}
+                                            onChange={e => { setDeletePasswordInput(e.target.value); setDeleteError(''); }}
+                                            placeholder="현재 비밀번호"
+                                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none text-sm transition-all"
+                                            autoComplete="current-password"
+                                            disabled={isDeleting}
+                                            autoFocus
+                                        />
+                                    </div>
+                                )}
+
                                 {deleteError && (
                                     <motion.p
                                         initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
@@ -389,11 +444,17 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
                                     </button>
                                     <button
                                         onClick={handleDeleteAccount}
-                                        disabled={isDeleting || deleteConfirmInput.trim() !== user?.email}
+                                        disabled={
+                                            isDeleting ||
+                                            deleteConfirmInput.trim().toLowerCase() !== user?.email?.trim().toLowerCase() ||
+                                            (isEmailPassword && deleteStep === 2 && !deletePasswordInput.trim())
+                                        }
                                         className="flex-1 h-12 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     >
                                         {isDeleting ? (
                                             <><Loader2 size={16} className="animate-spin" />탈퇴 처리 중...</>
+                                        ) : isEmailPassword && deleteStep === 1 ? (
+                                            <>다음 단계</>
                                         ) : (
                                             <><Trash2 size={16} />계정 영구 삭제</>
                                         )}
