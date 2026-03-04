@@ -99,7 +99,7 @@ const ValueMetricCard = ({ title, value, subValue, change, icon: Icon, colorClas
 
 // ─── Treasury Constants ───────────────────────────────────────────────────────
 const TREASURY_ARB = 130766;
-const TARGET_KRW = 800_000_000; // 8억 원
+const TARGET_KRW = 500_000_000; // 5억 원
 
 // ─── Value Gap Gauge Component ────────────────────────────────────────────────
 const ValueGapGauge = ({ index }) => {
@@ -152,109 +152,122 @@ const ValueGapGauge = ({ index }) => {
     );
 };
 
-// ─── Treasury Progress Bar ────────────────────────────────────────────────────
+// ─── Treasury Card ────────────────────────────────────────────────────────────
 const TreasuryCard = ({ priceKRW, priceUSD, krwRate }) => {
-    const currentValueKRW = TREASURY_ARB * priceKRW;
+    const currentValueKRW = TREASURY_ARB * (priceKRW || 0);
     const progressPct = Math.min((currentValueKRW / TARGET_KRW) * 100, 100);
-    const targetPriceUSD = TARGET_KRW / TREASURY_ARB / (krwRate || 1350);
-    const targetPriceKRW = TARGET_KRW / TREASURY_ARB;
-    const gapMultiple = targetPriceKRW / (priceKRW || 1);
+    const targetPriceKRW = TARGET_KRW / TREASURY_ARB;          // ₩3,824 / ARB
+    const targetPriceUSD = targetPriceKRW / (krwRate || 1350); // ~$2.83
+    const gapMultiple = priceKRW > 0 ? targetPriceKRW / priceKRW : 0;
+    const remainingKRW = Math.max(0, TARGET_KRW - currentValueKRW);
+
+    const gold = '#D4AF37';
+    const goldFaint = 'rgba(212,175,55,0.12)';
+    const goldFainter = 'rgba(212,175,55,0.06)';
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-            className="relative overflow-hidden rounded-3xl p-6 sm:p-8 mb-6"
+            className="relative overflow-hidden rounded-3xl mb-6"
             style={{
                 background: 'linear-gradient(135deg, #0D0D0D 0%, #1A1200 100%)',
-                border: '1px solid rgba(212, 175, 55, 0.35)',
-                boxShadow: '0 0 40px rgba(212, 175, 55, 0.08), inset 0 1px 0 rgba(212, 175, 55, 0.15)'
+                border: `1px solid rgba(212,175,55,0.3)`,
+                boxShadow: '0 0 40px rgba(212,175,55,0.07), inset 0 1px 0 rgba(212,175,55,0.12)'
             }}
         >
-            {/* Gold shimmer overlay */}
+            {/* shimmer */}
             <div className="absolute inset-0 pointer-events-none"
-                style={{ background: 'radial-gradient(ellipse at top left, rgba(212,175,55,0.08) 0%, transparent 60%)' }} />
+                style={{ background: 'radial-gradient(ellipse at top left, rgba(212,175,55,0.07) 0%, transparent 55%)' }} />
 
-            <div className="relative z-10">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                            style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)' }}>
-                            <span className="text-sm">🏛️</span>
+            <div className="relative z-10 p-5 sm:p-7">
+
+                {/* ── Row 1: Label + ARB count ── */}
+                <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                            style={{ background: 'rgba(212,175,55,0.15)', border: `1px solid ${goldFaint}` }}>
+                            <span className="text-xs">🏛️</span>
                         </div>
                         <div>
-                            <h3 className="text-xs font-mono tracking-[0.2em] uppercase" style={{ color: '#D4AF37' }}>HYZEN Labs. Treasury</h3>
-                            <p className="text-[10px] text-gray-600 font-mono mt-0.5">Private · Real-time ARB Holdings</p>
+                            <div className="text-[10px] font-mono tracking-[0.18em] uppercase" style={{ color: gold }}>HYZEN Labs. Treasury</div>
+                            <div className="text-[10px] text-gray-600 font-mono">Private · Real-time ARB</div>
                         </div>
                     </div>
-                    <div className="text-right">
-                        <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider">Total ARB</div>
-                        <div className="text-xl font-black font-mono" style={{ color: '#D4AF37' }}>
-                            {TREASURY_ARB.toLocaleString()}
+                    <div className="text-right shrink-0 ml-3">
+                        <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider">Holdings</div>
+                        <div className="text-base font-black font-mono leading-tight" style={{ color: gold }}>
+                            {TREASURY_ARB.toLocaleString()} ARB
                         </div>
                     </div>
                 </div>
 
-                {/* Main Value Row */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-                    <div className="sm:col-span-2">
+                {/* ── Row 2: Big value + live price (two clean columns) ── */}
+                <div className="flex flex-col sm:flex-row sm:items-end gap-3 mb-5">
+                    {/* Estimated KRW value */}
+                    <div className="flex-1 min-w-0">
                         <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">Estimated Value</div>
-                        <div className="text-3xl sm:text-4xl font-black tracking-tight" style={{ color: '#D4AF37' }}>
+                        <div className="text-2xl sm:text-3xl font-black tracking-tight leading-none" style={{ color: gold }}>
                             ₩{Math.round(currentValueKRW).toLocaleString()}
                         </div>
-                        <div className="text-sm text-gray-500 font-mono mt-1">
+                        <div className="text-xs text-gray-500 font-mono mt-1">
                             ≈ ${(currentValueKRW / (krwRate || 1350)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </div>
                     </div>
-                    <div className="flex flex-col justify-center">
-                        <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">Live ARB Price</div>
-                        <div className="text-xl font-black text-white font-mono">${priceUSD?.toFixed(4)}</div>
-                        <div className="text-sm text-gray-500 font-mono">₩{priceKRW?.toLocaleString()}</div>
+                    {/* Live price pill */}
+                    <div className="shrink-0 rounded-xl px-4 py-3" style={{ background: goldFainter, border: `1px solid ${goldFaint}` }}>
+                        <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">Live ARB</div>
+                        <div className="text-lg font-black text-white font-mono leading-none">${priceUSD?.toFixed(4) ?? '—'}</div>
+                        <div className="text-xs text-gray-500 font-mono mt-0.5">₩{(priceKRW || 0).toLocaleString()}</div>
                     </div>
                 </div>
 
-                {/* Progress Bar */}
-                <div className="mb-4">
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-[10px] text-gray-500 font-mono uppercase tracking-wider">Road to ₩800,000,000</span>
-                        <span className="text-sm font-black font-mono" style={{ color: '#D4AF37' }}>{progressPct.toFixed(2)}%</span>
+                {/* ── Row 3: Progress bar ── */}
+                <div className="mb-5">
+                    <div className="flex justify-between items-baseline mb-1.5">
+                        <span className="text-[10px] text-gray-500 font-mono uppercase tracking-wider">Road to ₩500,000,000</span>
+                        <span className="text-sm font-black font-mono" style={{ color: gold }}>{progressPct.toFixed(2)}%</span>
                     </div>
-                    <div className="relative h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    <div className="relative h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
                         <div
-                            className="absolute top-0 left-0 h-full rounded-full transition-all duration-700"
+                            className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
                             style={{
                                 width: `${progressPct}%`,
-                                background: 'linear-gradient(90deg, #8B6914 0%, #D4AF37 50%, #FFD700 100%)',
-                                boxShadow: '0 0 10px rgba(212,175,55,0.6)'
+                                background: 'linear-gradient(90deg, #8B6914 0%, #D4AF37 60%, #FFD700 100%)',
+                                boxShadow: '0 0 8px rgba(212,175,55,0.55)'
                             }}
                         />
                     </div>
                 </div>
 
-                {/* Target Distance */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="flex-1 rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }}>
-                        <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">Target Price for 8억</div>
-                        <div className="font-mono font-black" style={{ color: '#D4AF37' }}>
-                            ₩{Math.round(targetPriceKRW).toLocaleString()} <span className="text-gray-600 text-xs">/ ARB</span>
+                {/* ── Row 4: 3 stat boxes in a stable 3-col grid ── */}
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    {/* Target price */}
+                    <div className="rounded-xl p-3" style={{ background: goldFainter, border: `1px solid ${goldFaint}` }}>
+                        <div className="text-[9px] sm:text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1 leading-tight">Target / ARB</div>
+                        <div className="text-sm sm:text-base font-black font-mono leading-tight" style={{ color: gold }}>
+                            ₩{Math.round(targetPriceKRW).toLocaleString()}
                         </div>
-                        <div className="text-xs text-gray-600 font-mono">≈ ${targetPriceUSD.toFixed(2)}</div>
+                        <div className="text-[10px] text-gray-600 font-mono mt-0.5">≈ ${targetPriceUSD.toFixed(2)}</div>
                     </div>
-                    <div className="flex-1 rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }}>
-                        <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">Required Multiplier</div>
-                        <div className="text-xl font-black font-mono" style={{ color: gapMultiple >= 100 ? '#DC3545' : '#D4AF37' }}>
+                    {/* Required multiplier */}
+                    <div className="rounded-xl p-3" style={{ background: goldFainter, border: `1px solid ${goldFaint}` }}>
+                        <div className="text-[9px] sm:text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1 leading-tight">Need ×</div>
+                        <div className="text-xl sm:text-2xl font-black font-mono leading-tight"
+                            style={{ color: gapMultiple >= 50 ? '#DC3545' : gold }}>
                             {gapMultiple.toFixed(1)}x
                         </div>
-                        <div className="text-xs text-gray-600 font-mono">vs. current price</div>
+                        <div className="text-[10px] text-gray-600 font-mono mt-0.5">from now</div>
                     </div>
-                    <div className="flex-1 rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }}>
-                        <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">Remaining</div>
-                        <div className="font-mono font-black text-white">
-                            ₩{Math.max(0, Math.round(TARGET_KRW - currentValueKRW)).toLocaleString()}
+                    {/* Remaining */}
+                    <div className="rounded-xl p-3" style={{ background: goldFainter, border: `1px solid ${goldFaint}` }}>
+                        <div className="text-[9px] sm:text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1 leading-tight">Remaining</div>
+                        <div className="text-sm sm:text-base font-black font-mono leading-tight text-white">
+                            ₩{(remainingKRW / 1_000_000).toFixed(1)}M
                         </div>
-                        <div className="text-xs text-gray-600 font-mono">to goal</div>
+                        <div className="text-[10px] text-gray-600 font-mono mt-0.5">to 5억 goal</div>
                     </div>
                 </div>
+
             </div>
         </motion.div>
     );
