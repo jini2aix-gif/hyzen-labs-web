@@ -101,7 +101,6 @@ const ValueMetricCard = ({ title, value, subValue, change, icon: Icon, colorClas
 
 // ─── Treasury Constants ───────────────────────────────────────────────────────
 const TREASURY_ARB = 130766;
-const TARGET_KRW = 500_000_000; // 5억 원
 
 // ─── Value Gap Gauge Component ────────────────────────────────────────────────
 const ValueGapGauge = ({ index }) => {
@@ -157,11 +156,7 @@ const ValueGapGauge = ({ index }) => {
 // ─── Treasury Card ────────────────────────────────────────────────────────────
 const TreasuryCard = ({ priceKRW, priceUSD, krwRate }) => {
     const currentValueKRW = TREASURY_ARB * (priceKRW || 0);
-    const progressPct = Math.min((currentValueKRW / TARGET_KRW) * 100, 100);
-    const targetPriceKRW = TARGET_KRW / TREASURY_ARB;          // ₩3,824 / ARB
-    const targetPriceUSD = targetPriceKRW / (krwRate || 1350); // ~$2.83
-    const gapMultiple = priceKRW > 0 ? targetPriceKRW / priceKRW : 0;
-    const remainingKRW = Math.max(0, TARGET_KRW - currentValueKRW);
+    const currentValueUSD = currentValueKRW / (krwRate || 1350);
 
     const gold = '#D4AF37';
     const goldFaint = 'rgba(212,175,55,0.12)';
@@ -203,70 +198,32 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate }) => {
                     </div>
                 </div>
 
-                {/* ── Row 2: Big value + live price (two clean columns) ── */}
-                <div className="flex flex-col sm:flex-row sm:items-end gap-3 mb-5">
-                    {/* Estimated KRW value */}
+                {/* ── Row 2: KRW Value + Price Pills ── */}
+                <div className="flex flex-col sm:flex-row sm:items-stretch gap-3">
+                    {/* Big KRW value */}
                     <div className="flex-1 min-w-0">
                         <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">Estimated Value</div>
                         <div className="text-2xl sm:text-3xl font-black tracking-tight leading-none" style={{ color: gold }}>
                             ₩{Math.round(currentValueKRW).toLocaleString()}
                         </div>
-                        <div className="text-xs text-gray-500 font-mono mt-1">
-                            ≈ ${(currentValueKRW / (krwRate || 1350)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        <div className="text-xs text-gray-500 font-mono mt-1.5">
+                            ≈ ${currentValueUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })} USD
                         </div>
                     </div>
-                    {/* Live price pill */}
-                    <div className="shrink-0 rounded-xl px-4 py-3" style={{ background: goldFainter, border: `1px solid ${goldFaint}` }}>
-                        <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">Live ARB</div>
-                        <div className="text-lg font-black text-white font-mono leading-none">${priceUSD?.toFixed(4) ?? '—'}</div>
-                        <div className="text-xs text-gray-500 font-mono mt-0.5">₩{(priceKRW || 0).toLocaleString()}</div>
-                    </div>
-                </div>
-
-                {/* ── Row 3: Progress bar ── */}
-                <div className="mb-5">
-                    <div className="flex justify-between items-baseline mb-1.5">
-                        <span className="text-[10px] text-gray-500 font-mono uppercase tracking-wider">Road to ₩500,000,000</span>
-                        <span className="text-sm font-black font-mono" style={{ color: gold }}>{progressPct.toFixed(2)}%</span>
-                    </div>
-                    <div className="relative h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                        <div
-                            className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
-                            style={{
-                                width: `${progressPct}%`,
-                                background: 'linear-gradient(90deg, #8B6914 0%, #D4AF37 60%, #FFD700 100%)',
-                                boxShadow: '0 0 8px rgba(212,175,55,0.55)'
-                            }}
-                        />
-                    </div>
-                </div>
-
-                {/* ── Row 4: 3 stat boxes in a stable 3-col grid ── */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                    {/* Target price */}
-                    <div className="rounded-xl p-3" style={{ background: goldFainter, border: `1px solid ${goldFaint}` }}>
-                        <div className="text-[9px] sm:text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1 leading-tight">Target / ARB</div>
-                        <div className="text-sm sm:text-base font-black font-mono leading-tight" style={{ color: gold }}>
-                            ₩{Math.round(targetPriceKRW).toLocaleString()}
+                    {/* Right pills */}
+                    <div className="flex sm:flex-col gap-2 shrink-0">
+                        <div className="flex-1 sm:flex-none rounded-xl px-4 py-3" style={{ background: goldFainter, border: `1px solid ${goldFaint}` }}>
+                            <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">Live ARB</div>
+                            <div className="text-lg font-black text-white font-mono leading-none">${priceUSD?.toFixed(4) ?? '—'}</div>
+                            <div className="text-xs text-gray-500 font-mono mt-0.5">₩{(priceKRW || 0).toLocaleString()}</div>
                         </div>
-                        <div className="text-[10px] text-gray-600 font-mono mt-0.5">≈ ${targetPriceUSD.toFixed(2)}</div>
-                    </div>
-                    {/* Required multiplier */}
-                    <div className="rounded-xl p-3" style={{ background: goldFainter, border: `1px solid ${goldFaint}` }}>
-                        <div className="text-[9px] sm:text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1 leading-tight">Need ×</div>
-                        <div className="text-xl sm:text-2xl font-black font-mono leading-tight"
-                            style={{ color: gapMultiple >= 50 ? '#DC3545' : gold }}>
-                            {gapMultiple.toFixed(1)}x
+                        <div className="flex-1 sm:flex-none rounded-xl px-4 py-3" style={{ background: goldFainter, border: `1px solid ${goldFaint}` }}>
+                            <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">USD Value</div>
+                            <div className="text-lg font-black font-mono leading-none" style={{ color: gold }}>
+                                ${currentValueUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                            </div>
+                            <div className="text-xs text-gray-500 font-mono mt-0.5">{(currentValueUSD / 1000).toFixed(1)}K</div>
                         </div>
-                        <div className="text-[10px] text-gray-600 font-mono mt-0.5">from now</div>
-                    </div>
-                    {/* Remaining */}
-                    <div className="rounded-xl p-3" style={{ background: goldFainter, border: `1px solid ${goldFaint}` }}>
-                        <div className="text-[9px] sm:text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1 leading-tight">Remaining</div>
-                        <div className="text-sm sm:text-base font-black font-mono leading-tight text-white">
-                            ₩{(remainingKRW / 1_000_000).toFixed(1)}M
-                        </div>
-                        <div className="text-[10px] text-gray-600 font-mono mt-0.5">to 5억 goal</div>
                     </div>
                 </div>
 
