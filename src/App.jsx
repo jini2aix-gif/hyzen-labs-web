@@ -9,6 +9,7 @@ const ArbiscanDashboard = React.lazy(() => import('./components/dashboard/Arbisc
 const MyPageModal = React.lazy(() => import('./components/modals/MyPageModal'));
 const ZeroGDrift = React.lazy(() => import('./components/games/ZeroGDrift'));
 const PulseDash = React.lazy(() => import('./components/games/PulseDash'));
+const NeonGhostRun = React.lazy(() => import('./components/games/NeonGhostRun'));
 const AuthModal = React.lazy(() => import('./components/modals/AuthModal'));
 
 import { useFirebase } from './hooks/useFirebase';
@@ -30,6 +31,7 @@ const App = () => {
   const [isMyPageOpen, setIsMyPageOpen] = useState(false);
   const [isZeroGOpen, setIsZeroGOpen] = useState(false);
   const [isPulseDashOpen, setIsPulseDashOpen] = useState(false);
+  const [isNeonGhostOpen, setIsNeonGhostOpen] = useState(false);
   const [isHNRCModalOpen, setIsHNRCModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState('login');
@@ -96,6 +98,15 @@ const App = () => {
 
   const handleClosePulseDash = useCallback(() => {
     setIsPulseDashOpen(false);
+  }, []);
+
+  const handleOpenNeonGhost = useCallback(() => {
+    if (!user) { setIsAuthModalOpen(true); return; }
+    setIsNeonGhostOpen(true);
+  }, [user]);
+
+  const handleCloseNeonGhost = useCallback(() => {
+    setIsNeonGhostOpen(false);
   }, []);
 
   // Swipe Handlers
@@ -261,6 +272,7 @@ const App = () => {
                       user={user}
                       onOpenZeroG={handleOpenZeroG}
                       onOpenPulseDash={handleOpenPulseDash}
+                      onOpenNeonGhost={handleOpenNeonGhost}
                     />
                   </div>
                 ) : viewIndex === 1 ? (
@@ -334,6 +346,12 @@ const App = () => {
           <PulseDash
             isOpen={isPulseDashOpen}
             onClose={handleClosePulseDash}
+            user={user}
+          />
+
+          <NeonGhostRun
+            isOpen={isNeonGhostOpen}
+            onClose={handleCloseNeonGhost}
             user={user}
           />
 
