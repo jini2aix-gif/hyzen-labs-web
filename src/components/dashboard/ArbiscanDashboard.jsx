@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    ComposedChart, Line
+    ComposedChart, Line, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import {
     fetchMarketComparison,
@@ -19,6 +19,10 @@ import {
     fetchArbitrumStablecoins,
     fetchArbitrumYields,
     fetchArbitrumStablecoinHistory,
+    fetchNativeAlphaIndex,
+    fetchGMXSentiment,
+    fetchSequencerMargin,
+    fetchM2ArbElasticity,
     fetchKRWRate,
     REFRESH
 } from '../../lib/api-fetcher';
@@ -239,6 +243,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
         histPrice: [], histTvl: [], monthlyPrice: [],
         protocols: [], stablecoins: { total: 0, top: [] }, yields: [],
         stablecoinHistory: [],
+        nativeAlpha: [], gmxSentiment: null, seqMargin: null, m2Elasticity: [],
         krwRate: 1350
     });
     const [stableTrendDays, setStableTrendDays] = useState(30);
@@ -247,7 +252,11 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
     useEffect(() => {
         const loadAllData = async () => {
             try {
-                const [market, tvlData, supply, histPrice, histTvl, monthlyPrice, protocols, stablecoins, yields, stablecoinHistory, krwRate] = await Promise.all([
+                const [
+                    market, tvlData, supply, histPrice, histTvl, monthlyPrice,
+                    protocols, stablecoins, yields, stablecoinHistory,
+                    nativeAlpha, gmxSentiment, seqMargin, m2Elasticity, krwRate
+                ] = await Promise.all([
                     fetchMarketComparison(),
                     fetchChainTVLs(),
                     fetchArbitrumSupply(),
@@ -258,9 +267,17 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                     fetchArbitrumStablecoins(),
                     fetchArbitrumYields(),
                     fetchArbitrumStablecoinHistory(),
+                    fetchNativeAlphaIndex(),
+                    fetchGMXSentiment(),
+                    fetchSequencerMargin(),
+                    fetchM2ArbElasticity(),
                     fetchKRWRate()
                 ]);
-                setData({ market, tvlData, supply, histPrice, histTvl, monthlyPrice, protocols, stablecoins, yields, stablecoinHistory, krwRate });
+                setData({
+                    market, tvlData, supply, histPrice, histTvl, monthlyPrice,
+                    protocols, stablecoins, yields, stablecoinHistory,
+                    nativeAlpha, gmxSentiment, seqMargin, m2Elasticity, krwRate
+                });
             } catch (e) {
                 console.error("Dashboard Data Load Error", e);
             } finally {
@@ -551,8 +568,8 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                                                     key={d}
                                                     onClick={() => setStableTrendDays(d)}
                                                     className={`text-[10px] font-mono px-2.5 py-1 rounded-lg border transition-all ${days === d
-                                                            ? 'bg-[#00D1FF]/20 border-[#00D1FF]/50 text-[#00D1FF]'
-                                                            : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500'
+                                                        ? 'bg-[#00D1FF]/20 border-[#00D1FF]/50 text-[#00D1FF]'
+                                                        : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500'
                                                         }`}
                                                 >{d}D</button>
                                             ))}
@@ -706,6 +723,209 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                                 )}
 
                             </div>
+                        </div>
+                    </motion.div>
+
+                </div>
+            </div>
+
+            {/* ════════════════════════════════════════════════════════════ */}
+            {/* ═══  ARB Alpha Intelligence Section  ══════════════════════ */}
+            {/* ════════════════════════════════════════════════════════════ */}
+            <div className="max-w-[1400px] mx-auto pb-24 px-4 md:px-8">
+
+                {/* Section Header */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
+                    className="flex items-center gap-3 mt-10 mb-6"
+                >
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[#00D1FF]/30" />
+                    <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#00D1FF]/20 bg-[#00D1FF]/5">
+                        <Zap size={13} className="text-[#00D1FF]" />
+                        <span className="text-[11px] font-mono font-bold text-[#00D1FF] uppercase tracking-[0.2em]">ARB Alpha Intelligence</span>
+                    </div>
+                    <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[#00D1FF]/30" />
+                </motion.div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+
+                    {/* ── M2-ARB Elasticity Chart ── */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75 }}
+                        whileHover={{ y: -3, transition: { type: 'spring', stiffness: 400 } }}
+                        className="xl:col-span-2 bg-[#0D0D0D] border border-gray-800 rounded-3xl p-5 shadow-xl"
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-1">M2-ARB Elasticity</div>
+                                <div className="text-sm font-bold text-white">Global Liquidity vs. ARB TVL Inflow</div>
+                            </div>
+                            <div className="text-[10px] font-mono text-[#00D1FF]/60 bg-[#00D1FF]/5 border border-[#00D1FF]/10 px-2 py-1 rounded-lg">Weekly · 30pts</div>
+                        </div>
+                        {data.m2Elasticity.length > 1 ? (
+                            <ResponsiveContainer width="100%" height={180}>
+                                <ComposedChart data={data.m2Elasticity} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="tvlGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#00D1FF" stopOpacity={0.3} />
+                                            <stop offset="100%" stopColor="#00D1FF" stopOpacity={0.02} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#1A1A1A" />
+                                    <XAxis dataKey="date" tick={{ fill: '#4B5563', fontSize: 9, fontFamily: 'monospace' }} interval={5} tickLine={false} axisLine={false} />
+                                    <YAxis yAxisId="left" tick={{ fill: '#00D1FF', fontSize: 9, fontFamily: 'monospace' }} tickFormatter={v => `$${v}B`} tickLine={false} axisLine={false} width={42} />
+                                    <YAxis yAxisId="right" orientation="right" tick={{ fill: '#F0A500', fontSize: 9, fontFamily: 'monospace' }} tickFormatter={v => `${v}%`} tickLine={false} axisLine={false} width={36} />
+                                    <Tooltip
+                                        content={({ active, payload, label }) => {
+                                            if (!active || !payload?.length) return null;
+                                            return (
+                                                <div className="bg-[#111] border border-gray-700 rounded-xl px-3 py-2 shadow-2xl text-xs font-mono">
+                                                    <p className="text-gray-500 mb-1">{label}</p>
+                                                    {payload.map((p, i) => <p key={i} style={{ color: p.color }}>{p.name}: {p.value}{p.name === 'Elasticity' ? '%' : 'B'}</p>)}
+                                                </div>
+                                            );
+                                        }}
+                                    />
+                                    <Area yAxisId="left" type="monotone" dataKey="tvlB" name="ARB TVL" stroke="#00D1FF" strokeWidth={2} fill="url(#tvlGrad)" dot={false} />
+                                    <Line yAxisId="right" type="monotone" dataKey="elasticity" name="Elasticity" stroke="#F0A500" strokeWidth={2} dot={false} strokeDasharray="4 2" />
+                                </ComposedChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="h-[180px] flex items-center justify-center text-gray-700 text-xs font-mono">Loading data...</div>
+                        )}
+                        <div className="flex gap-4 mt-3 text-[10px] font-mono">
+                            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-[#00D1FF] inline-block" />ARB TVL (B)</span>
+                            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-[#F0A500] inline-block border-dashed" />Elasticity %</span>
+                        </div>
+                    </motion.div>
+
+                    {/* ── Native Alpha Index (Donut) ── */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}
+                        whileHover={{ y: -3, transition: { type: 'spring', stiffness: 400 } }}
+                        className="bg-[#0D0D0D] border border-gray-800 rounded-3xl p-5 shadow-xl"
+                    >
+                        <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-1">Native Alpha Index</div>
+                        <div className="text-sm font-bold text-white mb-4">ARB-Native TVL Share</div>
+                        {(() => {
+                            const COLORS = ['#00D1FF', '#F0A500', '#28A745', '#9B59B6', '#E74C3C', '#3498DB', '#555'];
+                            const top = data.nativeAlpha.slice(0, 6);
+                            if (!top.length) return <div className="h-[180px] flex items-center justify-center text-gray-700 text-xs font-mono">Loading...</div>;
+                            const totalTvl = top.reduce((s, x) => s + x.tvl, 0) || 1;
+                            return (
+                                <>
+                                    <ResponsiveContainer width="100%" height={160}>
+                                        <PieChart>
+                                            <Pie
+                                                data={top}
+                                                cx="50%" cy="50%"
+                                                innerRadius={48} outerRadius={72}
+                                                dataKey="tvl" paddingAngle={3}
+                                                stroke="none"
+                                            >
+                                                {top.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                                            </Pie>
+                                            <Tooltip
+                                                content={({ active, payload }) => {
+                                                    if (!active || !payload?.length) return null;
+                                                    const d = payload[0].payload;
+                                                    return (
+                                                        <div className="bg-[#111] border border-gray-700 rounded-xl px-3 py-2 text-xs font-mono shadow-2xl">
+                                                            <p className="text-white font-bold">{d.name}</p>
+                                                            <p className="text-gray-400">${(d.tvl / 1e6).toFixed(0)}M · {(d.tvl / totalTvl * 100).toFixed(1)}%</p>
+                                                        </div>
+                                                    );
+                                                }}
+                                            />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="space-y-1.5 mt-2">
+                                        {top.slice(0, 5).map((p, i) => (
+                                            <div key={i} className="flex items-center justify-between">
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className="w-2 h-2 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />
+                                                    <span className="text-[10px] text-gray-400 font-mono">{p.name}</span>
+                                                </div>
+                                                <span className="text-[10px] text-gray-500 font-mono">{(p.tvl / totalTvl * 100).toFixed(1)}%</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            );
+                        })()}
+                    </motion.div>
+
+                    {/* ── GMX Whale Sentiment + Sequencer Margin ── */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.85 }}
+                        whileHover={{ y: -3, transition: { type: 'spring', stiffness: 400 } }}
+                        className="bg-[#0D0D0D] border border-gray-800 rounded-3xl p-5 shadow-xl flex flex-col gap-5"
+                    >
+                        {/* GMX Whale Sentiment */}
+                        <div>
+                            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-1">GMX Whale Sentiment</div>
+                            <div className="text-sm font-bold text-white mb-3">Long / Short OI</div>
+                            {data.gmxSentiment ? (() => {
+                                const { longPct, longOI, shortOI, bullish } = data.gmxSentiment;
+                                const shortPct = 100 - longPct;
+                                const sentColor = bullish ? '#28A745' : '#DC3545';
+                                return (
+                                    <div>
+                                        {/* SVG arc gauge */}
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-2xl font-black font-mono" style={{ color: sentColor }}>{longPct}%</span>
+                                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold" style={{ color: sentColor, background: `${sentColor}18` }}>
+                                                {bullish ? '🟢 LONG BIAS' : '🔴 SHORT BIAS'}
+                                            </span>
+                                        </div>
+                                        <div className="relative h-3 rounded-full bg-[#1A1A1A] overflow-hidden">
+                                            <div className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
+                                                style={{ width: `${longPct}%`, background: `linear-gradient(90deg, #28A745, #2ECC71)`, boxShadow: '0 0 8px #28A74560' }} />
+                                        </div>
+                                        <div className="flex justify-between mt-1.5">
+                                            <span className="text-[9px] font-mono text-[#28A745]">Long ${longOI}M</span>
+                                            <span className="text-[9px] font-mono text-[#DC3545]">Short ${shortOI}M</span>
+                                        </div>
+                                        {/* Mini segments */}
+                                        <div className="flex gap-0.5 mt-2">
+                                            {Array.from({ length: 20 }).map((_, i) => (
+                                                <div key={i} className="flex-1 h-1 rounded-full"
+                                                    style={{ background: i < Math.round(longPct / 5) ? '#28A745' : '#DC3545', opacity: 0.7 }} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })() : <div className="text-gray-700 text-xs font-mono">Loading...</div>}
+                        </div>
+
+                        <div className="border-t border-gray-800" />
+
+                        {/* Sequencer Margin */}
+                        <div>
+                            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-1">Sequencer Margin</div>
+                            <div className="text-sm font-bold text-white mb-3">L2 Revenue vs L1 Cost</div>
+                            {data.seqMargin ? (() => {
+                                const { revenue24h, cost24h, marginPct, trend } = data.seqMargin;
+                                const marginColor = marginPct >= 55 ? '#28A745' : marginPct >= 35 ? '#F0A500' : '#DC3545';
+                                return (
+                                    <div>
+                                        <div className="flex items-end justify-between mb-2">
+                                            <span className="text-2xl font-black font-mono" style={{ color: marginColor }}>{marginPct}%</span>
+                                            <span className="text-[10px] font-mono text-gray-500">
+                                                {trend === 'up' ? '↑' : '↓'} 24h rev: ${(revenue24h / 1000).toFixed(1)}K
+                                            </span>
+                                        </div>
+                                        <div className="relative h-3 rounded-full bg-[#1A1A1A] overflow-hidden">
+                                            <div className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
+                                                style={{ width: `${marginPct}%`, background: `linear-gradient(90deg, ${marginColor}99, ${marginColor})`, boxShadow: `0 0 8px ${marginColor}60` }} />
+                                        </div>
+                                        <div className="flex justify-between mt-1.5">
+                                            <span className="text-[9px] font-mono text-[#00D1FF]">Revenue ${(revenue24h / 1000).toFixed(1)}K</span>
+                                            <span className="text-[9px] font-mono text-gray-600">L1 Cost ${(cost24h / 1000).toFixed(1)}K</span>
+                                        </div>
+                                    </div>
+                                );
+                            })() : <div className="text-gray-700 text-xs font-mono">Loading...</div>}
                         </div>
                     </motion.div>
 
