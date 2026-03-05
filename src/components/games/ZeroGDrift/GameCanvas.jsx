@@ -424,14 +424,26 @@ const GameCanvas = ({ onGameOver, onScoreUpdate, gameAudio, onLevelChange, onCol
                 }
             }
 
-            // --- Device Specific Difficulty Adjustments (Mobile vs PC) ---
-            const isMobile = width < 768;
-            const diffScale = {
-                count: isMobile ? 0.5 : 1.0,   // 모바일: 최대 적 스폰 수 50% 감소
-                speed: isMobile ? 0.55 : 1.0,  // 모바일: 적 이동 속도 45% 감소
-                size: isMobile ? 0.7 : 1.0,    // 모바일: 장애물 크기 30% 축소
-                spawnRate: isMobile ? 0.008 : 0.02 // 모바일: 스폰 자주 안됨
+            // --- Device-Adaptive Difficulty (4-tier: phone / small tablet / tablet / PC) ---
+            // Principle: smaller screen = less visible area per enemy → reduce density & speed
+            // larger screen = easy to dodge → increase challenge proportionally
+            const getDiffScale = () => {
+                const w = width;
+                if (w < 480) {
+                    // Phone portrait — tightest play area, most challenging per pixel
+                    return { count: 0.45, speed: 0.52, size: 0.65, spawnRate: 0.006 };
+                } else if (w < 768) {
+                    // Phone landscape / small tablet
+                    return { count: 0.6, speed: 0.65, size: 0.75, spawnRate: 0.009 };
+                } else if (w < 1100) {
+                    // Tablet — balanced difficulty
+                    return { count: 0.8, speed: 0.85, size: 0.88, spawnRate: 0.014 };
+                } else {
+                    // Desktop — widest screen, easiest to dodge → full difficulty
+                    return { count: 1.0, speed: 1.0, size: 1.0, spawnRate: 0.02 };
+                }
             };
+            const diffScale = getDiffScale();
 
             // Intelligence-based enemy count
             const baseEnemies = (2 + levelRef.current) * diffScale.count;

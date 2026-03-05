@@ -145,44 +145,60 @@ const PulseDash = ({ isOpen, onClose, user }) => {
                         <X size={24} />
                     </button>
 
-                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-40 opacity-30 text-[10px] font-mono uppercase tracking-[0.4em] pointer-events-none">
-                        Drag to move
+                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-40 opacity-30 text-[10px] font-mono uppercase tracking-[0.4em] pointer-events-none hidden md:block">
+                        Arrow keys / drag to move
                     </div>
                 </>
             )}
 
-            {/* Level Announcement Overlay */}
+            {/* Level Announcement Overlay — identical to Zero-G Drift */}
             <AnimatePresence>
                 {showLevelUp && (
                     <motion.div
-                        initial={{ opacity: 0, y: 30, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, scale: 1.2, y: -30 }}
-                        className="absolute inset-0 z-[110] flex flex-col items-center justify-center pointer-events-none"
+                        initial={{ opacity: 0, scale: 0.5, y: -20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 1.5, y: 20 }}
+                        className="absolute inset-0 z-[110] flex items-center justify-center pointer-events-none"
                     >
-                        <div className="flex flex-col items-center py-10 px-20 bg-black/20 backdrop-blur-[2px] rounded-[4rem]">
-                            <span className="text-cyan-400 font-tech text-[10px] md:text-xs tracking-[0.5em] uppercase mb-4 opacity-70">Sector Transition</span>
-                            <h2 className="text-5xl md:text-8xl font-black italic text-white drop-shadow-[0_0_30px_rgba(34,211,238,0.5)] font-brand uppercase tracking-tighter">
+                        <div className="flex flex-col items-center">
+                            <motion.span
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 0.7 }}
+                                className="text-cyan-400 font-mono text-[10px] md:text-xs uppercase mb-4"
+                            >
+                                Pulse Sector Reached
+                            </motion.span>
+                            <h2 className="text-6xl md:text-8xl font-black italic text-white drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] font-brand uppercase tracking-tighter">
                                 LEVEL {currentLevel}
                             </h2>
-                            <div className="h-[2px] w-24 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mt-6"></div>
+                            <div className="h-[2px] w-24 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mt-6 shadow-[0_0_15px_rgba(6,182,212,0.8)] opacity-50"></div>
                         </div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Countdown Overlay */}
+            {/* Countdown Overlay — identical to Zero-G Drift */}
             <AnimatePresence>
                 {gameState === 'countdown' && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.5 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 2 }}
-                        className="absolute inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
                     >
-                        <div className="text-[160px] font-black italic text-cyan-400 drop-shadow-[0_0_50px_rgba(34,211,238,0.8)] font-sans">
-                            {countdown > 0 ? countdown : "GO!"}
-                        </div>
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={countdown}
+                                initial={{ scale: 2, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.5, opacity: 0 }}
+                                className="flex items-center justify-center"
+                            >
+                                <span className="text-[12rem] font-black italic text-white font-brand drop-shadow-[0_0_30px_rgba(6,182,212,0.8)]">
+                                    {countdown > 0 ? countdown : 'GO!'}
+                                </span>
+                            </motion.div>
+                        </AnimatePresence>
                     </motion.div>
                 )}
             </AnimatePresence>

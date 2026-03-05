@@ -19,23 +19,18 @@ const GameCanvas = forwardRef(({ onGameOver, onScoreUpdate, onLevelChange, gameA
     const centerY = useRef(0);
     const animationFrameRef = useRef(null);
 
-    // Controls
+    // Swipe / Touch State
+    const touchStartXRef = useRef(null);
+    const touchStartYRef = useRef(null);
     const isDragging = useRef(false);
+    const SWIPE_THRESHOLD = 35; // px — minimum horizontal delta to trigger snap
 
-    // Pastel Colors for obstacles
     const pastelColors = [
-        '#FFB7B2', // Pink
-        '#FFDAC1', // Peach
-        '#E2F0CB', // Lime
-        '#B5EAD7', // Mint
-        '#C7CEEA', // Lavender
-        '#D4F0F0', // Sky
+        '#FFB7B2', '#FFDAC1', '#E2F0CB', '#B5EAD7', '#C7CEEA', '#D4F0F0',
     ];
 
     useImperativeHandle(ref, () => ({
-        setLane: (lane) => {
-            targetLaneRef.current = lane;
-        }
+        setLane: (lane) => { targetLaneRef.current = lane; }
     }));
 
     useEffect(() => {
@@ -49,7 +44,6 @@ const GameCanvas = forwardRef(({ onGameOver, onScoreUpdate, onLevelChange, gameA
             canvas.style.width = `${window.innerWidth}px`;
             canvas.style.height = `${window.innerHeight}px`;
             ctx.scale(dpr, dpr);
-
             centerX.current = window.innerWidth / 2;
             centerY.current = window.innerHeight * 0.3;
             roadWidth.current = Math.min(window.innerWidth * 0.8, 600);
@@ -57,45 +51,100 @@ const GameCanvas = forwardRef(({ onGameOver, onScoreUpdate, onLevelChange, gameA
         setCanvasSize();
         window.addEventListener('resize', setCanvasSize);
 
-        const handleMove = (x) => {
+        // ─── Device diffScale helper ───────────────────────────────────────
+        // Returns scaling factors based on viewport width
+        const getDiffScale = () => {
+            const w = window.innerWidth;
+            if (w < 480) {
+                // Phone portrait  ← hardest relative area per screen: reduce density
+                return { spawnRate: 0.65, baseSpeedMult: 0.72, obstacleCountMult: 0.6 };
+            } else if (w < 768) {
+                // Phone landscape / small tablet
+                return { spawnRate: 0.78, baseSpeedMult: 0.82, obstacleCountMult: 0.75 };
+            } else if (w < 1100) {
+                // Tablet  ← medium — balanced
+                return { spawnRate: 0.88, baseSpeedMult: 0.92, obstacleCountMult: 0.88 };
+            } else {
+                // Desktop ← full speed
+                return { spawnRate: 1.0, baseSpeedMult: 1.0, obstacleCountMult: 1.0 };
+            }
+        };
+
+        // ─── Snap-lane helper ──────────────────────────────────────────────
+        const snapLane = (direction) => {
+            // direction: -1 (left), +1 (right)
+            const next = Math.max(0, Math.min(2, targetLaneRef.current + direction));
+            if (next !== targetLaneRef.current) {
+                targetLaneRef.current = next;
+                gameAudio?.playSFX('click');
+            }
+        };
+
+        // ─── Mouse controls (PC drag — position-based) ─────────────────────
+        const handleMouseMove = (x) => {
+            if (!isDragging.current) return;
             const width = window.innerWidth;
             const third = width / 3;
-            let newLane = 1;
-            if (x < third) newLane = 0;
-            else if (x < third * 2) newLane = 1;
-            else newLane = 2;
-
+            let newLane = x < third ? 0 : x < third * 2 ? 1 : 2;
             if (newLane !== targetLaneRef.current) {
                 targetLaneRef.current = newLane;
                 gameAudio?.playSFX('click');
             }
         };
-
-        const onMouseDown = (e) => {
-            isDragging.current = true;
-            handleMove(e.clientX);
-        };
-        const onMouseMove = (e) => {
-            if (isDragging.current) handleMove(e.clientX);
-        };
+        const onMouseDown = (e) => { isDragging.current = true; handleMouseMove(e.clientX); };
+        const onMouseMove = (e) => { if (isDragging.current) handleMouseMove(e.clientX); };
         const onMouseUp = () => { isDragging.current = false; };
+
+        // ─── Touch controls (mobile snap-swipe) ────────────────────────────
         const onTouchStart = (e) => {
+            e.preventDefault();
+            const t = e.touches[0];
+            touchStartXRef.current = t.clientX;
+            touchStartYRef.current = t.clientY;
             isDragging.current = true;
-            handleMove(e.touches[0].clientX);
         };
+
         const onTouchMove = (e) => {
-            if (isDragging.current) handleMove(e.touches[0].clientX);
+            e.preventDefault();
+            if (!isDragging.current || touchStartXRef.current === null) return;
+            const t = e.touches[0];
+            const dx = t.clientX - touchStartXRef.current;
+            const dy = t.clientY - touchStartYRef.current;
+
+            // Only act if horizontal movement dominates and threshold exceeded
+            if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > SWIPE_THRESHOLD) {
+                snapLane(dx > 0 ? 1 : -1);
+                // Reset anchor so continuous slow drag triggers per-lane
+                touchStartXRef.current = t.clientX;
+                touchStartYRef.current = t.clientY;
+            }
         };
-        const onTouchEnd = () => { isDragging.current = false; };
+
+        const onTouchEnd = (e) => {
+            e.preventDefault();
+            isDragging.current = false;
+            touchStartXRef.current = null;
+            touchStartYRef.current = null;
+        };
+
+        // Keyboard
+        const onKeyDown = (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') snapLane(-1);
+            if (e.key === 'ArrowRight' || e.key === 'd') snapLane(1);
+        };
 
         window.addEventListener('mousedown', onMouseDown);
         window.addEventListener('mousemove', onMouseMove);
         window.addEventListener('mouseup', onMouseUp);
-        window.addEventListener('touchstart', onTouchStart, { passive: false });
-        window.addEventListener('touchmove', onTouchMove, { passive: false });
-        window.addEventListener('touchend', onTouchEnd);
+        canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+        canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+        canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+        window.addEventListener('keydown', onKeyDown);
 
         const spawnObstacle = () => {
+            const ds = getDiffScale();
+            // On mobile, sometimes skip a spawn to reduce density
+            if (Math.random() > ds.obstacleCountMult) return;
             const lane = Math.floor(Math.random() * 3);
             const color = pastelColors[Math.floor(Math.random() * pastelColors.length)];
             obstaclesRef.current.push({ z: 2000, lane, passed: false, color });
@@ -105,9 +154,7 @@ const GameCanvas = forwardRef(({ onGameOver, onScoreUpdate, onLevelChange, gameA
             const side = Math.random() > 0.5 ? 1 : -1;
             const type = Math.random() > 0.7 ? 'pillar' : 'rect';
             sceneryRef.current.push({
-                z: 2000,
-                side,
-                type,
+                z: 2000, side, type,
                 h: 100 + Math.random() * 200,
                 color: Math.random() > 0.5 ? '#22d3ee' : '#6366f1'
             });
@@ -119,6 +166,7 @@ const GameCanvas = forwardRef(({ onGameOver, onScoreUpdate, onLevelChange, gameA
             const height = window.innerHeight;
             const now = Date.now();
             const elapsed = (now - startTimeRef.current) / 1000;
+            const ds = getDiffScale();
 
             // Level Logic (20s per level)
             const newLevel = Math.floor(elapsed / 20) + 1;
@@ -127,28 +175,22 @@ const GameCanvas = forwardRef(({ onGameOver, onScoreUpdate, onLevelChange, gameA
                 onLevelChange?.(newLevel);
             }
 
-            // Speed
-            const baseSpeed = 2 + (levelRef.current * 1.5);
+            // Speed — scaled by device
+            const baseSpeed = (2 + levelRef.current * 1.5) * ds.baseSpeedMult;
             const currentSpeed = baseSpeed + (scoreRef.current / 3000);
 
-            // Smooth lane movement (interpolation)
+            // Smooth lane movement
             laneRef.current += (targetLaneRef.current - laneRef.current) * 0.2;
 
-            // Spawn
-            const spawnRate = Math.max(12, 40 - (levelRef.current * 3));
-            if (frameRef.current % spawnRate === 0) {
-                spawnObstacle();
-            }
+            // Spawn rate scaled by device
+            const baseSpawnRate = Math.max(12, 40 - levelRef.current * 3);
+            const spawnRate = Math.round(baseSpawnRate / ds.spawnRate);
+            if (frameRef.current % spawnRate === 0) spawnObstacle();
 
             // Update
-            obstaclesRef.current.forEach(obs => {
-                obs.z -= currentSpeed * 4;
-            });
-            sceneryRef.current.forEach(s => {
-                s.z -= currentSpeed * 4;
-            });
+            obstaclesRef.current.forEach(obs => { obs.z -= currentSpeed * 4; });
+            sceneryRef.current.forEach(s => { s.z -= currentSpeed * 4; });
             sceneryRef.current = sceneryRef.current.filter(s => s.z > -100);
-
             if (frameRef.current % 5 === 0) spawnScenery();
 
             // Collision
@@ -168,7 +210,7 @@ const GameCanvas = forwardRef(({ onGameOver, onScoreUpdate, onLevelChange, gameA
                 return obs.z > -100;
             });
 
-            // Render
+            // ── Render ──────────────────────────────────────────────────────
             ctx.fillStyle = '#050505';
             ctx.fillRect(0, 0, width, height);
 
@@ -177,24 +219,22 @@ const GameCanvas = forwardRef(({ onGameOver, onScoreUpdate, onLevelChange, gameA
             const cY = centerY.current;
 
             // Road
-            const bottomW = rW;
-            const topW = bottomW * 0.05;
             ctx.fillStyle = '#0a0a15';
             ctx.beginPath();
-            ctx.moveTo(cX - topW, cY);
-            ctx.lineTo(cX + topW, cY);
-            ctx.lineTo(cX + bottomW / 2, height);
-            ctx.lineTo(cX - bottomW / 2, height);
+            ctx.moveTo(cX - rW * 0.025, cY);
+            ctx.lineTo(cX + rW * 0.025, cY);
+            ctx.lineTo(cX + rW / 2, height);
+            ctx.lineTo(cX - rW / 2, height);
             ctx.fill();
 
-            // Lane markers (Stronger dividers)
+            // Lane markers
             ctx.strokeStyle = '#22d3ee33';
             ctx.lineWidth = 1.5;
             ctx.setLineDash([40, 40]);
             ctx.lineDashOffset = -frameRef.current * currentSpeed;
-
+            const topW = rW * 0.05;
             for (let l = 0; l <= 3; l++) {
-                const lxBottom = cX - bottomW / 2 + (l * bottomW / 3);
+                const lxBottom = cX - rW / 2 + (l * rW / 3);
                 const lxTop = cX - topW + (l * topW * 2 / 3);
                 ctx.beginPath();
                 ctx.moveTo(lxTop, cY);
@@ -207,42 +247,32 @@ const GameCanvas = forwardRef(({ onGameOver, onScoreUpdate, onLevelChange, gameA
             sceneryRef.current.sort((a, b) => b.z - a.z).forEach(s => {
                 const scale = 400 / (s.z + 400);
                 if (s.z <= -350) return;
-
                 const w = 20 * scale;
                 const h = s.h * scale;
                 const xOff = s.side * (rW / 2 + 100);
-                const drawX = cX + (xOff * scale);
+                const drawX = cX + xOff * scale;
                 const drawY = cY + (height - cY) * scale;
-
                 ctx.globalAlpha = 0.3 * scale;
                 ctx.fillStyle = s.color;
-                if (s.type === 'pillar') {
-                    ctx.fillRect(drawX - w / 2, drawY - h, w, h);
-                } else {
-                    ctx.strokeRect(drawX - w / 2, drawY - h, w, h);
-                }
+                if (s.type === 'pillar') ctx.fillRect(drawX - w / 2, drawY - h, w, h);
+                else ctx.strokeRect(drawX - w / 2, drawY - h, w, h);
                 ctx.globalAlpha = 1;
             });
 
             // Obstacles
             obstaclesRef.current.sort((a, b) => b.z - a.z).forEach(obs => {
-                const scale = 400 / (obs.z + 400); // 400 is focal length
+                const scale = 400 / (obs.z + 400);
                 if (obs.z <= -350) return;
-
                 const laneWidth = (rW / 3) * scale;
-                const obsW = laneWidth * 0.95; // Slightly narrower than lane for margin
+                const obsW = laneWidth * 0.95;
                 const obsH = 40 * scale;
                 const xOff = (obs.lane - 1) * (rW / 3);
-                const drawX = cX + (xOff * scale);
+                const drawX = cX + xOff * scale;
                 const drawY = cY + (height - cY) * scale;
-
                 if (drawY > height + 50) return;
-
-                // Draw Capsule Shapes
                 ctx.shadowBlur = 15 * scale;
                 ctx.shadowColor = obs.color;
                 ctx.fillStyle = obs.color;
-
                 const padding = 5 * scale;
                 ctx.beginPath();
                 ctx.roundRect(drawX - obsW / 2 + padding, drawY - obsH, obsW - padding * 2, obsH, 15 * scale);
@@ -250,7 +280,7 @@ const GameCanvas = forwardRef(({ onGameOver, onScoreUpdate, onLevelChange, gameA
                 ctx.shadowBlur = 0;
             });
 
-            // Player Car 
+            // Player Car
             const carVisualZ = 150;
             const carScale = 400 / (carVisualZ + 400);
             const carY = cY + (height - cY) * carScale;
@@ -264,25 +294,32 @@ const GameCanvas = forwardRef(({ onGameOver, onScoreUpdate, onLevelChange, gameA
             ctx.translate(carX, carY);
             ctx.rotate(tiltAngle);
             ctx.scale(1, 0.9);
-
             ctx.shadowBlur = 30;
             ctx.shadowColor = '#22d3ee';
             ctx.fillStyle = '#0f172a';
             ctx.beginPath();
             ctx.roundRect(-carW / 2, -carH / 2, carW, carH, 15);
             ctx.fill();
-
             ctx.fillStyle = '#0ea5e9';
             ctx.beginPath();
             ctx.roundRect(-carW / 3, -carH / 4, carW * 2 / 3, carH / 2, 10);
             ctx.fill();
-
             ctx.shadowBlur = 15;
             ctx.shadowColor = '#fff';
             ctx.fillStyle = '#fff';
             ctx.fillRect(-carW / 2 + 8, -carH / 2 + 5, 15, 6);
             ctx.fillRect(carW / 2 - 23, -carH / 2 + 5, 15, 6);
             ctx.restore();
+
+            // Swipe hint (mobile only, first 10s)
+            if (width < 768 && elapsed < 10) {
+                ctx.globalAlpha = Math.max(0, 1 - elapsed / 8) * 0.4;
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px "Courier New"';
+                ctx.textAlign = 'center';
+                ctx.fillText('← swipe to change lane →', width / 2, height - 30);
+                ctx.globalAlpha = 1;
+            }
 
             // HUD
             ctx.font = 'bold 12px "Orbitron"';
@@ -300,9 +337,10 @@ const GameCanvas = forwardRef(({ onGameOver, onScoreUpdate, onLevelChange, gameA
             window.removeEventListener('mousedown', onMouseDown);
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup', onMouseUp);
-            window.removeEventListener('touchstart', onTouchStart);
-            window.removeEventListener('touchmove', onTouchMove);
-            window.removeEventListener('touchend', onTouchEnd);
+            canvas.removeEventListener('touchstart', onTouchStart);
+            canvas.removeEventListener('touchmove', onTouchMove);
+            canvas.removeEventListener('touchend', onTouchEnd);
+            window.removeEventListener('keydown', onKeyDown);
         };
     }, [onGameOver, onScoreUpdate]);
 
