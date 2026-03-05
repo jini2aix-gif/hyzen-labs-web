@@ -53,20 +53,22 @@ const GameCanvas = forwardRef(({ onGameOver, onScoreUpdate, onLevelChange, gameA
 
         // ─── Device diffScale helper ───────────────────────────────────────
         // Returns scaling factors based on viewport width
+        // Mobile tier (< 768): moderate difficulty — smaller screen = less dodge space
+        // PC/Tablet tier (≥ 768): significantly harder — bigger screen needs more challenge
         const getDiffScale = () => {
             const w = window.innerWidth;
             if (w < 480) {
-                // Phone portrait  ← hardest relative area per screen: reduce density
-                return { spawnRate: 0.65, baseSpeedMult: 0.72, obstacleCountMult: 0.6 };
+                // Phone portrait — slightly harder than before
+                return { spawnRate: 0.82, baseSpeedMult: 0.85, obstacleCountMult: 0.80 };
             } else if (w < 768) {
                 // Phone landscape / small tablet
-                return { spawnRate: 0.78, baseSpeedMult: 0.82, obstacleCountMult: 0.75 };
+                return { spawnRate: 0.90, baseSpeedMult: 0.92, obstacleCountMult: 0.88 };
             } else if (w < 1100) {
-                // Tablet  ← medium — balanced
-                return { spawnRate: 0.88, baseSpeedMult: 0.92, obstacleCountMult: 0.88 };
+                // Tablet — clearly harder tier than mobile
+                return { spawnRate: 1.12, baseSpeedMult: 1.18, obstacleCountMult: 1.10 };
             } else {
-                // Desktop ← full speed
-                return { spawnRate: 1.0, baseSpeedMult: 1.0, obstacleCountMult: 1.0 };
+                // Desktop — hardest: wide screen = lots of space so crank it up
+                return { spawnRate: 1.30, baseSpeedMult: 1.35, obstacleCountMult: 1.25 };
             }
         };
 
