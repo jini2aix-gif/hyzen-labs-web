@@ -14,7 +14,7 @@ import { gameAudio } from '../../../utils/gameAudio';
 const GHOST_STORAGE_KEY = 'ngr_ghost_v1';
 
 const NeonGhostRun = ({ isOpen, onClose, user }) => {
-    const [gameState, setGameState] = useState('start'); // start | countdown | playing | gameover
+    const [gameState, setGameState] = useState('start');
     const [countdown, setCountdown] = useState(3);
     const [score, setScore] = useState(0);
     const [combo, setCombo] = useState(0);
@@ -25,8 +25,13 @@ const NeonGhostRun = ({ isOpen, onClose, user }) => {
     const [showConfirmQuit, setShowConfirmQuit] = useState(false);
     const [hasGhost, setHasGhost] = useState(false);
     const [ghostLabel, setGhostLabel] = useState('');
+    // Item states
+    const [hasShield, setHasShield] = useState(false);
+    const [phantomSecs, setPhantomSecs] = useState(0);
+    const [boostSecs, setBoostSecs] = useState(0);
     const ghostDataRef = useRef(null);
     const currentRunFramesRef = useRef([]);
+    const itemTimersRef = useRef({});
 
     // ─── Load ghost from localStorage on open ────────────────────────────
     useEffect(() => {
@@ -57,6 +62,7 @@ const NeonGhostRun = ({ isOpen, onClose, user }) => {
             gameAudio.stopBGM();
             setGameState('start');
             setScore(0); setCombo(0); setMaxCombo(0); setCurrentLevel(1);
+            setHasShield(false); setPhantomSecs(0); setBoostSecs(0);
             setShowConfirmQuit(false);
         }
         return () => { document.body.style.overflow = 'unset'; gameAudio.stopBGM(); };
@@ -87,6 +93,29 @@ const NeonGhostRun = ({ isOpen, onClose, user }) => {
         setGameState('countdown');
         setCountdown(3);
         setScore(0); setCombo(0); setMaxCombo(0); setCurrentLevel(1);
+        setHasShield(false); setPhantomSecs(0); setBoostSecs(0);
+        // Clear any item timers
+        Object.values(itemTimersRef.current).forEach(clearInterval);
+        itemTimersRef.current = {};
+    }, []);
+
+    // ─── Item collect handler ──────────────────────────────────────────────
+    const handleItemCollect = useCallback((kind) => {
+        if (kind === 'shield') {
+            setHasShield(true);
+        } else if (kind === 'ghost') {
+            setPhantomSecs(4);
+            clearInterval(itemTimersRef.current.phantom);
+            itemTimersRef.current.phantom = setInterval(() => {
+                setPhantomSecs(prev => { if (prev <= 1) { clearInterval(itemTimersRef.current.phantom); return 0; } return prev - 1; });
+            }, 1000);
+        } else if (kind === 'boost') {
+            setBoostSecs(8);
+            clearInterval(itemTimersRef.current.boost);
+            itemTimersRef.current.boost = setInterval(() => {
+                setBoostSecs(prev => { if (prev <= 1) { clearInterval(itemTimersRef.current.boost); return 0; } return prev - 1; });
+            }, 1000);
+        }
     }, []);
 
     // ─── Game over ─────────────────────────────────────────────────────────
@@ -172,10 +201,32 @@ const NeonGhostRun = ({ isOpen, onClose, user }) => {
                         onScoreUpdate={setScore}
                         onLevelChange={handleLevelChange}
                         onComboUpdate={setCombo}
-                        onFrameRecord={(frames) => { currentRunFramesRef.current = frames; }}
+                        onItemCollect={handleItemCollect}
                         gameAudio={gameAudio}
                         ghostData={ghostDataRef.current}
                     />
+
+                    {/* Item HUD */}
+                    <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 pointer-events-none">
+                        {hasShield && (
+                            <div className="flex items-center gap-1 bg-red-500/20 border border-red-500/40 backdrop-blur-sm px-2.5 py-1 rounded-full">
+                                <span className="text-red-400 text-sm">♥</span>
+                                <span className="text-[9px] font-mono text-red-400 uppercase tracking-widest">SHIELD</span>
+                            </div>
+                        )}
+                        {phantomSecs > 0 && (
+                            <div className="flex items-center gap-1 bg-violet-500/20 border border-violet-500/40 backdrop-blur-sm px-2.5 py-1 rounded-full">
+                                <span className="text-violet-400 text-sm">◈</span>
+                                <span className="text-[9px] font-mono text-violet-400 uppercase tracking-widest">PHANTOM {phantomSecs}s</span>
+                            </div>
+                        )}
+                        {boostSecs > 0 && (
+                            <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 backdrop-blur-sm px-2.5 py-1 rounded-full">
+                                <span className="text-amber-400 text-sm">✦</span>
+                                <span className="text-[9px] font-mono text-amber-400 uppercase tracking-widest">×2 BOOST {boostSecs}s</span>
+                            </div>
+                        )}
+                    </div>
 
                     {/* HUD: Score */}
                     <div className="absolute top-16 right-6 z-50 pointer-events-none text-right">
@@ -329,19 +380,37 @@ const NeonGhostRun = ({ isOpen, onClose, user }) => {
                             {/* Controls quick guide (start only) */}
                             {gameState === 'start' && (
                                 <div className="w-full bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4">
-                                    <h3 className="text-white/40 font-mono text-[9px] uppercase tracking-widest mb-3 border-b border-white/10 pb-2">How to Run</h3>
-                                    <div className="grid grid-cols-2 gap-3 text-left">
+                                    <h3 className="text-white/40 font-mono text-[9px] uppercase tracking-widest mb-3 border-b border-white/10 pb-2">How to Play</h3>
+                                    <div className="grid grid-cols-3 gap-2 text-left">
                                         <div className="flex flex-col items-center gap-1">
-                                            <div className="w-8 h-8 rounded-lg border border-fuchsia-500/40 flex items-center justify-center text-fuchsia-400 text-lg">↑</div>
-                                            <div className="text-[9px] text-fuchsia-300 font-mono uppercase text-center">Jump / Double Jump</div>
+                                            <div className="w-8 h-8 rounded-lg border border-fuchsia-500/40 flex items-center justify-center text-fuchsia-400 text-base">↑</div>
+                                            <div className="text-[8px] text-fuchsia-300 font-mono uppercase text-center">Jump</div>
                                         </div>
                                         <div className="flex flex-col items-center gap-1">
-                                            <div className="w-8 h-8 rounded-lg border border-blue-500/40 flex items-center justify-center text-blue-400 text-lg">↓</div>
-                                            <div className="text-[9px] text-blue-300 font-mono uppercase text-center">Slide</div>
+                                            <div className="w-8 h-8 rounded-lg border border-purple-500/40 flex items-center justify-center text-purple-400 text-base">↑↑</div>
+                                            <div className="text-[8px] text-purple-300 font-mono uppercase text-center">D-Jump</div>
+                                        </div>
+                                        <div className="flex flex-col items-center gap-1">
+                                            <div className="w-8 h-8 rounded-lg border border-blue-500/40 flex items-center justify-center text-blue-400 text-base">↓</div>
+                                            <div className="text-[8px] text-blue-300 font-mono uppercase text-center">Slide</div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-3 border-t border-white/10 pt-3 grid grid-cols-3 gap-2">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <span className="text-red-400 text-base">♥</span>
+                                            <div className="text-[7px] text-red-300 font-mono uppercase text-center">Shield</div>
+                                        </div>
+                                        <div className="flex flex-col items-center gap-1">
+                                            <span className="text-violet-400 text-base">◈</span>
+                                            <div className="text-[7px] text-violet-300 font-mono uppercase text-center">Phantom</div>
+                                        </div>
+                                        <div className="flex flex-col items-center gap-1">
+                                            <span className="text-amber-400 text-base">✦</span>
+                                            <div className="text-[7px] text-amber-300 font-mono uppercase text-center">×2 Boost</div>
                                         </div>
                                     </div>
                                     <p className="text-[8px] text-white/20 font-mono text-center mt-3 uppercase tracking-widest">
-                                        Mobile: Swipe ↑ jump · Swipe ↓ slide · Tap jump
+                                        Mobile: Left tap=Slide · Right tap=Jump
                                     </p>
                                 </div>
                             )}
