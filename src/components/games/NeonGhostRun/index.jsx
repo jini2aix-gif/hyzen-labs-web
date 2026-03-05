@@ -365,7 +365,7 @@ const NeonGhostRun = ({ isOpen, onClose, user }) => {
                                     NEON GHOST RUN
                                 </h1>
                                 <p className="text-white/40 text-[10px] font-mono tracking-[0.3em] mt-2 uppercase">
-                                    Outrun your own ghost. Beat the Kyle-AI.
+                                    과거의 나를 넘어라. AI를 이겨라.
                                 </p>
                             </div>
 
@@ -380,37 +380,37 @@ const NeonGhostRun = ({ isOpen, onClose, user }) => {
                             {/* Controls quick guide (start only) */}
                             {gameState === 'start' && (
                                 <div className="w-full bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4">
-                                    <h3 className="text-white/40 font-mono text-[9px] uppercase tracking-widest mb-3 border-b border-white/10 pb-2">How to Play</h3>
+                                    <h3 className="text-white/40 font-mono text-[9px] uppercase tracking-widest mb-3 border-b border-white/10 pb-2">조작 방법</h3>
                                     <div className="grid grid-cols-3 gap-2 text-left">
                                         <div className="flex flex-col items-center gap-1">
                                             <div className="w-8 h-8 rounded-lg border border-fuchsia-500/40 flex items-center justify-center text-fuchsia-400 text-base">↑</div>
-                                            <div className="text-[8px] text-fuchsia-300 font-mono uppercase text-center">Jump</div>
+                                            <div className="text-[8px] text-fuchsia-300 font-mono uppercase text-center">점프</div>
                                         </div>
                                         <div className="flex flex-col items-center gap-1">
                                             <div className="w-8 h-8 rounded-lg border border-purple-500/40 flex items-center justify-center text-purple-400 text-base">↑↑</div>
-                                            <div className="text-[8px] text-purple-300 font-mono uppercase text-center">D-Jump</div>
+                                            <div className="text-[8px] text-purple-300 font-mono uppercase text-center">이단 점프</div>
                                         </div>
                                         <div className="flex flex-col items-center gap-1">
                                             <div className="w-8 h-8 rounded-lg border border-blue-500/40 flex items-center justify-center text-blue-400 text-base">↓</div>
-                                            <div className="text-[8px] text-blue-300 font-mono uppercase text-center">Slide</div>
+                                            <div className="text-[8px] text-blue-300 font-mono uppercase text-center">슬라이드</div>
                                         </div>
                                     </div>
                                     <div className="mt-3 border-t border-white/10 pt-3 grid grid-cols-3 gap-2">
                                         <div className="flex flex-col items-center gap-1">
                                             <span className="text-red-400 text-base">♥</span>
-                                            <div className="text-[7px] text-red-300 font-mono uppercase text-center">Shield</div>
+                                            <div className="text-[7px] text-red-300 font-mono uppercase text-center">실드</div>
                                         </div>
                                         <div className="flex flex-col items-center gap-1">
                                             <span className="text-violet-400 text-base">◈</span>
-                                            <div className="text-[7px] text-violet-300 font-mono uppercase text-center">Phantom</div>
+                                            <div className="text-[7px] text-violet-300 font-mono uppercase text-center">유령</div>
                                         </div>
                                         <div className="flex flex-col items-center gap-1">
                                             <span className="text-amber-400 text-base">✦</span>
-                                            <div className="text-[7px] text-amber-300 font-mono uppercase text-center">×2 Boost</div>
+                                            <div className="text-[7px] text-amber-300 font-mono uppercase text-center">점수 2배</div>
                                         </div>
                                     </div>
                                     <p className="text-[8px] text-white/20 font-mono text-center mt-3 uppercase tracking-widest">
-                                        Mobile: Left tap=Slide · Right tap=Jump
+                                        모바일: 왼쪽 탭=슬라이드 · 오른쪽 탭=점프
                                     </p>
                                 </div>
                             )}
@@ -432,7 +432,7 @@ const NeonGhostRun = ({ isOpen, onClose, user }) => {
                                     )}
                                     {hasGhost && (
                                         <div className="text-[10px] font-mono text-white/30 uppercase tracking-widest mt-1">
-                                            {score > 0 ? '👻 ghost updated — next run will be harder' : ''}
+                                            {score > 0 ? '👻 고스트 갱신 — 다음 판이 더 어려워집니다' : ''}
                                         </div>
                                     )}
                                 </motion.div>
@@ -447,7 +447,7 @@ const NeonGhostRun = ({ isOpen, onClose, user }) => {
                                     <div className="absolute inset-0 bg-fuchsia-400 mix-blend-multiply opacity-0 group-hover:opacity-100 transition-opacity" />
                                     <div className="relative flex items-center justify-center gap-2 font-mono">
                                         {gameState === 'start' ? <Play size={18} /> : <RotateCcw size={18} />}
-                                        <span>{gameState === 'start' ? '게임 시작' : '재도전'}</span>
+                                        <span>{gameState === 'start' ? '게임 시작' : '다시 도전'}</span>
                                     </div>
                                 </button>
                                 <button
