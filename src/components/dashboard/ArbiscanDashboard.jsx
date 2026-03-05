@@ -23,6 +23,7 @@ import {
     fetchGMXSentiment,
     fetchSequencerMargin,
     fetchM2ArbElasticity,
+    fetchArbEthMcapRatio,
     fetchKRWRate,
     REFRESH
 } from '../../lib/api-fetcher';
@@ -244,6 +245,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
         protocols: [], stablecoins: { total: 0, top: [] }, yields: [],
         stablecoinHistory: [],
         nativeAlpha: [], gmxSentiment: null, seqMargin: null, m2Elasticity: [],
+        arbEthRatio: [],
         krwRate: 1350
     });
     const [stableTrendDays, setStableTrendDays] = useState(30);
@@ -255,7 +257,8 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                 const [
                     market, tvlData, supply, histPrice, histTvl, monthlyPrice,
                     protocols, stablecoins, yields, stablecoinHistory,
-                    nativeAlpha, gmxSentiment, seqMargin, m2Elasticity, krwRate
+                    nativeAlpha, gmxSentiment, seqMargin, m2Elasticity,
+                    arbEthRatio, krwRate
                 ] = await Promise.all([
                     fetchMarketComparison(),
                     fetchChainTVLs(),
@@ -271,12 +274,14 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                     fetchGMXSentiment(),
                     fetchSequencerMargin(),
                     fetchM2ArbElasticity(),
+                    fetchArbEthMcapRatio(),
                     fetchKRWRate()
                 ]);
                 setData({
                     market, tvlData, supply, histPrice, histTvl, monthlyPrice,
                     protocols, stablecoins, yields, stablecoinHistory,
-                    nativeAlpha, gmxSentiment, seqMargin, m2Elasticity, krwRate
+                    nativeAlpha, gmxSentiment, seqMargin, m2Elasticity,
+                    arbEthRatio, krwRate
                 });
             } catch (e) {
                 console.error("Dashboard Data Load Error", e);
@@ -627,49 +632,10 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                             );
                         })()}
 
-                        {/* Top row: Protocols + Stablecoins + Yields */}
+                        {/* Stablecoins + Yields (full width now) */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
-                            {/* Top Protocols */}
-                            <div>
-                                <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-3">Top Protocols by TVL</div>
-                                <div className="space-y-2.5">
-                                    {(() => {
-                                        const maxTvl = data.protocols[0]?.tvl || 1;
-                                        const catColor = {
-                                            'Dexes': '#00D1FF', 'Lending': '#F0A500',
-                                            'Derivatives': '#28A745', 'Yield': '#9B59B6',
-                                            'Liquid Staking': '#3498DB'
-                                        };
-                                        return data.protocols.map((p, i) => (
-                                            <div key={i}>
-                                                <div className="flex justify-between items-baseline mb-1">
-                                                    <span className="text-xs font-bold text-white truncate max-w-[130px]">{p.name}</span>
-                                                    <span className="text-xs font-mono text-gray-400">${(p.tvl / 1e6).toFixed(0)}M</span>
-                                                </div>
-                                                <div className="relative h-1.5 rounded-full bg-gray-800 overflow-hidden">
-                                                    <div
-                                                        className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
-                                                        style={{
-                                                            width: `${(p.tvl / maxTvl) * 100}%`,
-                                                            background: catColor[p.category] || '#00D1FF',
-                                                            boxShadow: `0 0 6px ${catColor[p.category] || '#00D1FF'}80`
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div className="flex justify-between mt-0.5">
-                                                    <span className="text-[9px] text-gray-700 font-mono">{p.category}</span>
-                                                    <span className={`text-[9px] font-mono font-bold ${p.change1d >= 0 ? 'text-[#28A745]' : 'text-[#DC3545]'}`}>
-                                                        {p.change1d >= 0 ? '+' : ''}{p.change1d.toFixed(1)}%
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ));
-                                    })()}
-                                </div>
-                            </div>
-
-                            {/* Stablecoins + Yields */}
+                            {/* Stablecoin supply breakdown */}
                             <div className="flex flex-col gap-4">
 
                                 {/* Stablecoin supply breakdown */}
@@ -727,6 +693,122 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                     </motion.div>
 
                 </div>
+            </div>
+
+            {/* ── ARB / ETH Mcap Ratio Chart — 별도 max-w 컨테이너 ── */}
+            <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}
+                    className="mt-6 bg-[#111111] border border-gray-800 rounded-3xl p-6 shadow-xl"
+                >
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-5 border-b border-gray-800 pb-4 gap-3">
+                        <div>
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2 tracking-tight">
+                                <TrendingUp size={20} className="text-[#00D1FF]" />
+                                ARB / ETH Market Cap Ratio
+                            </h3>
+                            <p className="text-xs text-gray-500 mt-1 font-mono">ARB 시가총액이 이더리움 대비 차지하는 비율 (%) · 주별 · 1년</p>
+                        </div>
+                        {/* Live ratio badge */}
+                        {data.arbEthRatio.length > 0 && (() => {
+                            const cur = data.arbEthRatio[data.arbEthRatio.length - 1];
+                            const isFair = cur.ratioPct >= cur.fairLow && cur.ratioPct <= cur.fairHigh;
+                            const isUnder = cur.ratioPct < cur.fairLow;
+                            const color = isUnder ? '#F0A500' : isFair ? '#28A745' : '#DC3545';
+                            const label = isUnder ? '저평가 구간' : isFair ? '적정 구간' : '고평가 구간';
+                            return (
+                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                    <div className="font-black font-mono text-3xl" style={{ color }}>
+                                        {cur.ratioPct.toFixed(3)}%
+                                    </div>
+                                    <div className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold" style={{ color, background: `${color}18` }}>
+                                        {label}
+                                    </div>
+                                    <div className="text-[10px] text-gray-600 font-mono">적정 밴드 1.5%~3.0%</div>
+                                </div>
+                            );
+                        })()}
+                    </div>
+
+                    {data.arbEthRatio.length > 1 ? (
+                        <ResponsiveContainer width="100%" height={300}>
+                            <ComposedChart data={data.arbEthRatio} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="ratioGrad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#00D1FF" stopOpacity={0.35} />
+                                        <stop offset="100%" stopColor="#00D1FF" stopOpacity={0.02} />
+                                    </linearGradient>
+                                    {/* Fair-value band fill */}
+                                    <linearGradient id="fairBandGrad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#28A745" stopOpacity={0.12} />
+                                        <stop offset="100%" stopColor="#28A745" stopOpacity={0.04} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1A1A1A" vertical={false} />
+                                <XAxis
+                                    dataKey="date"
+                                    tick={{ fill: '#4B5563', fontSize: 10, fontFamily: 'monospace' }}
+                                    tickLine={false} axisLine={false}
+                                    interval={3}
+                                />
+                                <YAxis
+                                    tick={{ fill: '#4B5563', fontSize: 10, fontFamily: 'monospace' }}
+                                    tickFormatter={v => `${v}%`}
+                                    tickLine={false} axisLine={false}
+                                    width={48}
+                                    domain={[0, 'dataMax + 0.5']}
+                                />
+                                <Tooltip
+                                    content={({ active, payload, label }) => {
+                                        if (!active || !payload?.length) return null;
+                                        const d = payload[0]?.payload;
+                                        return (
+                                            <div className="bg-[#111111] border border-gray-700 rounded-xl px-4 py-3 shadow-2xl text-xs font-mono">
+                                                <p className="text-gray-500 mb-2">{label}</p>
+                                                <p className="text-[#00D1FF] font-bold">ARB/ETH: {d?.ratioPct?.toFixed(4)}%</p>
+                                                <p className="text-gray-400">ARB Mcap: ${d?.arbMcapB}B</p>
+                                                <p className="text-gray-400">ETH Mcap: ${d?.ethMcapB}B</p>
+                                                <div className="mt-2 pt-2 border-t border-gray-800">
+                                                    <p className="text-[#28A745]">적정 밴드: 1.5% ~ 3.0%</p>
+                                                    <p className="text-[#F0A500] text-[10px] mt-0.5">이론적 중심치: 2.25%</p>
+                                                </div>
+                                            </div>
+                                        );
+                                    }}
+                                />
+                                {/* Fair-value upper bound */}
+                                <Line type="monotone" dataKey="fairHigh" stroke="#28A745" strokeWidth={1}
+                                    strokeDasharray="6 3" dot={false} name="상단 적정" />
+                                {/* Fair-value mid line */}
+                                <Line type="monotone" dataKey="fairMid" stroke="#28A745" strokeWidth={1.5}
+                                    strokeDasharray="2 4" dot={false} name="이론 중심" />
+                                {/* Fair-value lower bound */}
+                                <Line type="monotone" dataKey="fairLow" stroke="#F0A500" strokeWidth={1}
+                                    strokeDasharray="6 3" dot={false} name="하단 적정" />
+                                {/* Actual ratio area */}
+                                <Area
+                                    type="monotone" dataKey="ratioPct" name="ARB/ETH 비율"
+                                    stroke="#00D1FF" strokeWidth={2.5}
+                                    fill="url(#ratioGrad)" dot={false}
+                                    activeDot={{ r: 5, fill: '#00D1FF', strokeWidth: 0 }}
+                                />
+                            </ComposedChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="h-[300px] flex items-center justify-center text-gray-700 text-sm font-mono">
+                            <Activity className="animate-spin mr-2" size={16} /> 데이터 로딩 중...
+                        </div>
+                    )}
+
+                    {/* Legend */}
+                    <div className="flex flex-wrap gap-4 mt-4 text-[11px] font-mono text-gray-500">
+                        <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#00D1FF] inline-block" />실제 ARB/ETH 비율</span>
+                        <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#28A745] inline-block" style={{ borderTop: '1px dashed #28A745' }} />상단 적정 (3.0%)</span>
+                        <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#28A745] inline-block" />이론 중심치 (2.25%)</span>
+                        <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#F0A500] inline-block" style={{ borderTop: '1px dashed #F0A500' }} />하단 적정 (1.5%)</span>
+                        <span className="ml-auto text-gray-700">* L2 적정비율: 연구 기반 이론치 (이더리움 대비 1.5~3%)</span>
+                    </div>
+                </motion.div>
             </div>
 
             {/* ════════════════════════════════════════════════════════════ */}

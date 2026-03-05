@@ -490,3 +490,51 @@ export const fetchM2ArbElasticity = async () => {
     }
 };
 
+// ─── 13. ARB/ETH Market Cap Ratio History (CoinGecko free) ───────────────
+// Shows historical ARB mcap as % of ETH mcap + fair-value band reference
+export const fetchArbEthMcapRatio = async () => {
+    try {
+        const [arbRaw, ethRaw] = await Promise.all([
+            fetchWithCache(
+                'https://api.coingecko.com/api/v3/coins/arbitrum/market_chart?vs_currency=usd&days=365&interval=weekly',
+                'arb_mcap_hist_v1',
+                TTL.LONG,
+                null
+            ),
+            fetchWithCache(
+                'https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=365&interval=weekly',
+                'eth_mcap_hist_v1',
+                TTL.LONG,
+                null
+            ),
+        ]);
+
+        const arbMcaps = arbRaw?.market_caps;
+        const ethMcaps = ethRaw?.market_caps;
+
+        if (!Array.isArray(arbMcaps) || !Array.isArray(ethMcaps)) return [];
+
+        return arbMcaps.map(([arbTs, arbMcap]) => {
+            const nearest = ethMcaps.reduce((best, cur) =>
+                Math.abs(cur[0] - arbTs) < Math.abs(best[0] - arbTs) ? cur : best,
+                ethMcaps[0]
+            );
+            const ethMcap = nearest[1] || 1;
+            const ratioPct = +((arbMcap / ethMcap) * 100).toFixed(4);
+            const d = new Date(arbTs);
+            const dateStr = `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+            return {
+                date: dateStr,
+                ratioPct,
+                arbMcapB: +(arbMcap / 1e9).toFixed(2),
+                ethMcapB: +(ethMcap / 1e9).toFixed(1),
+                // Fair-value band: academic/market consensus for healthy L2 vs L1
+                fairLow: 1.5,
+                fairMid: 2.25,
+                fairHigh: 3.0,
+            };
+        }).filter(d => d.ratioPct > 0);
+    } catch {
+        return [];
+    }
+};
