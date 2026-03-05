@@ -288,11 +288,9 @@ const GameCanvas = forwardRef(({ onGameOver, onScoreUpdate, onLevelChange, gameA
             const carX = cX + carLOffset * carScale;
             const carW = 70 * carScale;
             const carH = 100 * carScale;
-            const tiltAngle = (laneRef.current - 1) * 0.25;
 
             ctx.save();
             ctx.translate(carX, carY);
-            ctx.rotate(tiltAngle);
             ctx.scale(1, 0.9);
             ctx.shadowBlur = 30;
             ctx.shadowColor = '#22d3ee';
