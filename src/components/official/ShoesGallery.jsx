@@ -32,6 +32,161 @@ const getCardHeight = (aspect) => {
     return `${map[aspect] || 240}px`;
 };
 
+// ── 은하수 파티클 캔버스 ────────────────────────────────────────────────────────
+const GalaxyCanvas = () => {
+    const canvasRef = useRef(null);
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let raf;
+        let mouse = { x: -999, y: -999 };
+
+        const resize = () => {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        };
+        resize();
+        window.addEventListener('resize', resize);
+        canvas.addEventListener('mousemove', e => {
+            const r = canvas.getBoundingClientRect();
+            mouse.x = e.clientX - r.left;
+            mouse.y = e.clientY - r.top;
+        });
+        canvas.addEventListener('mouseleave', () => { mouse.x = -999; mouse.y = -999; });
+
+        // 별 생성
+        const COUNT = 260;
+        const stars = Array.from({ length: COUNT }, (_, i) => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            r: Math.random() * 1.5 + 0.2,
+            speed: Math.random() * 0.18 + 0.04,
+            angle: Math.random() * Math.PI * 2,
+            drift: (Math.random() - 0.5) * 0.008,
+            baseOpacity: Math.random() * 0.7 + 0.15,
+            twinkleSpeed: Math.random() * 0.02 + 0.005,
+            twinkleOffset: Math.random() * Math.PI * 2,
+            // 색상: 보라/파랑/흰 세 종류
+            hue: [240, 200, 0][Math.floor(Math.random() * 3)],
+            sat: Math.random() > 0.3 ? 70 : 0,
+        }));
+
+        // 유성 생성
+        const METEOR_COUNT = 3;
+        const meteors = Array.from({ length: METEOR_COUNT }, () => ({
+            x: Math.random() * 2000,
+            y: Math.random() * -400,
+            len: Math.random() * 80 + 40,
+            speed: Math.random() * 4 + 3,
+            opacity: 0,
+            active: false,
+            timer: Math.random() * 300,
+        }));
+
+        let t = 0;
+        const draw = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            t += 0.01;
+
+            // 배경 성운 글로우
+            const grad = ctx.createRadialGradient(
+                canvas.width * 0.35, canvas.height * 0.5, 0,
+                canvas.width * 0.35, canvas.height * 0.5, canvas.width * 0.55
+            );
+            grad.addColorStop(0, 'rgba(99,102,241,0.06)');
+            grad.addColorStop(0.5, 'rgba(14,165,233,0.03)');
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 별 그리기
+            stars.forEach(s => {
+                // 마우스 인터랙션 — 가까우면 밀림
+                const dx = s.x - mouse.x, dy = s.y - mouse.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 80) {
+                    const force = (80 - dist) / 80;
+                    s.x += (dx / dist) * force * 1.2;
+                    s.y += (dy / dist) * force * 1.2;
+                }
+
+                s.angle += s.drift;
+                s.x += Math.cos(s.angle) * s.speed * 0.3;
+                s.y += s.speed * 0.15;
+
+                if (s.y > canvas.height + 5) s.y = -5;
+                if (s.x < -5) s.x = canvas.width + 5;
+                if (s.x > canvas.width + 5) s.x = -5;
+
+                const twinkle = s.baseOpacity + Math.sin(t * s.twinkleSpeed * 60 + s.twinkleOffset) * 0.2;
+                const sat = s.sat;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fillStyle = sat > 0
+                    ? `hsla(${s.hue},${sat}%,85%,${twinkle})`
+                    : `rgba(255,255,255,${twinkle})`;
+                ctx.fill();
+
+                // 큰 별 글로우
+                if (s.r > 1.2) {
+                    const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 5);
+                    glow.addColorStop(0, `hsla(${s.hue},${sat}%,85%,${twinkle * 0.25})`);
+                    glow.addColorStop(1, 'transparent');
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r * 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            // 유성
+            meteors.forEach(m => {
+                m.timer--;
+                if (m.timer <= 0 && !m.active) {
+                    m.x = Math.random() * canvas.width * 1.5;
+                    m.y = Math.random() * -100;
+                    m.opacity = 1;
+                    m.active = true;
+                    m.timer = Math.random() * 400 + 200;
+                }
+                if (m.active) {
+                    m.x -= m.speed * 1.2;
+                    m.y += m.speed;
+                    m.opacity -= 0.012;
+                    if (m.opacity <= 0 || m.y > canvas.height) { m.active = false; }
+                    const tailX = m.x + m.len * 1.2;
+                    const tailY = m.y - m.len;
+                    const mg = ctx.createLinearGradient(tailX, tailY, m.x, m.y);
+                    mg.addColorStop(0, 'transparent');
+                    mg.addColorStop(1, `rgba(200,210,255,${m.opacity})`);
+                    ctx.beginPath();
+                    ctx.moveTo(tailX, tailY);
+                    ctx.lineTo(m.x, m.y);
+                    ctx.strokeStyle = mg;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            });
+
+            raf = requestAnimationFrame(draw);
+        };
+        draw();
+        return () => {
+            cancelAnimationFrame(raf);
+            window.removeEventListener('resize', resize);
+        };
+    }, []);
+
+    return (
+        <canvas
+            ref={canvasRef}
+            className="absolute inset-0 w-full h-full pointer-events-auto"
+            style={{ opacity: 0.9 }}
+        />
+    );
+};
+
 // ── 플레이스홀더 카드 ─────────────────────────────────────────────────────────
 const PlaceholderCard = ({ item, isHovered }) => (
     <div
@@ -225,43 +380,55 @@ const GalleryCard = ({ item, index, onOpen, viewMode }) => {
     );
 };
 
-// ── 라이트박스 ────────────────────────────────────────────────────────────────
 const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) => {
     const [idx, setIdx] = useState(allItems.findIndex(i => i.id === item.id));
+    const [imgIdx, setImgIdx] = useState(0); // 현재 작품의 이미지 인덱스
     const cur = allItems[idx] ?? item;
 
-    const goNext = useCallback(() => setIdx(i => (i + 1) % allItems.length), [allItems.length]);
-    const goPrev = useCallback(() => setIdx(i => (i - 1 + allItems.length) % allItems.length), [allItems.length]);
+    // 현재 작품의 이미지 목록: images[] 우선, 없으면 imageUrl 단일
+    const images = useMemo(() => {
+        if (cur.images?.length) return cur.images;
+        if (cur.imageUrl) return [cur.imageUrl];
+        return [];
+    }, [cur]);
+
+    // 작품 변경 시 이미지 인덱스 초기화
+    useEffect(() => { setImgIdx(0); }, [idx]);
+
+    const goNextItem = useCallback(() => { setIdx(i => (i + 1) % allItems.length); }, [allItems.length]);
+    const goPrevItem = useCallback(() => { setIdx(i => (i - 1 + allItems.length) % allItems.length); }, [allItems.length]);
+    const goNextImg = useCallback(() => setImgIdx(i => (i + 1) % images.length), [images.length]);
+    const goPrevImg = useCallback(() => setImgIdx(i => (i - 1 + images.length) % images.length), [images.length]);
 
     useEffect(() => {
         const h = (e) => {
-            if (e.key === 'ArrowRight') goNext();
-            if (e.key === 'ArrowLeft') goPrev();
+            if (e.key === 'ArrowRight') images.length > 1 ? goNextImg() : goNextItem();
+            if (e.key === 'ArrowLeft') images.length > 1 ? goPrevImg() : goPrevItem();
             if (e.key === 'Escape') onClose();
         };
         window.addEventListener('keydown', h);
         return () => window.removeEventListener('keydown', h);
-    }, [goNext, goPrev, onClose]);
+    }, [goNextImg, goPrevImg, goNextItem, goPrevItem, images.length, onClose]);
 
     return (
         <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.96)', backdropFilter: 'blur(24px)' }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.97)', backdropFilter: 'blur(32px)' }}
             onClick={onClose}
         >
             {/* Close */}
             <button onClick={onClose}
-                className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center z-20"
+                className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center z-20 hover:bg-white/10 transition-all"
                 style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}>
                 <X size={18} color="white" />
             </button>
 
-            {/* Nav */}
-            {['left', 'right'].map(dir => (
+            {/* 좌우 작품 네비 — 이미지 1장일 때만 보임 */}
+            {images.length <= 1 && allItems.length > 1 && ['left', 'right'].map(dir => (
                 <button key={dir}
-                    onClick={e => { e.stopPropagation(); dir === 'left' ? goPrev() : goNext(); }}
-                    className={`absolute ${dir === 'left' ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center z-20 hover:bg-white/10 transition-all`}
+                    onClick={e => { e.stopPropagation(); dir === 'left' ? goPrevItem() : goNextItem(); }}
+                    className={`absolute ${dir === 'left' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center z-20 hover:bg-white/10 transition-all`}
                     style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
                     {dir === 'left' ? <ChevronLeft size={20} color="white" /> : <ChevronRight size={20} color="white" />}
                 </button>
@@ -270,25 +437,71 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
             <AnimatePresence mode="wait">
                 <motion.div
                     key={cur.id}
-                    initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.25 }}
-                    className="flex flex-col md:flex-row gap-5 max-w-5xl w-full mx-14"
+                    initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.22 }}
+                    className="flex flex-col md:flex-row gap-5 w-full max-w-5xl mx-4 md:mx-14 max-h-[92vh]"
                     onClick={e => e.stopPropagation()}
+                    style={{ paddingTop: '4px' }}
                 >
-                    {/* Image */}
-                    <div className="flex-1 rounded-2xl overflow-hidden relative"
-                        style={{ minHeight: '300px', maxHeight: '72vh', border: `1px solid ${cur.accentColor}30` }}>
-                        {cur.imageUrl
-                            ? <img src={cur.imageUrl} alt={cur.title} className="w-full h-full object-cover" />
-                            : <div className="w-full h-full" style={{ minHeight: '340px' }}>
-                                <PlaceholderCard item={cur} isHovered />
-                            </div>}
-                        <div className="absolute inset-0 rounded-2xl pointer-events-none"
-                            style={{ boxShadow: `inset 0 0 60px ${cur.accentColor}0d` }} />
+                    {/* ── Image Slider ── */}
+                    <div className="flex-1 flex flex-col gap-2 min-w-0">
+                        <div className="relative rounded-2xl overflow-hidden flex-1"
+                            style={{ minHeight: '260px', maxHeight: '70vh', border: `1px solid ${cur.accentColor}30` }}>
+                            <AnimatePresence mode="wait">
+                                <motion.div key={imgIdx}
+                                    initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
+                                    className="absolute inset-0">
+                                    {images[imgIdx]
+                                        ? <img src={images[imgIdx]} alt={`${cur.title} ${imgIdx + 1}`} className="w-full h-full object-cover" />
+                                        : <div className="w-full h-full" style={{ minHeight: '300px' }}><PlaceholderCard item={cur} isHovered /></div>
+                                    }
+                                </motion.div>
+                            </AnimatePresence>
+                            <div className="absolute inset-0 rounded-2xl pointer-events-none"
+                                style={{ boxShadow: `inset 0 0 60px ${cur.accentColor}0d` }} />
+
+                            {/* 이미지 내부 좌우 버튼 */}
+                            {images.length > 1 && (
+                                <>
+                                    {[['left', goPrevImg], ['right', goNextImg]].map(([dir, fn]) => (
+                                        <button key={dir} onClick={e => { e.stopPropagation(); fn(); }}
+                                            className={`absolute ${dir === 'left' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110`}
+                                            style={{ background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+                                            {dir === 'left' ? <ChevronLeft size={16} color="white" /> : <ChevronRight size={16} color="white" />}
+                                        </button>
+                                    ))}
+                                    {/* 이미지 인덱스 표시 */}
+                                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full"
+                                        style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
+                                        {images.map((_, i) => (
+                                            <button key={i} onClick={e => { e.stopPropagation(); setImgIdx(i); }}
+                                                className="rounded-full transition-all duration-300"
+                                                style={{ width: i === imgIdx ? '18px' : '5px', height: '5px', background: i === imgIdx ? cur.accentColor : 'rgba(255,255,255,0.3)' }} />
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* 썸네일 스트립 (3장 이상일 때) */}
+                        {images.length >= 3 && (
+                            <div className="flex gap-2 overflow-x-auto pb-1">
+                                {images.map((url, i) => (
+                                    <button key={i} onClick={() => setImgIdx(i)}
+                                        className="flex-shrink-0 w-14 h-10 rounded-lg overflow-hidden transition-all duration-200"
+                                        style={{ border: `2px solid ${i === imgIdx ? cur.accentColor : 'transparent'}`, opacity: i === imgIdx ? 1 : 0.5 }}>
+                                        {url
+                                            ? <img src={url} alt="" className="w-full h-full object-cover" />
+                                            : <div className="w-full h-full" style={{ background: `${cur.accentColor}20` }} />}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Info */}
-                    <div className="md:w-72 flex flex-col justify-between gap-4 py-1">
+                    {/* ── Info Panel ── */}
+                    <div className="md:w-72 flex flex-col justify-between gap-4 py-1 overflow-y-auto">
                         <div>
                             <div className="flex flex-wrap gap-1.5 mb-3">
                                 {cur.tags?.map(tag => (
@@ -302,8 +515,14 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
                             <h2 className="text-white font-black text-xl tracking-tight mb-1">{cur.title}</h2>
                             <div className="flex items-center gap-2 text-white/35 mb-3">
                                 <span className="text-[9px] font-mono">{cur.year}</span>
-                                <span className="w-0.5 h-0.5 rounded-full bg-white/20" />
-                                <span className="text-[9px] font-mono">{cur.medium}</span>
+                                {images.length > 1 && (
+                                    <>
+                                        <span className="w-0.5 h-0.5 rounded-full bg-white/20" />
+                                        <span className="text-[9px] font-mono" style={{ color: cur.accentColor }}>
+                                            {imgIdx + 1} / {images.length} photos
+                                        </span>
+                                    </>
+                                )}
                             </div>
                             <div className="h-px mb-3"
                                 style={{ background: `linear-gradient(90deg, ${cur.accentColor}40, transparent)` }} />
@@ -334,20 +553,21 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
                                     <Trash2 size={11} /> Delete
                                 </button>
                             )}
-                        </div>
-
-                        {/* Dots — max 12 visible */}
-                        <div className="flex items-center gap-1 justify-center flex-wrap">
-                            {allItems.slice(0, 12).map((_, i) => (
-                                <button key={i} onClick={() => setIdx(i)}
-                                    className="rounded-full transition-all duration-300"
-                                    style={{
-                                        width: i === idx ? '18px' : '5px', height: '5px',
-                                        background: i === idx ? cur.accentColor : 'rgba(255,255,255,0.18)'
-                                    }} />
-                            ))}
-                            {allItems.length > 12 && (
-                                <span className="text-[8px] text-white/25 font-mono ml-1">+{allItems.length - 12}</span>
+                            {/* 작품 간 이동 dots */}
+                            {allItems.length > 1 && (
+                                <div className="flex items-center gap-1 justify-center flex-wrap pt-1">
+                                    {allItems.slice(0, 12).map((_, i) => (
+                                        <button key={i} onClick={() => setIdx(i)}
+                                            className="rounded-full transition-all duration-300"
+                                            style={{
+                                                width: i === idx ? '18px' : '5px', height: '5px',
+                                                background: i === idx ? cur.accentColor : 'rgba(255,255,255,0.18)'
+                                            }} />
+                                    ))}
+                                    {allItems.length > 12 && (
+                                        <span className="text-[8px] text-white/25 font-mono ml-1">+{allItems.length - 12}</span>
+                                    )}
+                                </div>
                             )}
                         </div>
                     </div>
@@ -357,12 +577,13 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
     );
 };
 
+
 // ── 업로드 모달 (관리자 전용) ─────────────────────────────────────────────────
 const UploadModal = ({ onClose, onSave, totalCount }) => {
     const [form, setForm] = useState({
         title: '', subtitle: '', year: String(new Date().getFullYear()),
-        medium: 'AI Generative · Midjourney', tags: '', aspect: '4:3',
-        description: '', imageUrl: '',
+        tags: '', aspect: '4:3', description: '',
+        imageUrls: '', // 쉼표로 구분된 여러 이미지 URL
     });
     const [saving, setSaving] = useState(false);
 
@@ -370,23 +591,30 @@ const UploadModal = ({ onClose, onSave, totalCount }) => {
         if (!form.title.trim()) return alert('제목을 입력해주세요.');
         setSaving(true);
         const colorIndex = totalCount % ACCENT_COLORS.length;
-        await onSave({ ...form, tags: form.tags.split(',').map(t => t.trim()).filter(Boolean), accentColor: ACCENT_COLORS[colorIndex] });
+        const images = form.imageUrls.split(',').map(u => u.trim()).filter(Boolean);
+        await onSave({
+            ...form,
+            imageUrl: images[0] || '',
+            images,
+            tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+            accentColor: ACCENT_COLORS[colorIndex],
+        });
         setSaving(false);
         onClose();
     };
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[300] flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)' }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(24px)' }}
             onClick={onClose}>
             <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }}
-                className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-lg mx-4"
+                className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
                 onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-5">
                     <div>
                         <h3 className="text-white font-black text-lg tracking-tight">새 작품 추가</h3>
-                        <p className="text-white/30 text-xs mt-0.5">현재 총 {totalCount}개 · 무제한 추가 가능</p>
+                        <p className="text-white/30 text-xs mt-0.5">총 {totalCount}개 · 무제한 추가 가능</p>
                     </div>
                     <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10">
                         <X size={14} color="white" />
@@ -397,8 +625,6 @@ const UploadModal = ({ onClose, onSave, totalCount }) => {
                     {[
                         { key: 'title', label: '제목 *', placeholder: 'VOID RUNNER 002' },
                         { key: 'subtitle', label: '시리즈명', placeholder: 'Dark Matter Series' },
-                        { key: 'medium', label: 'AI 도구', placeholder: 'AI Generative · Midjourney' },
-                        { key: 'imageUrl', label: '이미지 URL', placeholder: 'https://...' },
                         { key: 'tags', label: '태그 (쉼표 구분)', placeholder: 'Carbon Fiber, Limited, Speed' },
                         { key: 'description', label: '설명', placeholder: '디자인 컨셉 설명...' },
                     ].map(({ key, label, placeholder }) => (
@@ -413,6 +639,16 @@ const UploadModal = ({ onClose, onSave, totalCount }) => {
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-500/50 placeholder-white/20" />}
                         </div>
                     ))}
+
+                    {/* 여러 이미지 URL */}
+                    <div>
+                        <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest block mb-1">이미지 URL (쉼표로 여러 장)</label>
+                        <textarea rows={3} value={form.imageUrls}
+                            placeholder="https://img1.jpg, https://img2.jpg, ..."
+                            onChange={e => setForm(f => ({ ...f, imageUrls: e.target.value }))}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-500/50 resize-none placeholder-white/20" />
+                        <p className="text-[9px] text-white/20 mt-1">첫 번째 이미지가 갤러리 썸네일로 사용됩니다.</p>
+                    </div>
 
                     <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -610,19 +846,15 @@ const ShoesGallery = () => {
         <div ref={containerRef} className="h-full overflow-y-auto overflow-x-hidden" style={{ background: '#080808' }}>
 
             {/* ── Hero ──────────────────────────────────────────────────── */}
-            <motion.div style={{ y: headerY, opacity: headerOpacity }}
+            <motion.div
+                style={{ y: headerY, opacity: headerOpacity, minHeight: '220px' }}
                 className="relative pt-20 pb-8 px-6 md:px-16 overflow-hidden">
-                {/* Ambient */}
+                {/* 은하수 파티클 배경 */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    <div className="absolute -top-32 -left-24 w-96 h-96 rounded-full"
-                        style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)' }} />
-                    <div className="absolute -top-16 right-0 w-72 h-72 rounded-full"
-                        style={{ background: 'radial-gradient(circle, rgba(14,165,233,0.06) 0%, transparent 70%)' }} />
-                    <div className="absolute inset-0 opacity-[0.025]"
-                        style={{
-                            backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
-                            backgroundSize: '50px 50px'
-                        }} />
+                    <GalaxyCanvas />
+                    {/* 하단 페이드아웃 */}
+                    <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
+                        style={{ background: 'linear-gradient(to bottom, transparent, #080808)' }} />
                 </div>
 
                 <div className="relative z-10 max-w-[1400px] mx-auto">
@@ -631,7 +863,7 @@ const ShoesGallery = () => {
                         <div className="flex items-center gap-2 px-3 py-1 rounded-full"
                             style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}>
                             <Sparkles size={10} className="text-indigo-400" />
-                            <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-indigo-400">AI Design Gallery</span>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-indigo-400">Running Shoe Gallery</span>
                         </div>
                     </motion.div>
 
@@ -670,11 +902,11 @@ const ShoesGallery = () => {
             </motion.div>
 
             {/* ── Toolbar ───────────────────────────────────────────────── */}
-            <div className="sticky top-0 z-30 px-6 md:px-16 py-2.5"
-                style={{ background: 'rgba(8,8,8,0.88)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <div className="max-w-[1400px] mx-auto flex items-center gap-2">
-                    {/* Filter pills */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-1">
+            <div className="sticky top-0 z-30 px-6 md:px-16"
+                style={{ background: 'rgba(8,8,8,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="max-w-[1400px] mx-auto">
+                    {/* Row 1: Filter pills */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                         {years.map(f => (
                             <button key={f} onClick={() => setFilter(f)}
                                 className="flex-shrink-0 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all duration-300"
@@ -689,42 +921,37 @@ const ShoesGallery = () => {
                             </button>
                         ))}
                     </div>
-
-                    {/* Search */}
-                    <div className="relative flex-shrink-0">
-                        <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25" />
-                        <input
-                            value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                            placeholder="검색..."
-                            className="bg-white/5 border border-white/8 rounded-full pl-7 pr-3 py-1 text-[10px] text-white/70 outline-none focus:border-indigo-500/40 w-28 md:w-36 placeholder-white/20"
-                        />
+                    {/* Row 2: Search + Controls */}
+                    <div className="flex items-center gap-2 py-2">
+                        <div className="relative flex-1 max-w-xs">
+                            <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25" />
+                            <input
+                                value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                                placeholder="디자인 검색..."
+                                className="w-full bg-white/5 border border-white/8 rounded-full pl-7 pr-3 py-1.5 text-[10px] text-white/70 outline-none focus:border-indigo-500/40 placeholder-white/20"
+                            />
+                        </div>
+                        <div className="ml-auto flex items-center gap-2">
+                            <span className="text-[9px] text-white/22 font-mono">{displayed.length}/{items.length}</span>
+                            <div className="flex items-center gap-1"
+                                style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '999px', padding: '2px' }}>
+                                {[['grid', LayoutGrid], ['list', LayoutList]].map(([mode, Icon]) => (
+                                    <button key={mode} onClick={() => setViewMode(mode)}
+                                        className="w-7 h-7 rounded-full flex items-center justify-center transition-all"
+                                        style={{ background: viewMode === mode ? 'rgba(255,255,255,0.12)' : 'transparent' }}>
+                                        <Icon size={13} color={viewMode === mode ? 'white' : 'rgba(255,255,255,0.3)'} />
+                                    </button>
+                                ))}
+                            </div>
+                            {isAdmin && (
+                                <button onClick={() => setShowUpload(true)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all"
+                                    style={{ background: 'rgba(99,102,241,0.18)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}>
+                                    <Plus size={11} /> 추가
+                                </button>
+                            )}
+                        </div>
                     </div>
-
-                    {/* View mode */}
-                    <div className="flex items-center gap-1 flex-shrink-0"
-                        style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '999px', padding: '2px' }}>
-                        {[['grid', LayoutGrid], ['list', LayoutList]].map(([mode, Icon]) => (
-                            <button key={mode} onClick={() => setViewMode(mode)}
-                                className="w-7 h-7 rounded-full flex items-center justify-center transition-all"
-                                style={{ background: viewMode === mode ? 'rgba(255,255,255,0.12)' : 'transparent' }}>
-                                <Icon size={13} color={viewMode === mode ? 'white' : 'rgba(255,255,255,0.3)'} />
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Count */}
-                    <div className="flex-shrink-0 text-[9px] text-white/22 font-mono min-w-[42px] text-right">
-                        {displayed.length}/{items.length}
-                    </div>
-
-                    {/* Admin: Add */}
-                    {isAdmin && (
-                        <button onClick={() => setShowUpload(true)}
-                            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all"
-                            style={{ background: 'rgba(99,102,241,0.18)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}>
-                            <Plus size={11} /> 추가
-                        </button>
-                    )}
                 </div>
             </div>
 
