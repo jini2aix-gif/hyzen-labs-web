@@ -11,6 +11,7 @@ import {
     query, orderBy, startAfter, limit,
     serverTimestamp
 } from 'firebase/firestore';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useFirebase, db, appId } from '../../hooks/useFirebase';
 import { ADMIN_EMAIL } from '../admin/AdminPanel';
 
@@ -578,29 +579,91 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
 };
 
 
+// ── Firebase Storage 업로드 헬퍼 ─────────────────────────────────────────────
+const uploadImageToStorage = async (file, path) => {
+    try {
+        const storage = getStorage();
+        const fileRef = storageRef(storage, path);
+        const snap = await uploadBytes(fileRef, file);
+        return await getDownloadURL(snap.ref);
+    } catch (e) {
+        console.warn('Storage upload failed, using object URL fallback:', e);
+        // Storage CORS or permissions issue → return local object URL as fallback
+        return URL.createObjectURL(file);
+    }
+};
+
 // ── 업로드 모달 (관리자 전용) ─────────────────────────────────────────────────
 const UploadModal = ({ onClose, onSave, totalCount }) => {
     const [form, setForm] = useState({
         title: '', subtitle: '', year: String(new Date().getFullYear()),
         tags: '', aspect: '4:3', description: '',
-        imageUrls: '', // 쉼표로 구분된 여러 이미지 URL
     });
+    // 선택된 파일 목록 (File[])
+    const [files, setFiles] = useState([]);
+    // 미리보기 ObjectURL 목록
+    const [previews, setPreviews] = useState([]);
     const [saving, setSaving] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState('');
+    const fileInputRef = useRef(null);
+
+    // 파일 선택 처리
+    const handleFileSelect = (e) => {
+        const selected = Array.from(e.target.files || []);
+        if (!selected.length) return;
+        const newFiles = [...files, ...selected].slice(0, 8); // 최대 8장
+        setFiles(newFiles);
+        // 미리보기 URL 생성
+        const newPreviews = newFiles.map(f => URL.createObjectURL(f));
+        setPreviews(prev => { prev.forEach(p => URL.revokeObjectURL(p)); return newPreviews; });
+        e.target.value = '';
+    };
+
+    // 파일 개별 제거
+    const removeFile = (idx) => {
+        URL.revokeObjectURL(previews[idx]);
+        const nf = files.filter((_, i) => i !== idx);
+        const np = previews.filter((_, i) => i !== idx);
+        setFiles(nf);
+        setPreviews(np);
+    };
+
+    // Cleanup on unmount
+    useEffect(() => () => previews.forEach(p => URL.revokeObjectURL(p)), []);
 
     const handleSave = async () => {
         if (!form.title.trim()) return alert('제목을 입력해주세요.');
+        if (files.length === 0) return alert('이미지를 최소 1장 선택해주세요.');
         setSaving(true);
-        const colorIndex = totalCount % ACCENT_COLORS.length;
-        const images = form.imageUrls.split(',').map(u => u.trim()).filter(Boolean);
-        await onSave({
-            ...form,
-            imageUrl: images[0] || '',
-            images,
-            tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
-            accentColor: ACCENT_COLORS[colorIndex],
-        });
-        setSaving(false);
-        onClose();
+        try {
+            const colorIndex = totalCount % ACCENT_COLORS.length;
+            const timestamp = Date.now();
+            const imageUrls = [];
+
+            for (let i = 0; i < files.length; i++) {
+                setUploadProgress(`이미지 업로드 중... ${i + 1}/${files.length}`);
+                const ext = files[i].name.split('.').pop();
+                const path = `gallery/${appId}/${timestamp}_${i}.${ext}`;
+                const url = await uploadImageToStorage(files[i], path);
+                imageUrls.push(url);
+            }
+
+            setUploadProgress('Firestore 저장 중...');
+            await onSave({
+                ...form,
+                imageUrl: imageUrls[0],
+                images: imageUrls,
+                tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+                accentColor: ACCENT_COLORS[colorIndex],
+            });
+            onClose();
+        } catch (err) {
+            console.error(err);
+            alert('저장 중 오류가 발생했습니다.');
+        } finally {
+            setSaving(false);
+            setUploadProgress('');
+        }
     };
 
     return (
@@ -609,18 +672,82 @@ const UploadModal = ({ onClose, onSave, totalCount }) => {
             style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(24px)' }}
             onClick={onClose}>
             <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }}
-                className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
+                className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-lg mx-4 max-h-[92vh] overflow-y-auto"
                 onClick={e => e.stopPropagation()}>
+
+                {/* Header */}
                 <div className="flex items-center justify-between mb-5">
                     <div>
                         <h3 className="text-white font-black text-lg tracking-tight">새 작품 추가</h3>
-                        <p className="text-white/30 text-xs mt-0.5">총 {totalCount}개 · 무제한 추가 가능</p>
+                        <p className="text-white/30 text-xs mt-0.5">총 {totalCount}개 · 최대 8장까지 업로드</p>
                     </div>
                     <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10">
                         <X size={14} color="white" />
                     </button>
                 </div>
 
+                {/* ── 이미지 업로드 영역 ── */}
+                <div className="mb-4">
+                    <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest block mb-2">이미지 파일 (최대 8장) *</label>
+
+                    {/* 드롭존 */}
+                    <div
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'rgba(99,102,241,0.6)'; }}
+                        onDragLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                        onDrop={e => {
+                            e.preventDefault();
+                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                            const dt = e.dataTransfer;
+                            if (dt.files.length) handleFileSelect({ target: { files: dt.files, value: '' } });
+                        }}
+                        className="cursor-pointer rounded-2xl flex flex-col items-center justify-center gap-2 py-6 transition-all hover:bg-white/5"
+                        style={{ border: '2px dashed rgba(255,255,255,0.1)', minHeight: '100px' }}>
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                            style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)' }}>
+                            <Upload size={18} color="#818cf8" />
+                        </div>
+                        <p className="text-white/40 text-xs">클릭하거나 파일을 드래그 하세요</p>
+                        <p className="text-white/20 text-[10px]">JPG, PNG, WebP · 최대 8장</p>
+                    </div>
+                    <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={handleFileSelect} />
+
+                    {/* 미리보기 그리드 */}
+                    {previews.length > 0 && (
+                        <div className="grid grid-cols-4 gap-2 mt-3">
+                            {previews.map((url, i) => (
+                                <div key={i} className="relative group aspect-square rounded-xl overflow-hidden"
+                                    style={{ border: i === 0 ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.1)' }}>
+                                    <img src={url} alt="" className="w-full h-full object-cover" />
+                                    {/* 첫 번째 = 대표 배지 */}
+                                    {i === 0 && (
+                                        <div className="absolute top-1 left-1 text-[8px] font-black px-1.5 py-0.5 rounded-full"
+                                            style={{ background: '#6366f1', color: '#fff' }}>MAIN</div>
+                                    )}
+                                    {/* 제거 버튼 */}
+                                    <button onClick={() => removeFile(i)}
+                                        className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                                        style={{ background: 'rgba(0,0,0,0.7)' }}>
+                                        <X size={10} color="white" />
+                                    </button>
+                                    {/* 순서 번호 */}
+                                    <div className="absolute bottom-1 right-1 text-[8px] font-mono px-1 rounded"
+                                        style={{ background: 'rgba(0,0,0,0.6)', color: 'rgba(255,255,255,0.6)' }}>{i + 1}</div>
+                                </div>
+                            ))}
+                            {/* 추가 버튼 */}
+                            {previews.length < 8 && (
+                                <button onClick={() => fileInputRef.current?.click()}
+                                    className="aspect-square rounded-xl flex items-center justify-center transition-all hover:bg-white/8"
+                                    style={{ border: '1px dashed rgba(255,255,255,0.15)' }}>
+                                    <Plus size={18} color="rgba(255,255,255,0.3)" />
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* ── 텍스트 필드 ── */}
                 <div className="space-y-3">
                     {[
                         { key: 'title', label: '제목 *', placeholder: 'VOID RUNNER 002' },
@@ -640,16 +767,6 @@ const UploadModal = ({ onClose, onSave, totalCount }) => {
                         </div>
                     ))}
 
-                    {/* 여러 이미지 URL */}
-                    <div>
-                        <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest block mb-1">이미지 URL (쉼표로 여러 장)</label>
-                        <textarea rows={3} value={form.imageUrls}
-                            placeholder="https://img1.jpg, https://img2.jpg, ..."
-                            onChange={e => setForm(f => ({ ...f, imageUrls: e.target.value }))}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-500/50 resize-none placeholder-white/20" />
-                        <p className="text-[9px] text-white/20 mt-1">첫 번째 이미지가 갤러리 썸네일로 사용됩니다.</p>
-                    </div>
-
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest block mb-1">연도</label>
@@ -668,15 +785,17 @@ const UploadModal = ({ onClose, onSave, totalCount }) => {
                     </div>
                 </div>
 
+                {/* ── 저장 버튼 ── */}
                 <div className="flex gap-2 mt-5">
-                    <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest text-white/40 border border-white/10 hover:bg-white/5 transition-all">
+                    <button onClick={onClose} disabled={saving}
+                        className="flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest text-white/40 border border-white/10 hover:bg-white/5 transition-all disabled:opacity-40">
                         취소
                     </button>
                     <button onClick={handleSave} disabled={saving}
-                        className="flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                        className="flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                         style={{ background: 'linear-gradient(135deg, #6366f1, #0ea5e9)', color: '#fff' }}>
-                        {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-                        {saving ? '저장 중...' : '추가하기'}
+                        {saving ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                        {saving ? (uploadProgress || '업로드 중...') : `업로드 (${files.length}장)`}
                     </button>
                 </div>
             </motion.div>
@@ -974,11 +1093,14 @@ const ShoesGallery = () => {
                         </button>
                     </div>
                 ) : viewMode === 'grid' ? (
-                    <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                        gap: '16px',
+                        alignItems: 'start',
+                    }}>
                         {displayed.map((item, i) => (
-                            <div key={item.id} className="break-inside-avoid">
-                                <GalleryCard item={item} index={i} onOpen={setSelectedItem} viewMode="grid" />
-                            </div>
+                            <GalleryCard key={item.id} item={item} index={i} onOpen={setSelectedItem} viewMode="grid" />
                         ))}
                     </div>
                 ) : (
