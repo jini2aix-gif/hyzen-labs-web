@@ -1,0 +1,827 @@
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import {
+    Download, X, ZoomIn, ChevronLeft, ChevronRight,
+    Sparkles, Eye, Heart, Share2, Info, Loader2,
+    Plus, Upload, Trash2, LayoutGrid, LayoutList,
+    Search, SlidersHorizontal, RefreshCw
+} from 'lucide-react';
+import {
+    collection, getDocs, addDoc, deleteDoc, doc,
+    query, orderBy, startAfter, limit,
+    serverTimestamp
+} from 'firebase/firestore';
+import { useFirebase, db, appId } from '../../hooks/useFirebase';
+import { ADMIN_EMAIL } from '../admin/AdminPanel';
+
+// ── 색상 팔레트 (새 항목 자동 할당) ───────────────────────────────────────────
+const ACCENT_COLORS = [
+    '#6366f1', '#0ea5e9', '#22d3ee', '#84cc16',
+    '#f59e0b', '#ec4899', '#a855f7', '#ef4444',
+    '#10b981', '#f97316', '#06b6d4', '#8b5cf6',
+];
+
+const PAGE_SIZE = 9; // 한 번에 로드할 항목 수
+
+// ── 유틸: accent color 자동 배정 ─────────────────────────────────────────────
+const getAccentColor = (index) => ACCENT_COLORS[index % ACCENT_COLORS.length];
+
+// ── 카드 높이 계산 ────────────────────────────────────────────────────────────
+const getCardHeight = (aspect) => {
+    const map = { '16:9': 200, '4:3': 240, '1:1': 240, '3:4': 300, '2:3': 300 };
+    return `${map[aspect] || 240}px`;
+};
+
+// ── 플레이스홀더 카드 ─────────────────────────────────────────────────────────
+const PlaceholderCard = ({ item, isHovered }) => (
+    <div
+        className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden"
+        style={{ background: `linear-gradient(135deg, ${item.accentColor}08, #0a0a0a)` }}
+    >
+        <div className="absolute inset-0 opacity-10"
+            style={{
+                backgroundImage: `
+                    linear-gradient(${item.accentColor}30 1px, transparent 1px),
+                    linear-gradient(90deg, ${item.accentColor}30 1px, transparent 1px)`,
+                backgroundSize: '28px 28px'
+            }}
+        />
+        {isHovered && (
+            <>
+                {[0, 1].map(i => (
+                    <motion.div key={i} className="absolute rounded-full border"
+                        style={{ borderColor: `${item.accentColor}${i === 0 ? '25' : '15'}` }}
+                        animate={{ width: ['50px', i === 0 ? '180px' : '280px'], height: ['50px', i === 0 ? '180px' : '280px'], opacity: [1, 0] }}
+                        transition={{ duration: 1.6, delay: i * 0.35, repeat: Infinity }}
+                    />
+                ))}
+            </>
+        )}
+        <motion.div
+            animate={isHovered ? { scale: 1.08, y: -4 } : { scale: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+            className="relative z-10 flex flex-col items-center gap-2.5"
+        >
+            <svg viewBox="0 0 80 50" fill="none" className="w-20 h-auto">
+                <motion.path
+                    d="M5 38 C10 20, 20 15, 35 18 C45 20, 52 28, 60 28 C65 28, 72 25, 75 30 C76 34, 72 40, 65 41 C55 42, 15 42, 8 41 C5 40, 4 39, 5 38Z"
+                    stroke={item.accentColor} strokeWidth={isHovered ? 2 : 1.5}
+                    fill={`${item.accentColor}15`} transition={{ duration: 0.3 }}
+                />
+                <path d="M30 18 C28 12, 30 8, 36 8 C42 8, 48 12, 52 18"
+                    stroke={item.accentColor} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                <circle cx="20" cy="38" r="4" fill={`${item.accentColor}30`} stroke={item.accentColor} strokeWidth="1" />
+                <circle cx="60" cy="38" r="4" fill={`${item.accentColor}30`} stroke={item.accentColor} strokeWidth="1" />
+            </svg>
+            <p className="text-[9px] uppercase tracking-[0.3em] font-bold" style={{ color: item.accentColor }}>
+                Image Coming Soon
+            </p>
+        </motion.div>
+        {[['top-3 left-3', 'border-t border-l'], ['top-3 right-3', 'border-t border-r'],
+        ['bottom-3 left-3', 'border-b border-l'], ['bottom-3 right-3', 'border-b border-r']].map(([pos, cls], i) => (
+            <div key={i} className={`absolute ${pos} w-4 h-4 ${cls}`}
+                style={{ borderColor: `${item.accentColor}35` }} />
+        ))}
+    </div>
+);
+
+// ── 갤러리 카드 ───────────────────────────────────────────────────────────────
+const GalleryCard = ({ item, index, onOpen, viewMode }) => {
+    const [isHovered, setIsHovered] = useState(false);
+
+    if (viewMode === 'list') {
+        return (
+            <motion.article
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.04, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="flex items-center gap-4 p-3 rounded-2xl border cursor-pointer transition-all duration-300"
+                style={{
+                    borderColor: isHovered ? `${item.accentColor}40` : '#1a1a1a',
+                    background: isHovered ? `${item.accentColor}08` : 'transparent',
+                }}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+                onClick={() => onOpen(item)}
+            >
+                <div className="w-20 h-14 rounded-xl overflow-hidden flex-shrink-0"
+                    style={{ border: `1px solid ${item.accentColor}30` }}>
+                    {item.imageUrl
+                        ? <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                        : <PlaceholderCard item={item} isHovered={false} />}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-[9px] uppercase tracking-[0.2em] font-bold mb-0.5 truncate" style={{ color: item.accentColor }}>
+                        {item.subtitle}
+                    </p>
+                    <h3 className="text-white font-black text-sm tracking-tight truncate">{item.title}</h3>
+                    <p className="text-white/30 text-[10px] font-mono truncate">{item.medium}</p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-[9px] text-white/30 font-mono">{item.year}</span>
+                    <div className="flex gap-1">
+                        {item.tags?.slice(0, 2).map(tag => (
+                            <span key={tag} className="text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase"
+                                style={{ background: `${item.accentColor}20`, color: item.accentColor }}>
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </motion.article>
+        );
+    }
+
+    return (
+        <motion.article
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: Math.min(index * 0.06, 0.5), duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            className="relative group cursor-pointer"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            onClick={() => onOpen(item)}
+        >
+            <motion.div
+                className="relative overflow-hidden rounded-2xl border"
+                style={{
+                    borderColor: isHovered ? `${item.accentColor}50` : '#1a1a1a',
+                    height: getCardHeight(item.aspect),
+                    boxShadow: isHovered
+                        ? `0 0 28px ${item.accentColor}1a, 0 16px 48px rgba(0,0,0,0.5)`
+                        : '0 4px 16px rgba(0,0,0,0.25)',
+                }}
+                animate={{ y: isHovered ? -4 : 0, scale: isHovered ? 1.01 : 1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            >
+                {/* Image */}
+                <div className="absolute inset-0">
+                    {item.imageUrl
+                        ? <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover transition-transform duration-700"
+                            style={{ transform: isHovered ? 'scale(1.05)' : 'scale(1)' }} />
+                        : <PlaceholderCard item={item} isHovered={isHovered} />}
+                </div>
+
+                {/* Gradient */}
+                <div className="absolute inset-0 transition-opacity duration-300"
+                    style={{
+                        background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.05) 100%)',
+                        opacity: isHovered ? 1 : 0.82,
+                    }} />
+
+                {/* Tags */}
+                <div className="absolute top-3 left-3 right-3 flex justify-between items-start z-10">
+                    <div className="flex flex-wrap gap-1">
+                        {item.tags?.slice(0, 2).map(tag => (
+                            <span key={tag} className="text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full backdrop-blur-md"
+                                style={{ background: `${item.accentColor}20`, color: item.accentColor, border: `1px solid ${item.accentColor}30` }}>
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Info */}
+                <div className="absolute bottom-0 left-0 right-0 p-3.5 z-10">
+                    <div style={{ transform: isHovered ? 'translateY(0)' : 'translateY(3px)', transition: 'transform 0.3s' }}>
+                        <p className="text-[8px] uppercase tracking-[0.2em] font-bold mb-0.5" style={{ color: item.accentColor }}>
+                            {item.subtitle}
+                        </p>
+                        <h3 className="text-white font-black text-sm tracking-tight leading-tight">{item.title}</h3>
+                        <p className="text-white/35 text-[10px] font-mono mt-0.5">{item.medium}</p>
+                    </div>
+                </div>
+
+                {/* Zoom icon */}
+                <AnimatePresence>
+                    {isHovered && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.7 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.7 }}
+                            className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
+                        >
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-md"
+                                style={{ background: `${item.accentColor}28`, border: `1px solid ${item.accentColor}55` }}>
+                                <ZoomIn size={15} color={item.accentColor} />
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Bottom glow line */}
+                <motion.div className="absolute bottom-0 left-0 h-[2px]"
+                    style={{ background: `linear-gradient(90deg, ${item.accentColor}, transparent)` }}
+                    animate={{ width: isHovered ? '100%' : '0%' }}
+                    transition={{ duration: 0.4 }} />
+            </motion.div>
+
+            {/* Year badge */}
+            <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-[7px] font-black font-mono z-20"
+                style={{ background: item.accentColor, color: '#000' }}>
+                {item.year?.slice(2)}
+            </div>
+        </motion.article>
+    );
+};
+
+// ── 라이트박스 ────────────────────────────────────────────────────────────────
+const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) => {
+    const [idx, setIdx] = useState(allItems.findIndex(i => i.id === item.id));
+    const cur = allItems[idx] ?? item;
+
+    const goNext = useCallback(() => setIdx(i => (i + 1) % allItems.length), [allItems.length]);
+    const goPrev = useCallback(() => setIdx(i => (i - 1 + allItems.length) % allItems.length), [allItems.length]);
+
+    useEffect(() => {
+        const h = (e) => {
+            if (e.key === 'ArrowRight') goNext();
+            if (e.key === 'ArrowLeft') goPrev();
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', h);
+        return () => window.removeEventListener('keydown', h);
+    }, [goNext, goPrev, onClose]);
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.96)', backdropFilter: 'blur(24px)' }}
+            onClick={onClose}
+        >
+            {/* Close */}
+            <button onClick={onClose}
+                className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center z-20"
+                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                <X size={18} color="white" />
+            </button>
+
+            {/* Nav */}
+            {['left', 'right'].map(dir => (
+                <button key={dir}
+                    onClick={e => { e.stopPropagation(); dir === 'left' ? goPrev() : goNext(); }}
+                    className={`absolute ${dir === 'left' ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center z-20 hover:bg-white/10 transition-all`}
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    {dir === 'left' ? <ChevronLeft size={20} color="white" /> : <ChevronRight size={20} color="white" />}
+                </button>
+            ))}
+
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={cur.id}
+                    initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.25 }}
+                    className="flex flex-col md:flex-row gap-5 max-w-5xl w-full mx-14"
+                    onClick={e => e.stopPropagation()}
+                >
+                    {/* Image */}
+                    <div className="flex-1 rounded-2xl overflow-hidden relative"
+                        style={{ minHeight: '300px', maxHeight: '72vh', border: `1px solid ${cur.accentColor}30` }}>
+                        {cur.imageUrl
+                            ? <img src={cur.imageUrl} alt={cur.title} className="w-full h-full object-cover" />
+                            : <div className="w-full h-full" style={{ minHeight: '340px' }}>
+                                <PlaceholderCard item={cur} isHovered />
+                            </div>}
+                        <div className="absolute inset-0 rounded-2xl pointer-events-none"
+                            style={{ boxShadow: `inset 0 0 60px ${cur.accentColor}0d` }} />
+                    </div>
+
+                    {/* Info */}
+                    <div className="md:w-72 flex flex-col justify-between gap-4 py-1">
+                        <div>
+                            <div className="flex flex-wrap gap-1.5 mb-3">
+                                {cur.tags?.map(tag => (
+                                    <span key={tag} className="text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full"
+                                        style={{ background: `${cur.accentColor}15`, color: cur.accentColor, border: `1px solid ${cur.accentColor}30` }}>
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                            <p className="text-[10px] uppercase tracking-[0.28em] font-bold mb-1" style={{ color: cur.accentColor }}>{cur.subtitle}</p>
+                            <h2 className="text-white font-black text-xl tracking-tight mb-1">{cur.title}</h2>
+                            <div className="flex items-center gap-2 text-white/35 mb-3">
+                                <span className="text-[9px] font-mono">{cur.year}</span>
+                                <span className="w-0.5 h-0.5 rounded-full bg-white/20" />
+                                <span className="text-[9px] font-mono">{cur.medium}</span>
+                            </div>
+                            <div className="h-px mb-3"
+                                style={{ background: `linear-gradient(90deg, ${cur.accentColor}40, transparent)` }} />
+                            <p className="text-white/55 text-xs leading-relaxed">{cur.description}</p>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                                onClick={() => onDownload(cur)}
+                                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest"
+                                style={{ background: `linear-gradient(135deg, ${cur.accentColor}, ${cur.accentColor}cc)`, color: '#000', boxShadow: `0 4px 18px ${cur.accentColor}40` }}>
+                                <Download size={13} /> Download
+                            </motion.button>
+                            <div className="flex gap-2">
+                                <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
+                                    style={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.45)' }}>
+                                    <Share2 size={11} /> Share
+                                </button>
+                                <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
+                                    style={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.45)' }}>
+                                    <Info size={11} /> Details
+                                </button>
+                            </div>
+                            {isAdmin && (
+                                <button onClick={() => { onDelete(cur); onClose(); }}
+                                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-red-500/15 transition-all"
+                                    style={{ border: '1px solid rgba(239,68,68,0.25)', color: 'rgba(239,68,68,0.7)' }}>
+                                    <Trash2 size={11} /> Delete
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Dots — max 12 visible */}
+                        <div className="flex items-center gap-1 justify-center flex-wrap">
+                            {allItems.slice(0, 12).map((_, i) => (
+                                <button key={i} onClick={() => setIdx(i)}
+                                    className="rounded-full transition-all duration-300"
+                                    style={{
+                                        width: i === idx ? '18px' : '5px', height: '5px',
+                                        background: i === idx ? cur.accentColor : 'rgba(255,255,255,0.18)'
+                                    }} />
+                            ))}
+                            {allItems.length > 12 && (
+                                <span className="text-[8px] text-white/25 font-mono ml-1">+{allItems.length - 12}</span>
+                            )}
+                        </div>
+                    </div>
+                </motion.div>
+            </AnimatePresence>
+        </motion.div>
+    );
+};
+
+// ── 업로드 모달 (관리자 전용) ─────────────────────────────────────────────────
+const UploadModal = ({ onClose, onSave, totalCount }) => {
+    const [form, setForm] = useState({
+        title: '', subtitle: '', year: String(new Date().getFullYear()),
+        medium: 'AI Generative · Midjourney', tags: '', aspect: '4:3',
+        description: '', imageUrl: '',
+    });
+    const [saving, setSaving] = useState(false);
+
+    const handleSave = async () => {
+        if (!form.title.trim()) return alert('제목을 입력해주세요.');
+        setSaving(true);
+        const colorIndex = totalCount % ACCENT_COLORS.length;
+        await onSave({ ...form, tags: form.tags.split(',').map(t => t.trim()).filter(Boolean), accentColor: ACCENT_COLORS[colorIndex] });
+        setSaving(false);
+        onClose();
+    };
+
+    return (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)' }}
+            onClick={onClose}>
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }}
+                className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-lg mx-4"
+                onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-5">
+                    <div>
+                        <h3 className="text-white font-black text-lg tracking-tight">새 작품 추가</h3>
+                        <p className="text-white/30 text-xs mt-0.5">현재 총 {totalCount}개 · 무제한 추가 가능</p>
+                    </div>
+                    <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10">
+                        <X size={14} color="white" />
+                    </button>
+                </div>
+
+                <div className="space-y-3">
+                    {[
+                        { key: 'title', label: '제목 *', placeholder: 'VOID RUNNER 002' },
+                        { key: 'subtitle', label: '시리즈명', placeholder: 'Dark Matter Series' },
+                        { key: 'medium', label: 'AI 도구', placeholder: 'AI Generative · Midjourney' },
+                        { key: 'imageUrl', label: '이미지 URL', placeholder: 'https://...' },
+                        { key: 'tags', label: '태그 (쉼표 구분)', placeholder: 'Carbon Fiber, Limited, Speed' },
+                        { key: 'description', label: '설명', placeholder: '디자인 컨셉 설명...' },
+                    ].map(({ key, label, placeholder }) => (
+                        <div key={key}>
+                            <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest block mb-1">{label}</label>
+                            {key === 'description'
+                                ? <textarea rows={2} value={form[key]} placeholder={placeholder}
+                                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-500/50 resize-none placeholder-white/20" />
+                                : <input value={form[key]} placeholder={placeholder}
+                                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-500/50 placeholder-white/20" />}
+                        </div>
+                    ))}
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest block mb-1">연도</label>
+                            <select value={form.year} onChange={e => setForm(f => ({ ...f, year: e.target.value }))}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-500/50">
+                                {['2024', '2025', '2026', '2027'].map(y => <option key={y} value={y}>{y}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest block mb-1">비율</label>
+                            <select value={form.aspect} onChange={e => setForm(f => ({ ...f, aspect: e.target.value }))}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-500/50">
+                                {['16:9', '4:3', '1:1', '3:4', '2:3'].map(a => <option key={a} value={a}>{a}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex gap-2 mt-5">
+                    <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest text-white/40 border border-white/10 hover:bg-white/5 transition-all">
+                        취소
+                    </button>
+                    <button onClick={handleSave} disabled={saving}
+                        className="flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                        style={{ background: 'linear-gradient(135deg, #6366f1, #0ea5e9)', color: '#fff' }}>
+                        {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+                        {saving ? '저장 중...' : '추가하기'}
+                    </button>
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+};
+
+// ── 메인 컴포넌트 ─────────────────────────────────────────────────────────────
+const ShoesGallery = () => {
+    const { user } = useFirebase();
+    const isAdmin = user?.email === ADMIN_EMAIL;
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [lastDoc, setLastDoc] = useState(null);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [filter, setFilter] = useState('ALL');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
+    const [showUpload, setShowUpload] = useState(false);
+
+    const containerRef = useRef(null);
+    const loaderRef = useRef(null);
+
+    const { scrollYProgress } = useScroll({ container: containerRef });
+    const headerY = useTransform(scrollYProgress, [0, 0.12], [0, -25]);
+    const headerOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
+
+
+    useEffect(() => {
+        let cancelled = false;
+        const load = async () => {
+            if (!db || !appId) {
+                setItems(FALLBACK_ITEMS.map((item, i) => ({ ...item, accentColor: getAccentColor(i) })));
+                setLoading(false);
+                setHasMore(false);
+                return;
+            }
+            try {
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'gallery');
+                const q = query(colRef, orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
+                const snap = await getDocs(q);
+                if (!cancelled) {
+                    const docs = snap.docs.map((d, i) => ({
+                        id: d.id,
+                        ...d.data(),
+                        accentColor: d.data().accentColor || getAccentColor(i),
+                    }));
+                    setItems(docs.length > 0 ? docs : FALLBACK_ITEMS.map((item, i) => ({ ...item, accentColor: getAccentColor(i) })));
+                    setLastDoc(snap.docs[snap.docs.length - 1] || null);
+                    setHasMore(snap.docs.length === PAGE_SIZE);
+                }
+            } catch (err) {
+                console.warn('Gallery: Firestore load failed, using fallback.', err);
+                if (!cancelled) {
+                    setItems(FALLBACK_ITEMS.map((item, i) => ({ ...item, accentColor: getAccentColor(i) })));
+                    setHasMore(false);
+                }
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
+        load();
+        return () => { cancelled = true; };
+    }, []);
+
+    // ── 더 불러오기 ───────────────────────────────────────────────────────────
+    const loadMore = useCallback(async () => {
+        if (!db || !appId || !lastDoc || loadingMore || !hasMore) return;
+        setLoadingMore(true);
+        try {
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'gallery');
+            const q = query(colRef, orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(PAGE_SIZE));
+            const snap = await getDocs(q);
+            const newDocs = snap.docs.map((d, i) => ({
+                id: d.id, ...d.data(),
+                accentColor: d.data().accentColor || getAccentColor(items.length + i),
+            }));
+            setItems(prev => {
+                const ids = new Set(prev.map(x => x.id));
+                return [...prev, ...newDocs.filter(x => !ids.has(x.id))];
+            });
+            setLastDoc(snap.docs[snap.docs.length - 1] || null);
+            setHasMore(snap.docs.length === PAGE_SIZE);
+        } catch (err) {
+            console.warn('loadMore failed', err);
+        } finally {
+            setLoadingMore(false);
+        }
+    }, [db, appId, lastDoc, loadingMore, hasMore, items.length]);
+
+    // ── Infinite scroll (IntersectionObserver) ────────────────────────────────
+    useEffect(() => {
+        if (!loaderRef.current) return;
+        const obs = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting) loadMore();
+        }, { threshold: 0.2 });
+        obs.observe(loaderRef.current);
+        return () => obs.disconnect();
+    }, [loadMore]);
+
+    // ── 추가 ─────────────────────────────────────────────────────────────────
+    const handleSave = useCallback(async (data) => {
+        if (!db || !appId) return;
+        try {
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'gallery');
+            await addDoc(colRef, { ...data, createdAt: serverTimestamp() });
+            // 새 항목 추가 후 목록 다시 로드
+            const q = query(colRef, orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
+            const snap = await getDocs(q);
+            setItems(snap.docs.map((d, i) => ({ id: d.id, ...d.data(), accentColor: d.data().accentColor || getAccentColor(i) })));
+            setLastDoc(snap.docs[snap.docs.length - 1] || null);
+            setHasMore(snap.docs.length === PAGE_SIZE);
+        } catch (err) { console.error('handleSave error', err); }
+    }, [db, appId]);
+
+    // ── 삭제 ─────────────────────────────────────────────────────────────────
+    const handleDelete = useCallback(async (item) => {
+        if (!db || !appId || !confirm(`"${item.title}" 을(를) 삭제하시겠습니까?`)) return;
+        try {
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'gallery', item.id));
+            setItems(prev => prev.filter(x => x.id !== item.id));
+        } catch (err) { console.error('handleDelete error', err); }
+    }, [db, appId]);
+
+    // ── 다운로드 ─────────────────────────────────────────────────────────────
+    const handleDownload = useCallback((item) => {
+        if (item.imageUrl) {
+            const a = document.createElement('a');
+            a.href = item.imageUrl;
+            a.download = `${(item.title || 'design').replace(/\s+/g, '_')}_SoleVision.jpg`;
+            a.click();
+        } else {
+            alert('⚠️ 이미지가 아직 준비 중입니다.');
+        }
+    }, []);
+
+    // ── 필터 & 검색 ──────────────────────────────────────────────────────────
+    const years = useMemo(() => {
+        const ys = [...new Set(items.map(x => x.year))].sort((a, b) => b - a);
+        return ['ALL', ...ys, 'Limited'];
+    }, [items]);
+
+    const displayed = useMemo(() => {
+        let out = items;
+        if (filter !== 'ALL') {
+            out = out.filter(item =>
+                item.year === filter || item.tags?.some(t => t.toLowerCase().includes(filter.toLowerCase()))
+            );
+        }
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            out = out.filter(item =>
+                item.title?.toLowerCase().includes(q) ||
+                item.subtitle?.toLowerCase().includes(q) ||
+                item.tags?.some(t => t.toLowerCase().includes(q))
+            );
+        }
+        return out;
+    }, [items, filter, searchQuery]);
+
+    // ── 렌더 ─────────────────────────────────────────────────────────────────
+    return (
+        <div ref={containerRef} className="h-full overflow-y-auto overflow-x-hidden" style={{ background: '#080808' }}>
+
+            {/* ── Hero ──────────────────────────────────────────────────── */}
+            <motion.div style={{ y: headerY, opacity: headerOpacity }}
+                className="relative pt-20 pb-8 px-6 md:px-16 overflow-hidden">
+                {/* Ambient */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    <div className="absolute -top-32 -left-24 w-96 h-96 rounded-full"
+                        style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)' }} />
+                    <div className="absolute -top-16 right-0 w-72 h-72 rounded-full"
+                        style={{ background: 'radial-gradient(circle, rgba(14,165,233,0.06) 0%, transparent 70%)' }} />
+                    <div className="absolute inset-0 opacity-[0.025]"
+                        style={{
+                            backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+                            backgroundSize: '50px 50px'
+                        }} />
+                </div>
+
+                <div className="relative z-10 max-w-[1400px] mx-auto">
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-2 mb-4">
+                        <div className="flex items-center gap-2 px-3 py-1 rounded-full"
+                            style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                            <Sparkles size={10} className="text-indigo-400" />
+                            <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-indigo-400">AI Design Gallery</span>
+                        </div>
+                    </motion.div>
+
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-5">
+                        <div>
+                            <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
+                                className="text-5xl md:text-6xl font-black text-white tracking-tighter leading-none mb-2">
+                                SOLE
+                                <span className="block" style={{
+                                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                                    backgroundImage: 'linear-gradient(135deg, #6366f1, #0ea5e9, #22d3ee)',
+                                    backgroundClip: 'text',
+                                }}>VISION</span>
+                            </motion.h1>
+                            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.08 }}
+                                className="text-white/35 text-sm max-w-xs leading-relaxed">
+                                상상 속의 러닝화, AI로 시각화한 나의 디자인 비전.
+                                <br /><span className="text-white/18 text-xs">Every sole tells a story.</span>
+                            </motion.p>
+                        </div>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.12 }}
+                            className="flex gap-6 items-end">
+                            {[
+                                { label: 'Total Works', value: items.length },
+                                { label: 'AI Tools', value: '4+' },
+                                { label: 'Displayed', value: displayed.length },
+                            ].map(stat => (
+                                <div key={stat.label} className="text-center">
+                                    <div className="text-2xl font-black text-white tabular-nums">{stat.value}</div>
+                                    <div className="text-[8px] uppercase tracking-[0.18em] text-white/25 font-bold">{stat.label}</div>
+                                </div>
+                            ))}
+                        </motion.div>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* ── Toolbar ───────────────────────────────────────────────── */}
+            <div className="sticky top-0 z-30 px-6 md:px-16 py-2.5"
+                style={{ background: 'rgba(8,8,8,0.88)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <div className="max-w-[1400px] mx-auto flex items-center gap-2">
+                    {/* Filter pills */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-1">
+                        {years.map(f => (
+                            <button key={f} onClick={() => setFilter(f)}
+                                className="flex-shrink-0 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all duration-300"
+                                style={filter === f ? {
+                                    background: 'linear-gradient(135deg, #6366f1, #0ea5e9)', color: '#fff',
+                                    boxShadow: '0 2px 10px rgba(99,102,241,0.3)',
+                                } : {
+                                    background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.38)',
+                                    border: '1px solid rgba(255,255,255,0.07)',
+                                }}>
+                                {f}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Search */}
+                    <div className="relative flex-shrink-0">
+                        <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25" />
+                        <input
+                            value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                            placeholder="검색..."
+                            className="bg-white/5 border border-white/8 rounded-full pl-7 pr-3 py-1 text-[10px] text-white/70 outline-none focus:border-indigo-500/40 w-28 md:w-36 placeholder-white/20"
+                        />
+                    </div>
+
+                    {/* View mode */}
+                    <div className="flex items-center gap-1 flex-shrink-0"
+                        style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '999px', padding: '2px' }}>
+                        {[['grid', LayoutGrid], ['list', LayoutList]].map(([mode, Icon]) => (
+                            <button key={mode} onClick={() => setViewMode(mode)}
+                                className="w-7 h-7 rounded-full flex items-center justify-center transition-all"
+                                style={{ background: viewMode === mode ? 'rgba(255,255,255,0.12)' : 'transparent' }}>
+                                <Icon size={13} color={viewMode === mode ? 'white' : 'rgba(255,255,255,0.3)'} />
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Count */}
+                    <div className="flex-shrink-0 text-[9px] text-white/22 font-mono min-w-[42px] text-right">
+                        {displayed.length}/{items.length}
+                    </div>
+
+                    {/* Admin: Add */}
+                    {isAdmin && (
+                        <button onClick={() => setShowUpload(true)}
+                            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all"
+                            style={{ background: 'rgba(99,102,241,0.18)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}>
+                            <Plus size={11} /> 추가
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* ── Gallery Grid ──────────────────────────────────────────── */}
+            <div className="px-6 md:px-16 py-6 max-w-[1400px] mx-auto">
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-32 gap-3">
+                        <Loader2 size={28} className="animate-spin text-indigo-400" />
+                        <p className="text-white/25 text-xs font-mono uppercase tracking-widest">Loading gallery...</p>
+                    </div>
+                ) : displayed.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-24 gap-3">
+                        <div className="w-14 h-14 rounded-full flex items-center justify-center bg-white/4 border border-white/8">
+                            <Search size={18} className="text-white/20" />
+                        </div>
+                        <p className="text-white/25 text-xs font-mono uppercase tracking-widest">작품을 찾을 수 없습니다</p>
+                        <button onClick={() => { setFilter('ALL'); setSearchQuery(''); }}
+                            className="flex items-center gap-1.5 text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors">
+                            <RefreshCw size={11} /> 필터 초기화
+                        </button>
+                    </div>
+                ) : viewMode === 'grid' ? (
+                    <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+                        {displayed.map((item, i) => (
+                            <div key={item.id} className="break-inside-avoid">
+                                <GalleryCard item={item} index={i} onOpen={setSelectedItem} viewMode="grid" />
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-2">
+                        {displayed.map((item, i) => (
+                            <GalleryCard key={item.id} item={item} index={i} onOpen={setSelectedItem} viewMode="list" />
+                        ))}
+                    </div>
+                )}
+
+                {/* ── Infinite Scroll Loader ─────────────────────────────── */}
+                <div ref={loaderRef} className="py-10 flex flex-col items-center gap-3">
+                    {loadingMore && (
+                        <>
+                            <Loader2 size={20} className="animate-spin text-indigo-400/60" />
+                            <p className="text-white/20 text-[10px] font-mono uppercase tracking-widest">Loading more...</p>
+                        </>
+                    )}
+                    {!hasMore && items.length > 0 && !loading && (
+                        <div className="flex flex-col items-center gap-2 py-4 rounded-2xl w-full"
+                            style={{ border: '1px dashed rgba(255,255,255,0.07)' }}>
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                                style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                                <Sparkles size={16} className="text-indigo-400" />
+                            </div>
+                            <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.25em]">
+                                총 {items.length}개 · 모두 표시됨
+                            </p>
+                            <p className="text-white/12 text-[9px] tracking-widest">AI로 계속 그려나가는 중</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* ── Lightbox ──────────────────────────────────────────────── */}
+            <AnimatePresence>
+                {selectedItem && (
+                    <LightBox
+                        item={selectedItem}
+                        allItems={displayed}
+                        onClose={() => setSelectedItem(null)}
+                        onDownload={handleDownload}
+                        isAdmin={isAdmin}
+                        onDelete={handleDelete}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* ── Upload Modal ─────────────────────────────────────────── */}
+            <AnimatePresence>
+                {showUpload && (
+                    <UploadModal
+                        onClose={() => setShowUpload(false)}
+                        onSave={handleSave}
+                        totalCount={items.length}
+                    />
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+// ── Fallback 데이터 (Firestore 연결 전) ──────────────────────────────────────
+const FALLBACK_ITEMS = [
+    { id: 'f1', title: 'VOID RUNNER 001', subtitle: 'Dark Matter Series', year: '2025', medium: 'AI Generative · Midjourney', tags: ['Carbon Fiber', 'Void Edition', 'Limited'], description: '빛을 흡수하는 소재와 에어로다이나믹 구조를 결합한 다크 매터 시리즈의 첫 작품.', aspect: '4:3' },
+    { id: 'f2', title: 'LUNAR SPRINT X', subtitle: 'Celestial Collection', year: '2025', medium: 'AI Generative · Stable Diffusion', tags: ['Lunar', 'Ultralight', 'Marathon'], description: '달 표면의 텍스처에서 영감받아 탄생한 초경량 마라톤화.', aspect: '3:4' },
+    { id: 'f3', title: 'NEON GHOST RUN', subtitle: 'Cyberpunk Edition', year: '2024', medium: 'AI Generative · DALL·E 3', tags: ['Neon', 'Night Run', 'Urban'], description: '도시의 밤을 지배하는 사이버펑크 러닝화.', aspect: '4:3' },
+    { id: 'f4', title: 'TERRA PULSE', subtitle: 'Trail Series', year: '2025', medium: 'AI Generative · Firefly', tags: ['Trail', 'Grip+', 'All-terrain'], description: '거친 산악 지형을 위한 오프로드 퍼포먼스화.', aspect: '1:1' },
+    { id: 'f5', title: 'CHROME VELOCITY', subtitle: 'Speed Series', year: '2026', medium: 'AI Generative · Midjourney', tags: ['Chrome', 'Speed', 'Record'], description: '크롬 메탈릭 피니시와 초소형 카본 플레이트로 완성된 기록 갱신을 위한 신발.', aspect: '4:3' },
+    { id: 'f6', title: 'SAKURA DRIFT', subtitle: 'Blossom Edition', year: '2025', medium: 'AI Generative · Stable Diffusion', tags: ['Sakura', 'Spring', 'Limited'], description: '벚꽃의 순간적인 아름다움을 담은 스프링 리미티드 에디션.', aspect: '3:4' },
+];
+
+export default ShoesGallery;

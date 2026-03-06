@@ -63,7 +63,8 @@ const Header = ({ onOpenMyPage, onOpenLoginModal, currentIndex, onNavigate }) =>
     const navItems = [
         { label: 'Playground', index: 0 },
         { label: 'HNRC', index: 1 },
-        { label: 'Arbiscan', index: 2 },
+        { label: 'Sole Vision', index: 2 },
+        { label: 'Arbiscan', index: 3 },
     ];
 
     return (
