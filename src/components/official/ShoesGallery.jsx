@@ -620,7 +620,7 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
 };
 
 
-// ── 유틸: 이미지 압축 ──────────────────────────────────────────────────────────
+// ── 유틸: 이미지 압축 및 워터마크 추가 ──────────────────────────────────────────
 const compressImage = (file, maxWidth = 1280, quality = 0.8) => {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -643,9 +643,36 @@ const compressImage = (file, maxWidth = 1280, quality = 0.8) => {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
 
-                canvas.toBlob((blob) => {
-                    resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
-                }, 'image/jpeg', quality);
+                // 워터마크 로드
+                const watermark = new Image();
+                watermark.src = '/hl_logo_clean.png';
+                watermark.crossOrigin = 'anonymous';
+                watermark.onload = () => {
+                    const padding = width * 0.03; // 화면 크기에 비례한 여백
+                    const wWidth = width * 0.12;   // 이미지 너비의 12%
+                    const wHeight = (watermark.height / watermark.width) * wWidth;
+
+                    ctx.globalAlpha = 0.7; // 자연스러운 투명도
+                    ctx.drawImage(
+                        watermark,
+                        width - wWidth - padding,
+                        height - wHeight - padding,
+                        wWidth,
+                        wHeight
+                    );
+                    ctx.globalAlpha = 1.0;
+
+                    canvas.toBlob((blob) => {
+                        resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
+                    }, 'image/jpeg', quality);
+                };
+
+                watermark.onerror = () => {
+                    // 워터마크 로드 실패 시 원본만 저장
+                    canvas.toBlob((blob) => {
+                        resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
+                    }, 'image/jpeg', quality);
+                };
             };
         };
     });
