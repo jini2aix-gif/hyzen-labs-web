@@ -12,7 +12,7 @@ import {
     query, orderBy, startAfter, limit,
     serverTimestamp
 } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { getStorage, ref as storageRef, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useFirebase, db, appId } from '../../hooks/useFirebase';
 import { ADMIN_EMAIL } from '../admin/AdminPanel';
 
@@ -646,8 +646,8 @@ const loadWatermark = () => {
     });
 };
 
-// ── 유틸: 이미지 압축 및 워터마크 추가 (ObjectURL 방식 + 병렬 처리 최적화) ──
-const compressImage = async (file, maxWidth = 960, quality = 0.7) => {
+// ── 유틸: 이미지 압축 및 워터마크 추가 (최적화 강도 상향: 800px / 0.6) ──
+const compressImage = async (file, maxWidth = 800, quality = 0.6) => {
     const [img, watermark] = await Promise.all([
         new Promise((resolve, reject) => {
             const i = new Image();
@@ -696,13 +696,25 @@ const compressImage = async (file, maxWidth = 960, quality = 0.7) => {
     });
 };
 
-// ── Firebase Storage 업로드 헬퍼 ─────────────────────────────────────────────
-const uploadImageToStorage = async (file, path) => {
-    const storage = getStorage();
-    const fileRef = storageRef(storage, `artifacts/${appId}/public/data/${path}`);
-    const snapshot = await uploadBytes(fileRef, file);
-    const downloadURL = await getDownloadURL(snapshot.ref);
-    return downloadURL;
+// ── Firebase Storage 업로드 헬퍼 (진행률 콜백 추가) ─────────────────────────────
+const uploadImageToStorage = (file, path, onProgress) => {
+    return new Promise((resolve, reject) => {
+        const storage = getStorage();
+        const fileRef = storageRef(storage, `artifacts/${appId}/public/data/${path}`);
+        const uploadTask = uploadBytesResumable(fileRef, file);
+
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                if (onProgress) onProgress(progress);
+            },
+            (error) => reject(error),
+            async () => {
+                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve(downloadURL);
+            }
+        );
+    });
 };
 // ── 업로드 모달 (관리자 전용) ─────────────────────────────────────────────────
 const UploadModal = ({ onClose, onSave, totalCount, editItem }) => {
@@ -721,6 +733,8 @@ const UploadModal = ({ onClose, onSave, totalCount, editItem }) => {
     const [previews, setPreviews] = useState(editItem?.images || (editItem?.imageUrl ? [editItem?.imageUrl] : []));
     const [saving, setSaving] = useState(false);
     const [uploadProgress, setUploadProgress] = useState('');
+    // 각 파일별 업로드 상태 (idx: { status: 'none'|'compressing'|'uploading', progress: number })
+    const [fileStatuses, setFileStatuses] = useState({});
     const fileInputRef = useRef(null);
 
     const isEditMode = !!editItem;
@@ -777,25 +791,28 @@ const UploadModal = ({ onClose, onSave, totalCount, editItem }) => {
             let imageUrls = isEditMode ? [...(editItem.images || [editItem.imageUrl])] : [];
 
             if (files.length > 0) {
-                setUploadProgress(`이미지 최적화 중... (CPU 작업)`);
+                setUploadProgress(`이미지 처리 중...`);
 
-                // 1. 병렬 최적화 (CPU) - 루프 대신 Promise.all 사용
+                // 1. 병렬 최적화 (CPU)
                 const compressedFiles = await Promise.all(
                     files.map(async (file, idx) => {
+                        setFileStatuses(prev => ({ ...prev, [idx]: { status: 'compressing', progress: 0 } }));
                         const result = await compressImage(file);
-                        setUploadProgress(`이미지 최적화 완료: ${idx + 1}/${files.length}`);
+                        setFileStatuses(prev => ({ ...prev, [idx]: { status: 'uploading', progress: 0 } }));
                         return result;
                     })
                 );
 
                 // 2. 병렬 업로드 (Network)
-                setUploadProgress(`서버로 전송 중... (0/${files.length})`);
                 const newUploadPromises = compressedFiles.map(async (file, i) => {
                     const ext = 'jpg';
                     const path = `gallery/${appId}/${timestamp}_${i}.${ext}`;
-                    const url = await uploadImageToStorage(file, path);
-                    setUploadProgress(`전송 완료: ${i + 1}/${files.length}`);
-                    return url;
+                    return await uploadImageToStorage(file, path, (progress) => {
+                        setFileStatuses(prev => ({
+                            ...prev,
+                            [i]: { ...prev[i], progress: Math.round(progress) }
+                        }));
+                    });
                 });
 
                 const uploadedUrls = await Promise.all(newUploadPromises);
@@ -897,6 +914,34 @@ const UploadModal = ({ onClose, onSave, totalCount, editItem }) => {
                                     <div key={i} className="relative group aspect-square rounded-xl overflow-hidden"
                                         style={{ border: i === 0 ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.1)' }}>
                                         <img src={url} alt="" className="w-full h-full object-cover" />
+
+                                        {/* 개별 업로드 상태 오버레이 */}
+                                        {saving && fileStatuses[i] && (
+                                            <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-2 z-10">
+                                                <div className="text-[7px] text-white/70 font-black uppercase tracking-widest mb-1">
+                                                    {fileStatuses[i].status === 'compressing' ? 'OPTIMIZING' : 'UPLOADING'}
+                                                </div>
+                                                <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden relative">
+                                                    <motion.div
+                                                        className="absolute inset-y-0 left-0 bg-[#6366f1]"
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${fileStatuses[i].progress}%` }}
+                                                        transition={{ duration: 0.3 }}
+                                                    />
+                                                    {fileStatuses[i].status === 'compressing' && (
+                                                        <motion.div
+                                                            className="absolute inset-0 bg-white/20"
+                                                            animate={{ x: ['-100%', '100%'] }}
+                                                            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                                                        />
+                                                    )}
+                                                </div>
+                                                <div className="text-[8px] text-white font-mono mt-1">
+                                                    {fileStatuses[i].progress}%
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {/* 첫 번째 = 대표 배지 */}
                                         {i === 0 && (
                                             <div className="absolute top-1 left-1 text-[8px] font-black px-1.5 py-0.5 rounded-full"
@@ -904,13 +949,16 @@ const UploadModal = ({ onClose, onSave, totalCount, editItem }) => {
                                         )}
                                         {/* 제거 버튼 */}
                                         <button onClick={() => removeFile(i)}
-                                            className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                                            disabled={saving}
+                                            className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all disabled:hidden"
                                             style={{ background: 'rgba(0,0,0,0.7)' }}>
                                             <X size={10} color="white" />
                                         </button>
                                         {/* 순서 번호 */}
-                                        <div className="absolute bottom-1 right-1 text-[8px] font-mono px-1 rounded"
-                                            style={{ background: 'rgba(0,0,0,0.6)', color: 'rgba(255,255,255,0.6)' }}>{i + 1}</div>
+                                        {!saving && (
+                                            <div className="absolute bottom-1 right-1 text-[8px] font-mono px-1 rounded"
+                                                style={{ background: 'rgba(0,0,0,0.6)', color: 'rgba(255,255,255,0.6)' }}>{i + 1}</div>
+                                        )}
                                     </div>
                                 ))}
                                 {/* 추가 버튼 */}
