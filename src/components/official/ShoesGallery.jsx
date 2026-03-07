@@ -973,7 +973,7 @@ const ShoesGallery = ({ onModalChange }) => {
         let cancelled = false;
         const load = async () => {
             if (!db || !appId) {
-                setItems(FALLBACK_ITEMS.map((item, i) => ({ ...item, accentColor: getAccentColor(i) })));
+                setItems([]);
                 setLoading(false);
                 setHasMore(false);
                 return;
@@ -988,14 +988,14 @@ const ShoesGallery = ({ onModalChange }) => {
                         ...d.data(),
                         accentColor: d.data().accentColor || getAccentColor(i),
                     }));
-                    setItems(docs.length > 0 ? docs : FALLBACK_ITEMS.map((item, i) => ({ ...item, accentColor: getAccentColor(i) })));
+                    setItems(docs);
                     setLastDoc(snap.docs[snap.docs.length - 1] || null);
                     setHasMore(snap.docs.length === PAGE_SIZE);
                 }
             } catch (err) {
-                console.warn('Gallery: Firestore load failed, using fallback.', err);
+                console.warn('Gallery: Firestore load failed.', err);
                 if (!cancelled) {
-                    setItems(FALLBACK_ITEMS.map((item, i) => ({ ...item, accentColor: getAccentColor(i) })));
+                    setItems([]);
                     setHasMore(false);
                 }
             } finally {
@@ -1069,12 +1069,6 @@ const ShoesGallery = ({ onModalChange }) => {
     // ── 삭제 ─────────────────────────────────────────────────────────────────
     const handleDelete = useCallback(async (item) => {
         if (!db || !appId) return;
-
-        // Fallback 데이터는 삭제 불가 안내
-        if (item.id.toString().startsWith('f')) {
-            alert('기본 샘플 데이터는 삭제할 수 없습니다.');
-            return;
-        }
 
         if (!confirm(`"${item.title}" 을(를) 삭제하시겠습니까?`)) return;
 
@@ -1344,14 +1338,5 @@ const ShoesGallery = ({ onModalChange }) => {
     );
 };
 
-// ── Fallback 데이터 (Firestore 연결 전) ──────────────────────────────────────
-const FALLBACK_ITEMS = [
-    { id: 'f1', title: 'VOID RUNNER 001', subtitle: 'Deep Space Series', year: '2024', medium: 'AI Generative · Midjourney', tags: ['Futuristic', 'Neon', 'Void'], description: '우주 심연의 공허함을 형상화한 익스트림 퍼포먼스 슈즈.' },
-    { id: 'f2', title: 'LUNAR SPRINT X', subtitle: 'Celestial Collection', year: '2025', medium: 'AI Generative · Stable Diffusion', tags: ['Lunar', 'Ultralight', 'Marathon'], description: '달 표면의 텍스처에서 영감받아 탄생한 초경량 마라톤화.' },
-    { id: 'f3', title: 'NEON GHOST RUN', subtitle: 'Cyberpunk Edition', year: '2024', medium: 'AI Generative · DALL·E 3', tags: ['Neon', 'Night Run', 'Urban'], description: '도시의 밤을 지배하는 사이버펑크 러닝화.' },
-    { id: 'f4', title: 'TERRA PULSE', subtitle: 'Trail Series', year: '2025', medium: 'AI Generative · Firefly', tags: ['Trail', 'Grip+', 'All-terrain'], description: '거친 산악 지형을 위한 오프로드 퍼포먼스화.' },
-    { id: 'f5', title: 'CHROME VELOCITY', subtitle: 'Speed Series', year: '2026', medium: 'AI Generative · Midjourney', tags: ['Chrome', 'Speed', 'Record'], description: '크롬 메탈릭 피니시와 초소형 카본 플레이트로 완성된 기록 갱신을 위한 신발.' },
-    { id: 'f6', title: 'SAKURA DRIFT', subtitle: 'Blossom Edition', year: '2025', medium: 'AI Generative · Stable Diffusion', tags: ['Sakura', 'Spring', 'Limited'], description: '벚꽃의 순간적인 아름다움을 담은 스프링 리미티드 에디션.' },
-];
-
+// ── 메인 컴포넌트 내보내기 ──────────────────────────────────────────────────
 export default ShoesGallery;
