@@ -13,7 +13,7 @@ import {
 } from 'firebase/auth';
 import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
 
-const FALLBACK_APP_ID = 'hyzen-labs-production';
+const FALLBACK_APP_ID = 'hyzen-labs';
 
 const getFirebaseConfig = () => {
     try {
