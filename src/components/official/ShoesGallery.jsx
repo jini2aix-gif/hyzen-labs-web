@@ -754,17 +754,25 @@ const UploadModal = ({ onClose, onSave, totalCount }) => {
 
             setUploadProgress(`준비 중... (0/${files.length})`);
 
-            // 압축 및 업로드 순차 처리가 더 안정적일 수 있음 (UI 업데이트를 위해)
-            const imageUrls = [];
+            // 1. 이미지 압축 (CPU 집약 작업이므로 순차 처리하여 브라우저 멈춤 방지)
+            const compressedFiles = [];
             for (let i = 0; i < files.length; i++) {
-                setUploadProgress(`이미지 처리 중... (${i + 1}/${files.length})`);
+                setUploadProgress(`이미지 최적화 중... (${i + 1}/${files.length})`);
                 const compressed = await compressImage(files[i]);
+                compressedFiles.push(compressed);
+            }
+
+            // 2. 업로드 (네트워크 작업이므로 병렬 처리하여 속도 대폭 개선)
+            setUploadProgress(`서버로 전송 중... (0/${files.length})`);
+            const uploadPromises = compressedFiles.map(async (file, i) => {
                 const ext = 'jpg';
                 const path = `gallery/${appId}/${timestamp}_${i}.${ext}`;
-                const url = await uploadImageToStorage(compressed, path);
-                imageUrls.push(url);
-                setUploadProgress(`업로드 완료... (${i + 1}/${files.length})`);
-            }
+                const url = await uploadImageToStorage(file, path);
+                return url;
+            });
+
+            const imageUrls = await Promise.all(uploadPromises);
+            setUploadProgress(`업로드 완료! (${imageUrls.length}장)`);
 
             setUploadProgress('Firestore 저장 중...');
             await onSave({
