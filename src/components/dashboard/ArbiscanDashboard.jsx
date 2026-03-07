@@ -259,8 +259,8 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
                                         fontSize={9}
                                         tickLine={false}
                                         axisLine={false}
-                                        tickFormatter={(val) => `₩${(val / 1e6).toFixed(0)}M`}
-                                        width={45}
+                                        tickFormatter={(val) => `₩${(val / 1e6).toFixed(1)}M`}
+                                        width={52}
                                     />
                                     <Tooltip
                                         contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(212,175,55,0.3)', borderRadius: '8px' }}
@@ -330,22 +330,31 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                 if (db && appId) {
                     try {
                         const todayRef = doc(db, 'artifacts', appId, 'public', 'data', 'treasury_history', today);
-                        await setDoc(todayRef, {
-                            date: today,
-                            timestamp: Date.now(),
-                            arbAmount: TREASURY_ARB,
-                            priceKRW: market.arb.priceKRW,
-                            krwRate: krwRateRes,
-                            valueKRW: currentValueKRW,
-                            valueUSD: currentValueUSD
-                        }, { merge: true });
 
+                        // 하루에 한 번만 (오전 9시 KST 기준 새 날짜 시작 시 첫 로드 때) 기록하도록 설정
                         const qRef = query(
                             collection(db, 'artifacts', appId, 'public', 'data', 'treasury_history'),
-                            orderBy('timestamp', 'asc'),
+                            orderBy('timestamp', 'desc'),
                             limit(90)
                         );
                         const snap = await getDocs(qRef);
+                        const historyDocs = snap.docs.map(d => d.data());
+                        const lastRecordDate = historyDocs[0]?.date;
+
+                        // 오늘 날짜의 기록이 없으면 현재 시세를 9시 기준 시세로 저장
+                        if (lastRecordDate !== today) {
+                            await setDoc(todayRef, {
+                                date: today,
+                                timestamp: Date.now(),
+                                arbAmount: TREASURY_ARB,
+                                priceKRW: market.arb.priceKRW,
+                                krwRate: krwRateRes,
+                                valueKRW: currentValueKRW,
+                                valueUSD: currentValueUSD
+                            }, { merge: true });
+                            console.log('Daily treasury snap recorded at 9 AM KST (or first load after 9 AM)');
+                        }
+
                         th = snap.docs.map(d => {
                             const dData = d.data();
                             const dObj = new Date(dData.date);
@@ -353,7 +362,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                                 ...dData,
                                 shortDate: `${String(dObj.getMonth() + 1).padStart(2, '0')}/${String(dObj.getDate()).padStart(2, '0')}`
                             };
-                        });
+                        }).reverse(); // Sort ASC for Recharts
 
                         // Recharts AreaChart requires at least 2 points to render an area/line
                         if (th.length === 1) {
@@ -382,29 +391,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
         return () => clearInterval(interval);
     }, []);
 
-    // Auth gate 
-    if (!user) {
-        return (
-            <section className="relative bg-[#050505] min-h-screen pt-24 pb-32 px-4 md:px-10 flex items-center justify-center overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#00D1FF]/5 to-transparent pointer-events-none" />
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="relative z-10 bg-[#111111] border border-gray-800 rounded-3xl p-10 max-w-md w-full text-center shadow-2xl"
-                >
-                    <Lock className="w-16 h-16 mx-auto mb-6 text-[#00D1FF]" />
-                    <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">On-Chain Terminal</h2>
-                    <p className="text-gray-400 mb-8 text-sm">Authentication required to access Hyzen Labs Arbitration Control Tower.</p>
-                    <button onClick={onOpenLoginModal} className="w-full py-4 bg-[#00D1FF] text-black font-bold uppercase tracking-widest rounded-xl hover:bg-[#00b8e6] transition-colors mb-3">
-                        Sign In
-                    </button>
-                    <button onClick={onOpenRegisterModal} className="w-full py-4 bg-transparent border border-gray-700 text-white font-bold uppercase tracking-widest rounded-xl hover:bg-gray-800 transition-colors">
-                        Register
-                    </button>
-                </motion.div>
-            </section>
-        );
-    }
+    const isAuthGated = !user;
 
     if (isLoading || !data.market) {
         return (
@@ -441,8 +428,46 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
         : 1;
 
     return (
-        <section className="bg-[#050505] min-h-screen text-gray-200 font-sans pt-24 pb-20 px-4 md:px-8">
-            <div className="max-w-[1400px] mx-auto">
+        <section className="relative bg-[#050505] min-h-screen text-gray-200 font-sans pt-24 pb-20 px-4 md:px-8 overflow-hidden">
+            {/* ─── Non-member Auth Overlay ─── */}
+            <AnimatePresence>
+                {isAuthGated && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-[#050505]/60 backdrop-blur-md pointer-events-none"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            className="relative z-10 bg-[#111111] border border-gray-800 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl overflow-hidden"
+                        >
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#00D1FF] to-[#6366f1]" />
+                            <Lock className="w-12 h-12 mx-auto mb-5 text-[#00D1FF]" />
+                            <h2 className="text-xl font-black text-white mb-2 uppercase tracking-tight">Exclusive Content</h2>
+                            <p className="text-gray-400 mb-8 text-xs leading-relaxed">Arbiscan On-Chain Terminal은 회원 전용 서비스입니다. 가입 후 실시간 대시보드와 온체인 데이터를 무제한으로 확인하세요.</p>
+
+                            <div className="space-y-3">
+                                <button onClick={onOpenLoginModal} className="w-full py-3.5 bg-[#00D1FF] text-black font-extrabold uppercase tracking-widest text-[11px] rounded-xl hover:bg-[#00b8e6] transition-all shadow-[0_0_20px_rgba(0,209,255,0.2)]">
+                                    Sign In to Access
+                                </button>
+                                <button onClick={onOpenRegisterModal} className="w-full py-3.5 bg-transparent border border-gray-700 text-white font-bold uppercase tracking-widest text-[11px] rounded-xl hover:bg-white/5 transition-all">
+                                    Create Free Account
+                                </button>
+                            </div>
+
+                            <div className="mt-8 pt-6 border-t border-gray-800 flex items-center justify-center gap-4 grayscale opacity-40">
+                                <Activity size={14} className="text-[#00D1FF]" />
+                                <BarChart2 size={14} className="text-indigo-400" />
+                                <Target size={14} className="text-red-400" />
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* ─── Main Dashboard Content (Blurred if gated) ─── */}
+            <div className={`max-w-[1400px] mx-auto transition-all duration-700 ${isAuthGated ? 'blur-xl grayscale pointer-events-none select-none opacity-40' : ''}`}>
 
                 {/* === TREASURY STATUS === */}
                 <TreasuryCard

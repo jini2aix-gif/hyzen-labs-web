@@ -134,7 +134,7 @@ const App = () => {
         // Block right swipe on first page (would trigger browser back)
         if (distanceX < 0 && viewIndex === 0) e.preventDefault();
         // Block left swipe on last page (would trigger browser forward)
-        const maxIndex = user ? 3 : 2;
+        const maxIndex = 3;
         if (distanceX > 0 && viewIndex === maxIndex) e.preventDefault();
       }
     }
@@ -142,7 +142,6 @@ const App = () => {
 
   const handleNavigate = (newIndex) => {
     if (newIndex === viewIndex || isNavigating.current) return;
-    if (newIndex === 3 && !user) return; // Block non-members from navigating to Arbiscan
 
     isNavigating.current = true;
     setDirection(newIndex > viewIndex ? 1 : -1);
@@ -166,7 +165,7 @@ const App = () => {
       const isRightSwipe = distanceX < -minSwipeDistance;
 
       if (isLeftSwipe) {
-        const maxIndex = user ? 3 : 2;
+        const maxIndex = 3;
         if (viewIndex < maxIndex) {
           handleNavigate(viewIndex + 1);
         }
@@ -356,20 +355,18 @@ const App = () => {
             </span>
           </button>
 
-          {user && (
-            <button
-              onClick={() => handleNavigate(3)}
-              className={`relative overflow-hidden flex items-center justify-center rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 3 ? 'bg-white text-black px-4 py-1.5' : 'bg-transparent text-white/50 w-8 h-8 hover:bg-white/10'}`}
-              aria-label="Arbiscan"
-            >
-              <span className={`text-[10px] font-bold tracking-widest uppercase transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 3 ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0 pointer-events-none'}`}>
-                Arbi
-              </span>
-              <span className={`text-[10px] font-bold transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] absolute ${viewIndex === 3 ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
-                A
-              </span>
-            </button>
-          )}
+          <button
+            onClick={() => handleNavigate(3)}
+            className={`relative overflow-hidden flex items-center justify-center rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 3 ? 'bg-white text-black px-4 py-1.5' : 'bg-transparent text-white/50 w-8 h-8 hover:bg-white/10'}`}
+            aria-label="Arbiscan"
+          >
+            <span className={`text-[10px] font-bold tracking-widest uppercase transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 3 ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0 pointer-events-none'}`}>
+              Arbi
+            </span>
+            <span className={`text-[10px] font-bold transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] absolute ${viewIndex === 3 ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
+              A
+            </span>
+          </button>
         </div>
 
         <React.Suspense fallback={null}>
