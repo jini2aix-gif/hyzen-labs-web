@@ -588,11 +588,18 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
                                 </button>
                             </div>
                             {isAdmin && (
-                                <button onClick={() => { onDelete(cur); onClose(); }}
-                                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-red-500/15 transition-all"
-                                    style={{ border: '1px solid rgba(239,68,68,0.25)', color: 'rgba(239,68,68,0.7)' }}>
-                                    <Trash2 size={11} /> Delete
-                                </button>
+                                <div className="flex gap-2">
+                                    <button onClick={() => { setEditItem(cur); setSelectedItem(null); }}
+                                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-indigo-500/15 transition-all"
+                                        style={{ border: '1px solid rgba(99,102,241,0.25)', color: 'rgba(129,140,248,0.7)' }}>
+                                        <Edit size={11} /> Edit
+                                    </button>
+                                    <button onClick={() => { onDelete(cur); onClose(); }}
+                                        className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-red-500/15 transition-all"
+                                        style={{ border: '1px solid rgba(239,68,68,0.25)', color: 'rgba(239,68,68,0.7)' }}>
+                                        <Trash2 size={11} /> Delete
+                                    </button>
+                                </div>
                             )}
                             {/* 작품 간 이동 dots */}
                             {allItems.length > 1 && (
@@ -620,8 +627,8 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
 };
 
 
-// ── 유틸: 이미지 압축 및 워터마크 추가 ──────────────────────────────────────────
-const compressImage = (file, maxWidth = 1280, quality = 0.8) => {
+// ── 유틸: 이미지 압축 및 워터마크 추가 (더 빠른 전송을 위해 960px/0.7 로 최적화) ──
+const compressImage = (file, maxWidth = 960, quality = 0.7) => {
     return new Promise((resolve) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -687,20 +694,25 @@ const uploadImageToStorage = async (file, path) => {
     return downloadURL;
 };
 // ── 업로드 모달 (관리자 전용) ─────────────────────────────────────────────────
-const UploadModal = ({ onClose, onSave, totalCount }) => {
+const UploadModal = ({ onClose, onSave, totalCount, editItem }) => {
     const [form, setForm] = useState({
-        title: '', subtitle: '', year: String(new Date().getFullYear()),
-        tags: '', description: '',
+        title: editItem?.title || '',
+        subtitle: editItem?.subtitle || '',
+        year: editItem?.year || String(new Date().getFullYear()),
+        tags: editItem?.tags?.join(', ') || '',
+        description: editItem?.description || '',
     });
     const [showScrollIndicator, setShowScrollIndicator] = useState(false);
     const scrollRef = useRef(null);
     // 선택된 파일 목록 (File[])
     const [files, setFiles] = useState([]);
-    // 미리보기 ObjectURL 목록
-    const [previews, setPreviews] = useState([]);
+    // 미리보기 (ObjectURL 또는 기존 URL)
+    const [previews, setPreviews] = useState(editItem?.images || (editItem?.imageUrl ? [editItem?.imageUrl] : []));
     const [saving, setSaving] = useState(false);
     const [uploadProgress, setUploadProgress] = useState('');
     const fileInputRef = useRef(null);
+
+    const isEditMode = !!editItem;
 
     // 파일 선택 처리
     const handleFileSelect = (e) => {
@@ -746,41 +758,44 @@ const UploadModal = ({ onClose, onSave, totalCount }) => {
 
     const handleSave = async () => {
         if (!form.title.trim()) return alert('제목을 입력해주세요.');
-        if (files.length === 0) return alert('이미지를 최소 1장 선택해주세요.');
+        if (!isEditMode && files.length === 0) return alert('이미지를 최소 1장 선택해주세요.');
         setSaving(true);
         try {
             const colorIndex = totalCount % ACCENT_COLORS.length;
             const timestamp = Date.now();
+            let imageUrls = isEditMode ? [...(editItem.images || [editItem.imageUrl])] : [];
 
-            setUploadProgress(`준비 중... (0/${files.length})`);
+            if (files.length > 0) {
+                setUploadProgress(`준비 중... (0/${files.length})`);
 
-            // 1. 이미지 압축 (CPU 집약 작업이므로 순차 처리하여 브라우저 멈춤 방지)
-            const compressedFiles = [];
-            for (let i = 0; i < files.length; i++) {
-                setUploadProgress(`이미지 최적화 중... (${i + 1}/${files.length})`);
-                const compressed = await compressImage(files[i]);
-                compressedFiles.push(compressed);
+                // 1. 이미지 압축 (CPU 집약)
+                const compressedFiles = [];
+                for (let i = 0; i < files.length; i++) {
+                    setUploadProgress(`이미지 최적화 중... (${i + 1}/${files.length})`);
+                    const compressed = await compressImage(files[i]);
+                    compressedFiles.push(compressed);
+                }
+
+                // 2. 업로드 (네트워크)
+                setUploadProgress(`서버로 전송 중... (0/${files.length})`);
+                const newUploadPromises = compressedFiles.map(async (file, i) => {
+                    const ext = 'jpg';
+                    const path = `gallery/${appId}/${timestamp}_${i}.${ext}`;
+                    return await uploadImageToStorage(file, path);
+                });
+
+                const uploadedUrls = await Promise.all(newUploadPromises);
+                imageUrls = isEditMode ? [...imageUrls, ...uploadedUrls] : uploadedUrls;
             }
-
-            // 2. 업로드 (네트워크 작업이므로 병렬 처리하여 속도 대폭 개선)
-            setUploadProgress(`서버로 전송 중... (0/${files.length})`);
-            const uploadPromises = compressedFiles.map(async (file, i) => {
-                const ext = 'jpg';
-                const path = `gallery/${appId}/${timestamp}_${i}.${ext}`;
-                const url = await uploadImageToStorage(file, path);
-                return url;
-            });
-
-            const imageUrls = await Promise.all(uploadPromises);
-            setUploadProgress(`업로드 완료! (${imageUrls.length}장)`);
 
             setUploadProgress('Firestore 저장 중...');
             await onSave({
                 ...form,
+                id: isEditMode ? editItem.id : undefined,
                 imageUrl: imageUrls[0],
                 images: imageUrls,
                 tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
-                accentColor: ACCENT_COLORS[colorIndex],
+                accentColor: editItem?.accentColor || ACCENT_COLORS[colorIndex],
             });
             onClose();
         } catch (err) {
@@ -821,8 +836,8 @@ const UploadModal = ({ onClose, onSave, totalCount }) => {
                 {/* Header - Fixed */}
                 <div className="p-6 border-b border-white/5 flex items-center justify-between shrink-0 bg-[#111] z-10">
                     <div>
-                        <h3 className="text-white font-black text-lg tracking-tight">새 작품 추가</h3>
-                        <p className="text-white/30 text-xs mt-0.5">총 {totalCount}개 · 최대 8장까지 업로드</p>
+                        <h3 className="text-white font-black text-lg tracking-tight">{isEditMode ? '작품 수정' : '새 작품 추가'}</h3>
+                        <p className="text-white/30 text-xs mt-0.5">{isEditMode ? '기존 정보를 수정합니다' : `총 ${totalCount}개 · 최대 8장까지 업로드`}</p>
                     </div>
                     <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors">
                         <X size={14} color="white" />
@@ -938,8 +953,8 @@ const UploadModal = ({ onClose, onSave, totalCount }) => {
                     <button onClick={handleSave} disabled={saving}
                         className="flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg shadow-indigo-500/10"
                         style={{ background: 'linear-gradient(135deg, #6366f1, #0ea5e9)', color: '#fff' }}>
-                        {saving ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
-                        {saving ? (uploadProgress || '업로드 중...') : `업로드 (${files.length}장)`}
+                        {saving ? <Loader2 size={13} className="animate-spin" /> : (isEditMode ? <Check size={13} /> : <Upload size={13} />)}
+                        {saving ? (uploadProgress || '저장 중...') : (isEditMode ? '수정 완료' : `업로드 (${files.length}장)`)}
                     </button>
                 </div>
             </motion.div>
@@ -964,10 +979,11 @@ const ShoesGallery = ({ onModalChange }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
     const [showUpload, setShowUpload] = useState(false);
+    const [editItem, setEditItem] = useState(null);
 
     useEffect(() => {
-        if (onModalChange) onModalChange(!!selectedItem || showUpload);
-    }, [selectedItem, showUpload, onModalChange]);
+        if (onModalChange) onModalChange(!!selectedItem || showUpload || !!editItem);
+    }, [selectedItem, showUpload, editItem, onModalChange]);
 
     const containerRef = useRef(null);
     const loaderRef = useRef(null);
@@ -1054,13 +1070,24 @@ const ShoesGallery = ({ onModalChange }) => {
         if (!db || !appId) return;
         try {
             const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'gallery');
-            const docData = {
-                ...data,
-                authorId: user?.uid || 'anonymous',
-                authorEmail: user?.email || '',
-                createdAt: serverTimestamp()
-            };
-            await addDoc(colRef, docData);
+            const { id, ...rest } = data;
+
+            if (id) {
+                // 수정 모드
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'gallery', id);
+                await updateDoc(docRef, { ...rest, updatedAt: serverTimestamp() });
+                alert('작품 정보가 수정되었습니다.');
+            } else {
+                // 추가 모드
+                const docData = {
+                    ...rest,
+                    authorId: user?.uid || 'anonymous',
+                    authorEmail: user?.email || '',
+                    createdAt: serverTimestamp()
+                };
+                await addDoc(colRef, docData);
+                alert('새 작품이 등록되었습니다.');
+            }
 
             // 새 항목 추가 후 목록 다시 로드
             const q = query(colRef, orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
@@ -1332,11 +1359,12 @@ const ShoesGallery = ({ onModalChange }) => {
                 )}
             </AnimatePresence>
 
-            {/* ── Upload Modal ─────────────────────────────────────────── */}
+            {/* ── Upload / Edit Modal ─────────────────────────────────────── */}
             <AnimatePresence>
-                {showUpload && (
+                {(showUpload || editItem) && (
                     <UploadModal
-                        onClose={() => setShowUpload(false)}
+                        editItem={editItem}
+                        onClose={() => { setShowUpload(false); setEditItem(null); }}
                         onSave={handleSave}
                         totalCount={items.length}
                     />
