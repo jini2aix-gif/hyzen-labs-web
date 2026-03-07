@@ -627,61 +627,72 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
 };
 
 
-// ── 유틸: 이미지 압축 및 워터마크 추가 (더 빠른 전송을 위해 960px/0.7 로 최적화) ──
-const compressImage = (file, maxWidth = 960, quality = 0.7) => {
+// ── 이미지 처리 캐시 (워터마크 로드 오버헤드 제거) ──
+let watermarkCache = null;
+const loadWatermark = () => {
+    if (watermarkCache) return Promise.resolve(watermarkCache);
     return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-
-                if (width > maxWidth) {
-                    height = (maxWidth / width) * height;
-                    width = maxWidth;
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-
-                // 워터마크 로드
-                const watermark = new Image();
-                watermark.src = '/hl_logo_clean.png';
-                watermark.crossOrigin = 'anonymous';
-                watermark.onload = () => {
-                    const padding = width * 0.03; // 화면 크기에 비례한 여백
-                    const wWidth = width * 0.12;   // 이미지 너비의 12%
-                    const wHeight = (watermark.height / watermark.width) * wWidth;
-
-                    ctx.globalAlpha = 0.7; // 자연스러운 투명도
-                    ctx.drawImage(
-                        watermark,
-                        width - wWidth - padding,
-                        height - wHeight - padding,
-                        wWidth,
-                        wHeight
-                    );
-                    ctx.globalAlpha = 1.0;
-
-                    canvas.toBlob((blob) => {
-                        resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
-                    }, 'image/jpeg', quality);
-                };
-
-                watermark.onerror = () => {
-                    // 워터마크 로드 실패 시 원본만 저장
-                    canvas.toBlob((blob) => {
-                        resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
-                    }, 'image/jpeg', quality);
-                };
-            };
+        const img = new Image();
+        img.src = '/hl_logo_clean.png';
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            watermarkCache = img;
+            resolve(img);
         };
+        img.onerror = () => {
+            console.warn('Watermark load failed');
+            resolve(null);
+        };
+    });
+};
+
+// ── 유틸: 이미지 압축 및 워터마크 추가 (ObjectURL 방식 + 병렬 처리 최적화) ──
+const compressImage = async (file, maxWidth = 960, quality = 0.7) => {
+    const [img, watermark] = await Promise.all([
+        new Promise((resolve, reject) => {
+            const i = new Image();
+            const url = URL.createObjectURL(file);
+            i.onload = () => {
+                URL.revokeObjectURL(url);
+                resolve(i);
+            };
+            i.onerror = reject;
+            i.src = url;
+        }),
+        loadWatermark()
+    ]);
+
+    const canvas = document.createElement('canvas');
+    let width = img.width;
+    let height = img.height;
+
+    if (width > maxWidth) {
+        height = (maxWidth / width) * height;
+        width = maxWidth;
+    }
+
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d', { alpha: false }); // 성능 향상을 위해 alpha: false
+    ctx.drawImage(img, 0, 0, width, height);
+
+    if (watermark) {
+        const padding = width * 0.03;
+        const wWidth = width * 0.12;
+        const wHeight = (watermark.height / watermark.width) * wWidth;
+
+        ctx.globalAlpha = 0.7;
+        ctx.drawImage(watermark, width - wWidth - padding, height - wHeight - padding, wWidth, wHeight);
+        ctx.globalAlpha = 1.0;
+    }
+
+    return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+            resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+            }));
+        }, 'image/jpeg', quality);
     });
 };
 
@@ -766,22 +777,25 @@ const UploadModal = ({ onClose, onSave, totalCount, editItem }) => {
             let imageUrls = isEditMode ? [...(editItem.images || [editItem.imageUrl])] : [];
 
             if (files.length > 0) {
-                setUploadProgress(`준비 중... (0/${files.length})`);
+                setUploadProgress(`이미지 최적화 중... (CPU 작업)`);
 
-                // 1. 이미지 압축 (CPU 집약)
-                const compressedFiles = [];
-                for (let i = 0; i < files.length; i++) {
-                    setUploadProgress(`이미지 최적화 중... (${i + 1}/${files.length})`);
-                    const compressed = await compressImage(files[i]);
-                    compressedFiles.push(compressed);
-                }
+                // 1. 병렬 최적화 (CPU) - 루프 대신 Promise.all 사용
+                const compressedFiles = await Promise.all(
+                    files.map(async (file, idx) => {
+                        const result = await compressImage(file);
+                        setUploadProgress(`이미지 최적화 완료: ${idx + 1}/${files.length}`);
+                        return result;
+                    })
+                );
 
-                // 2. 업로드 (네트워크)
+                // 2. 병렬 업로드 (Network)
                 setUploadProgress(`서버로 전송 중... (0/${files.length})`);
                 const newUploadPromises = compressedFiles.map(async (file, i) => {
                     const ext = 'jpg';
                     const path = `gallery/${appId}/${timestamp}_${i}.${ext}`;
-                    return await uploadImageToStorage(file, path);
+                    const url = await uploadImageToStorage(file, path);
+                    setUploadProgress(`전송 완료: ${i + 1}/${files.length}`);
+                    return url;
                 });
 
                 const uploadedUrls = await Promise.all(newUploadPromises);
