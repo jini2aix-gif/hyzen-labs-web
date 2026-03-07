@@ -727,13 +727,13 @@ const UploadModal = ({ onClose, onSave, totalCount, editItem }) => {
     });
     const [showScrollIndicator, setShowScrollIndicator] = useState(false);
     const scrollRef = useRef(null);
-    // 선택된 파일 목록 (File[])
-    const [files, setFiles] = useState([]);
-    // 미리보기 (ObjectURL 또는 기존 URL)
-    const [previews, setPreviews] = useState(editItem?.images || (editItem?.imageUrl ? [editItem?.imageUrl] : []));
+    // ── 상태 관리 (기존 이미지와 새 파일을 분리) ──
+    const [existingImages, setExistingImages] = useState(editItem?.images || (editItem?.imageUrl ? [editItem?.imageUrl] : []));
+    const [files, setFiles] = useState([]); // File[]
+    const [newPreviews, setNewPreviews] = useState([]); // ObjectURL[]
+
     const [saving, setSaving] = useState(false);
     const [uploadProgress, setUploadProgress] = useState('');
-    // 각 파일별 업로드 상태 (idx: { status: 'none'|'compressing'|'uploading', progress: number })
     const [fileStatuses, setFileStatuses] = useState({});
     const fileInputRef = useRef(null);
 
@@ -743,22 +743,33 @@ const UploadModal = ({ onClose, onSave, totalCount, editItem }) => {
     const handleFileSelect = (e) => {
         const selected = Array.from(e.target.files || []);
         if (!selected.length) return;
-        const newFiles = [...files, ...selected].slice(0, 8); // 최대 8장
-        setFiles(newFiles);
-        // 미리보기 URL 생성
-        const newPreviews = newFiles.map(f => URL.createObjectURL(f));
-        setPreviews(prev => { prev.forEach(p => URL.revokeObjectURL(p)); return newPreviews; });
+
+        // 최대 합계 8개로 제한
+        const totalPossibleNew = 8 - existingImages.length;
+        const toAdd = selected.slice(0, totalPossibleNew);
+
+        const updatedFiles = [...files, ...toAdd];
+        setFiles(updatedFiles);
+
+        const updatedPreviews = toAdd.map(f => URL.createObjectURL(f));
+        setNewPreviews(prev => [...prev, ...updatedPreviews]);
+
         e.target.value = '';
     };
 
-    // 파일 개별 제거
-    const removeFile = (idx) => {
-        URL.revokeObjectURL(previews[idx]);
-        const nf = files.filter((_, i) => i !== idx);
-        const np = previews.filter((_, i) => i !== idx);
-        setFiles(nf);
-        setPreviews(np);
+    // 이미지 제거
+    const removeFile = (idx, isNew) => {
+        if (isNew) {
+            URL.revokeObjectURL(newPreviews[idx]);
+            setFiles(prev => prev.filter((_, i) => i !== idx));
+            setNewPreviews(prev => prev.filter((_, i) => i !== idx));
+        } else {
+            setExistingImages(prev => prev.filter((_, i) => i !== idx));
+        }
     };
+
+    // 통합 미리보기 (UI용)
+    const allPreviews = [...existingImages, ...newPreviews];
 
     // Cleanup on unmount
     useEffect(() => {
@@ -771,7 +782,7 @@ const UploadModal = ({ onClose, onSave, totalCount, editItem }) => {
             }, 300);
             return () => clearTimeout(timer);
         }
-        return () => previews.forEach(p => URL.revokeObjectURL(p));
+        return () => newPreviews.forEach(p => URL.revokeObjectURL(p));
     }, []);
 
     const handleScroll = (e) => {
@@ -792,31 +803,42 @@ const UploadModal = ({ onClose, onSave, totalCount, editItem }) => {
 
             if (files.length > 0) {
                 setUploadProgress(`이미지 처리 중...`);
+                // UI 인덱스 보정을 위해 기존 이미지 개수만큼 오프셋 설정
+                const offset = existingImages.length;
 
-                // 1. 병렬 최적화 (CPU)
-                const compressedFiles = await Promise.all(
-                    files.map(async (file, idx) => {
-                        setFileStatuses(prev => ({ ...prev, [idx]: { status: 'compressing', progress: 0 } }));
-                        const result = await compressImage(file);
-                        setFileStatuses(prev => ({ ...prev, [idx]: { status: 'uploading', progress: 0 } }));
-                        return result;
-                    })
-                );
+                // 1. 순차적 최적화 (CPU 과부하 방지 및 UI 반응성 유지)
+                const compressedFiles = [];
+                for (let i = 0; i < files.length; i++) {
+                    const uiIdx = offset + i;
+                    setFileStatuses(prev => ({ ...prev, [uiIdx]: { status: 'compressing', progress: 0 } }));
+                    const result = await compressImage(files[i]);
+                    compressedFiles.push(result);
+                    setFileStatuses(prev => ({ ...prev, [uiIdx]: { status: 'uploading', progress: 0 } }));
+                }
 
                 // 2. 병렬 업로드 (Network)
                 const newUploadPromises = compressedFiles.map(async (file, i) => {
+                    const uiIdx = offset + i;
                     const ext = 'jpg';
                     const path = `gallery/${appId}/${timestamp}_${i}.${ext}`;
-                    return await uploadImageToStorage(file, path, (progress) => {
-                        setFileStatuses(prev => ({
-                            ...prev,
-                            [i]: { ...prev[i], progress: Math.round(progress) }
-                        }));
-                    });
+
+                    try {
+                        return await uploadImageToStorage(file, path, (progress) => {
+                            setFileStatuses(prev => ({
+                                ...prev,
+                                [uiIdx]: { ...prev[uiIdx], progress: Math.round(progress) }
+                            }));
+                        });
+                    } catch (err) {
+                        console.error(`Upload failed for index ${i}:`, err);
+                        throw err;
+                    }
                 });
 
                 const uploadedUrls = await Promise.all(newUploadPromises);
-                imageUrls = isEditMode ? [...imageUrls, ...uploadedUrls] : uploadedUrls;
+                imageUrls = [...existingImages, ...uploadedUrls];
+            } else {
+                imageUrls = [...existingImages];
             }
 
             setUploadProgress('Firestore 저장 중...');
@@ -908,61 +930,66 @@ const UploadModal = ({ onClose, onSave, totalCount, editItem }) => {
                         <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={handleFileSelect} />
 
                         {/* 미리보기 그리드 */}
-                        {previews.length > 0 && (
+                        {allPreviews.length > 0 && (
                             <div className="grid grid-cols-4 gap-2 mt-3">
-                                {previews.map((url, i) => (
-                                    <div key={i} className="relative group aspect-square rounded-xl overflow-hidden"
-                                        style={{ border: i === 0 ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.1)' }}>
-                                        <img src={url} alt="" className="w-full h-full object-cover" />
+                                {allPreviews.map((url, i) => {
+                                    const isExisting = i < existingImages.length;
+                                    const relativeIdx = isExisting ? i : i - existingImages.length;
 
-                                        {/* 개별 업로드 상태 오버레이 */}
-                                        {saving && fileStatuses[i] && (
-                                            <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-2 z-10">
-                                                <div className="text-[7px] text-white/70 font-black uppercase tracking-widest mb-1">
-                                                    {fileStatuses[i].status === 'compressing' ? 'OPTIMIZING' : 'UPLOADING'}
-                                                </div>
-                                                <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden relative">
-                                                    <motion.div
-                                                        className="absolute inset-y-0 left-0 bg-[#6366f1]"
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: `${fileStatuses[i].progress}%` }}
-                                                        transition={{ duration: 0.3 }}
-                                                    />
-                                                    {fileStatuses[i].status === 'compressing' && (
+                                    return (
+                                        <div key={i} className="relative group aspect-square rounded-xl overflow-hidden"
+                                            style={{ border: i === 0 ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.1)' }}>
+                                            <img src={url} alt="" className="w-full h-full object-cover" />
+
+                                            {/* 개별 업로드 상태 오버레이 (새 파일에만 해당) */}
+                                            {saving && !isExisting && fileStatuses[i] && (
+                                                <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-2 z-10">
+                                                    <div className="text-[7px] text-white/70 font-black uppercase tracking-widest mb-1">
+                                                        {fileStatuses[i].status === 'compressing' ? 'OPTIMIZING' : 'UPLOADING'}
+                                                    </div>
+                                                    <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden relative">
                                                         <motion.div
-                                                            className="absolute inset-0 bg-white/20"
-                                                            animate={{ x: ['-100%', '100%'] }}
-                                                            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                                                            className="absolute inset-y-0 left-0 bg-[#6366f1]"
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${fileStatuses[i].progress}%` }}
+                                                            transition={{ duration: 0.3 }}
                                                         />
-                                                    )}
+                                                        {fileStatuses[i].status === 'compressing' && (
+                                                            <motion.div
+                                                                className="absolute inset-0 bg-white/20"
+                                                                animate={{ x: ['-100%', '100%'] }}
+                                                                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                                                            />
+                                                        )}
+                                                    </div>
+                                                    <div className="text-[8px] text-white font-mono mt-1">
+                                                        {fileStatuses[i].progress}%
+                                                    </div>
                                                 </div>
-                                                <div className="text-[8px] text-white font-mono mt-1">
-                                                    {fileStatuses[i].progress}%
-                                                </div>
-                                            </div>
-                                        )}
+                                            )}
 
-                                        {/* 첫 번째 = 대표 배지 */}
-                                        {i === 0 && (
-                                            <div className="absolute top-1 left-1 text-[8px] font-black px-1.5 py-0.5 rounded-full"
-                                                style={{ background: '#6366f1', color: '#fff' }}>MAIN</div>
-                                        )}
-                                        {/* 제거 버튼 */}
-                                        <button onClick={() => removeFile(i)}
-                                            disabled={saving}
-                                            className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all disabled:hidden"
-                                            style={{ background: 'rgba(0,0,0,0.7)' }}>
-                                            <X size={10} color="white" />
-                                        </button>
-                                        {/* 순서 번호 */}
-                                        {!saving && (
-                                            <div className="absolute bottom-1 right-1 text-[8px] font-mono px-1 rounded"
-                                                style={{ background: 'rgba(0,0,0,0.6)', color: 'rgba(255,255,255,0.6)' }}>{i + 1}</div>
-                                        )}
-                                    </div>
-                                ))}
+                                            {/* 첫 번째 = 대표 배지 */}
+                                            {i === 0 && (
+                                                <div className="absolute top-1 left-1 text-[8px] font-black px-1.5 py-0.5 rounded-full"
+                                                    style={{ background: '#6366f1', color: '#fff' }}>MAIN</div>
+                                            )}
+                                            {/* 제거 버튼 */}
+                                            <button onClick={() => removeFile(relativeIdx, !isExisting)}
+                                                disabled={saving}
+                                                className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all disabled:hidden"
+                                                style={{ background: 'rgba(0,0,0,0.7)' }}>
+                                                <X size={10} color="white" />
+                                            </button>
+                                            {/* 순서 번호 */}
+                                            {!saving && (
+                                                <div className="absolute bottom-1 right-1 text-[8px] font-mono px-1 rounded"
+                                                    style={{ background: 'rgba(0,0,0,0.6)', color: 'rgba(255,255,255,0.6)' }}>{i + 1}</div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                                 {/* 추가 버튼 */}
-                                {previews.length < 8 && (
+                                {allPreviews.length < 8 && (
                                     <button onClick={() => fileInputRef.current?.click()}
                                         className="aspect-square rounded-xl flex items-center justify-center transition-all hover:bg-white/8"
                                         style={{ border: '1px dashed rgba(255,255,255,0.15)' }}>
