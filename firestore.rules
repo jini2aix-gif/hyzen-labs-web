@@ -39,7 +39,7 @@ service cloud.firestore {
 
     // Posts collection
     match /artifacts/{appId}/public/data/posts/{postId} {
-      allow read: if isAuthenticated() && !isBanned(appId, request.auth.uid);
+      allow read: if true;
       allow create: if isAuthenticated() && !isBanned(appId, request.auth.uid)
         && request.resource.data.authorId == request.auth.uid
         && isValidText(request.resource.data.title, 200)
@@ -53,7 +53,7 @@ service cloud.firestore {
 
     // Comments sub-collection
     match /artifacts/{appId}/public/data/posts/{postId}/comments/{cid} {
-      allow read: if isAuthenticated() && !isBanned(appId, request.auth.uid);
+      allow read: if true;
       allow create: if isAuthenticated() && !isBanned(appId, request.auth.uid)
         && request.resource.data.authorId == request.auth.uid
         && isValidText(request.resource.data.text, 1000);
@@ -66,7 +66,7 @@ service cloud.firestore {
 
     // HNRC Posts collection
     match /artifacts/{appId}/public/data/hnrc_posts/{postId} {
-      allow read: if isAuthenticated() && !isBanned(appId, request.auth.uid);
+      allow read: if true;
       allow create: if isAuthenticated() && !isBanned(appId, request.auth.uid)
         && request.resource.data.authorId == request.auth.uid;
       allow update: if isAuthenticated() && !isBanned(appId, request.auth.uid);
@@ -77,13 +77,21 @@ service cloud.firestore {
     
     // HNRC Posts Comments sub-collection
     match /artifacts/{appId}/public/data/hnrc_posts/{postId}/comments/{cid} {
-      allow read: if isAuthenticated() && !isBanned(appId, request.auth.uid);
+      allow read: if true;
       allow create: if isAuthenticated() && !isBanned(appId, request.auth.uid)
         && request.resource.data.authorId == request.auth.uid;
       allow update: if isAuthenticated() && !isBanned(appId, request.auth.uid);
       allow delete: if isAuthenticated() && (
         resource.data.authorId == request.auth.uid || isAdmin()
       );
+    }
+
+    // Gallery (Sole Vision) collection
+    match /artifacts/{appId}/public/data/gallery/{docId} {
+      allow read: if true;
+      allow create: if isAdmin() || (isAuthenticated() && !isBanned(appId, request.auth.uid));
+      allow update: if isAdmin() || (isAuthenticated() && !isBanned(appId, request.auth.uid));
+      allow delete: if isAdmin() || (isAuthenticated() && !isBanned(appId, request.auth.uid) && resource.data.authorId == request.auth.uid);
     }
 
     // Games Scores collection
@@ -104,6 +112,11 @@ service cloud.firestore {
       allow create: if isAdmin() ||
         (request.resource.data.keys().hasOnly(['visitorCount'])
          && request.resource.data.visitorCount == 1);
+    }
+
+    // Treasury History
+    match /artifacts/{appId}/public/data/treasury_history/{docId} {
+      allow read, write: if isAuthenticated() && !isBanned(appId, request.auth.uid);
     }
   }
 }

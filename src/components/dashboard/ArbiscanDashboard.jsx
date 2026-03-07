@@ -8,6 +8,8 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     ComposedChart, Line, PieChart, Pie, Cell, Legend
 } from 'recharts';
+import { doc, setDoc, getDocs, collection, query, orderBy, limit } from 'firebase/firestore';
+import { db, appId } from '../../hooks/useFirebase';
 import {
     fetchMarketComparison,
     fetchChainTVLs,
@@ -160,7 +162,7 @@ const ValueGapGauge = ({ index }) => {
 };
 
 // ─── Treasury Card ────────────────────────────────────────────────────────────
-const TreasuryCard = ({ priceKRW, priceUSD, krwRate }) => {
+const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
     const currentValueKRW = TREASURY_ARB * (priceKRW || 0);
     const currentValueUSD = currentValueKRW / (krwRate || 1350);
 
@@ -233,6 +235,46 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate }) => {
                     </div>
                 </div>
 
+                {/* ── Row 3: Historical Chart ── */}
+                {history && history.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-[rgba(212,175,55,0.15)]">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-wider">Treasury Value History (KRW)</div>
+                            <div className="text-[10px] text-gray-500 font-mono tracking-wider">{history.length} Days</div>
+                        </div>
+                        <div className="h-[140px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={history} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorValueKRW" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor={gold} stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor={gold} stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(212,175,55,0.05)" vertical={false} />
+                                    <XAxis dataKey="shortDate" stroke="rgba(212,175,55,0.3)" fontSize={9} tickLine={false} axisLine={false} dy={5} />
+                                    <YAxis
+                                        domain={['auto', 'auto']}
+                                        stroke="rgba(212,175,55,0.3)"
+                                        fontSize={9}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={(val) => `₩${(val / 1e6).toFixed(0)}M`}
+                                        width={45}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(212,175,55,0.3)', borderRadius: '8px' }}
+                                        itemStyle={{ color: gold, fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace' }}
+                                        labelStyle={{ color: '#888', fontSize: '10px', marginBottom: '4px', fontFamily: 'monospace' }}
+                                        formatter={(value) => [`₩${Math.round(value).toLocaleString()}`, 'Value']}
+                                    />
+                                    <Area type="monotone" dataKey="valueKRW" stroke={gold} strokeWidth={2} fillOpacity={1} fill="url(#colorValueKRW)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                )}
+
             </div>
         </motion.div>
     );
@@ -246,7 +288,8 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
         stablecoinHistory: [],
         nativeAlpha: [], gmxSentiment: null, seqMargin: null, m2Elasticity: [],
         arbEthRatio: [],
-        krwRate: 1350
+        krwRate: 1350,
+        treasuryHistory: []
     });
     const [stableTrendDays, setStableTrendDays] = useState(30);
     const [isLoading, setIsLoading] = useState(true);
@@ -277,11 +320,55 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                     fetchArbEthMcapRatio(),
                     fetchKRWRate()
                 ]);
+
+                const today = new Date().toISOString().split('T')[0];
+                const krwRateRes = krwRate || 1350;
+                const currentValueKRW = TREASURY_ARB * market.arb.priceKRW;
+                const currentValueUSD = currentValueKRW / krwRateRes;
+                let th = [];
+
+                if (db && appId) {
+                    try {
+                        const todayRef = doc(db, 'artifacts', appId, 'public', 'data', 'treasury_history', today);
+                        await setDoc(todayRef, {
+                            date: today,
+                            timestamp: Date.now(),
+                            arbAmount: TREASURY_ARB,
+                            priceKRW: market.arb.priceKRW,
+                            krwRate: krwRateRes,
+                            valueKRW: currentValueKRW,
+                            valueUSD: currentValueUSD
+                        }, { merge: true });
+
+                        const qRef = query(
+                            collection(db, 'artifacts', appId, 'public', 'data', 'treasury_history'),
+                            orderBy('timestamp', 'asc'),
+                            limit(90)
+                        );
+                        const snap = await getDocs(qRef);
+                        th = snap.docs.map(d => {
+                            const dData = d.data();
+                            const dObj = new Date(dData.date);
+                            return {
+                                ...dData,
+                                shortDate: `${String(dObj.getMonth() + 1).padStart(2, '0')}/${String(dObj.getDate()).padStart(2, '0')}`
+                            };
+                        });
+
+                        // Recharts AreaChart requires at least 2 points to render an area/line
+                        if (th.length === 1) {
+                            th.push({ ...th[0], shortDate: 'Now' });
+                        }
+                    } catch (err) {
+                        console.error('Treasury history sync failed', err);
+                    }
+                }
+
                 setData({
                     market, tvlData, supply, histPrice, histTvl, monthlyPrice,
                     protocols, stablecoins, yields, stablecoinHistory,
                     nativeAlpha, gmxSentiment, seqMargin, m2Elasticity,
-                    arbEthRatio, krwRate
+                    arbEthRatio, krwRate: krwRateRes, treasuryHistory: th
                 });
             } catch (e) {
                 console.error("Dashboard Data Load Error", e);
@@ -362,6 +449,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                     priceKRW={arb.priceKRW}
                     priceUSD={arb.priceUSD}
                     krwRate={data.krwRate}
+                    history={data.treasuryHistory}
                 />
 
                 {/* ── ARB / ETH Mcap Ratio Chart ── */}
@@ -418,7 +506,12 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                                     tick={{ fill: '#4B5563', fontSize: 10, fontFamily: 'monospace' }}
                                     tickLine={false} axisLine={false}
                                     interval="preserveStartEnd"
-                                    minTickGap={45}
+                                    minTickGap={65}
+                                    tickFormatter={(str) => {
+                                        // e.g. "2024-05-12" -> "05-12"
+                                        if (str?.length > 7) return str.substring(5);
+                                        return str;
+                                    }}
                                 />
                                 <YAxis
                                     tick={{ fill: '#4B5563', fontSize: 10, fontFamily: 'monospace' }}

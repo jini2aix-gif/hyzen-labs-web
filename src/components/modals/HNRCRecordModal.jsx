@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, MapPin, Send, Save, Clock, Zap } from 'lucide-react';
+import { X, Camera, MapPin, Send, Save, Clock, Zap, ChevronRight, ChevronLeft } from 'lucide-react';
 
 const WheelPicker = ({ items, value, onChange, label }) => {
     const scrollRef = useRef(null);
@@ -68,7 +68,28 @@ const HNRCRecordModal = ({ isOpen, onClose, user, onSubmit, initialData }) => {
     const [seconds, setSeconds] = useState(0);
 
     const [imagePreview, setImagePreview] = useState(null);
+    const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+    const scrollRef = useRef(null);
     const fileInputRef = useRef(null);
+
+    const handleScroll = (e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+        const canScroll = scrollHeight > clientHeight;
+        const isAtBottom = scrollTop + clientHeight >= scrollHeight - 30;
+        setShowScrollIndicator(canScroll && !isAtBottom);
+    };
+
+    useEffect(() => {
+        if (isOpen) {
+            const timer = setTimeout(() => {
+                if (scrollRef.current) {
+                    const { scrollHeight, clientHeight } = scrollRef.current;
+                    setShowScrollIndicator(scrollHeight > clientHeight);
+                }
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
 
     const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
@@ -176,16 +197,38 @@ const HNRCRecordModal = ({ isOpen, onClose, user, onSubmit, initialData }) => {
                     exit={{ y: '100%' }}
                     transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                     onClick={(e) => e.stopPropagation()}
-                    className="relative w-full max-w-lg bg-white rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
+                    className="relative w-full max-w-lg bg-white rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh] relative"
                 >
-                    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                    {/* Scroll Indicator */}
+                    <AnimatePresence>
+                        {showScrollIndicator && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                className="absolute bottom-20 left-1/2 -translate-x-1/2 z-[70] pointer-events-none"
+                            >
+                                <div className="bg-white/10 backdrop-blur-xl text-indigo-700/80 py-1.5 px-4 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.08)] flex items-center gap-2 animate-bounce border border-white/40">
+                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] whitespace-nowrap">Scroll for Details</span>
+                                    <div className="rotate-90"><ChevronLeft size={10} className="rotate-90" strokeWidth={3} /></div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10 shrink-0">
                         <h3 className="text-xl font-black text-gray-900 tracking-tight">러닝 기록</h3>
                         <button onClick={onClose} className="p-2 bg-gray-50 rounded-full text-gray-500 hover:bg-gray-100 transition-colors">
                             <X size={20} />
                         </button>
                     </div>
 
-                    <div className="p-6 overflow-y-auto overflow-x-hidden custom-scrollbar" style={{ touchAction: 'pan-y' }}>
+                    <div
+                        ref={scrollRef}
+                        onScroll={handleScroll}
+                        className="p-6 overflow-y-auto overflow-x-hidden custom-scrollbar"
+                        style={{ touchAction: 'pan-y' }}
+                    >
                         <form id="hnrc-form" onSubmit={handleSubmit} className="space-y-6">
 
                             {/* Stats Display Pane */}

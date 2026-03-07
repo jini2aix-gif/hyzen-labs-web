@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, User, Save, Loader2, Activity, Camera, Trash2, AlertTriangle } from 'lucide-react';
+import { X, User, Save, Loader2, Activity, Camera, Trash2, AlertTriangle, ChevronRight } from 'lucide-react';
 import { updateProfile, deleteUser, reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider, GoogleAuthProvider } from 'firebase/auth';
 import { collection, query, where, getDocs, getCountFromServer, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db, appId, auth } from '../../hooks/useFirebase';
@@ -21,6 +21,27 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
     const [deletePasswordInput, setDeletePasswordInput] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState('');
+    const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+    const scrollRef = useRef(null);
+
+    const handleScroll = (e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+        const canScroll = scrollHeight > clientHeight;
+        const isAtBottom = scrollTop + clientHeight >= scrollHeight - 30;
+        setShowScrollIndicator(canScroll && !isAtBottom);
+    };
+
+    useEffect(() => {
+        if (isOpen) {
+            const timer = setTimeout(() => {
+                if (scrollRef.current) {
+                    const { scrollHeight, clientHeight } = scrollRef.current;
+                    setShowScrollIndicator(scrollHeight > clientHeight);
+                }
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
 
     useEffect(() => {
         if (isOpen && user) {
@@ -230,18 +251,45 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+                    className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] relative"
                     onClick={e => e.stopPropagation()}
                 >
-                    {/* Header */}
-                    <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                        <h2 className="text-xl font-bold font-brand tracking-tight text-gray-900">마이페이지</h2>
-                        <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-black">
+                    {/* Universal Close Button - Fixed in Header */}
+                    <div className="absolute top-4 right-4 z-[70] md:hidden">
+                        <button onClick={onClose} className="p-2.5 bg-gray-100 rounded-full text-gray-500 active:scale-90">
                             <X size={20} />
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    {/* Scroll Indicator */}
+                    <AnimatePresence>
+                        {showScrollIndicator && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[70] pointer-events-none"
+                            >
+                                <div className="bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 animate-bounce border border-white/10">
+                                    <span className="text-[10px] font-black uppercase tracking-widest">More Details Below</span>
+                                    <div className="rotate-90"><ChevronRight size={12} /></div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                    {/* Header */}
+                    <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0">
+                        <h2 className="text-xl font-bold font-brand tracking-tight text-gray-900">마이페이지</h2>
+                        <button onClick={onClose} className="hidden md:flex p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-black">
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    <div
+                        ref={scrollRef}
+                        onScroll={handleScroll}
+                        className="flex-1 overflow-y-auto custom-scrollbar"
+                    >
                         <div className="p-6">
 
                             {/* ── Section 1: Profile ── */}

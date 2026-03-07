@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import {
     Download, X, ZoomIn, ChevronLeft, ChevronRight,
@@ -11,7 +12,7 @@ import {
     query, orderBy, startAfter, limit,
     serverTimestamp
 } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useFirebase, db, appId } from '../../hooks/useFirebase';
 import { ADMIN_EMAIL } from '../admin/AdminPanel';
 
@@ -29,8 +30,8 @@ const getAccentColor = (index) => ACCENT_COLORS[index % ACCENT_COLORS.length];
 
 // ── 카드 높이 계산 ────────────────────────────────────────────────────────────
 const getCardHeight = (aspect) => {
-    const map = { '16:9': 200, '4:3': 240, '1:1': 240, '3:4': 300, '2:3': 300 };
-    return `${map[aspect] || 240}px`;
+    // Return a fixed height for all cards to ensure uniformity on the grid
+    return "320px";
 };
 
 // ── 은하수 파티클 캔버스 ────────────────────────────────────────────────────────
@@ -260,10 +261,10 @@ const GalleryCard = ({ item, index, onOpen, viewMode }) => {
                 onMouseLeave={() => setIsHovered(false)}
                 onClick={() => onOpen(item)}
             >
-                <div className="w-20 h-14 rounded-xl overflow-hidden flex-shrink-0"
+                <div className="w-20 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-white/5"
                     style={{ border: `1px solid ${item.accentColor}30` }}>
                     {item.imageUrl
-                        ? <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                        ? <img src={item.imageUrl} alt={item.title} className="w-full h-full object-contain" />
                         : <PlaceholderCard item={item} isHovered={false} />}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -311,9 +312,9 @@ const GalleryCard = ({ item, index, onOpen, viewMode }) => {
                 transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             >
                 {/* Image */}
-                <div className="absolute inset-0">
+                <div className="absolute inset-0 bg-white/5">
                     {item.imageUrl
-                        ? <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover transition-transform duration-700"
+                        ? <img src={item.imageUrl} alt={item.title} className="w-full h-full object-contain transition-transform duration-700"
                             style={{ transform: isHovered ? 'scale(1.05)' : 'scale(1)' }} />
                         : <PlaceholderCard item={item} isHovered={isHovered} />}
                 </div>
@@ -384,6 +385,8 @@ const GalleryCard = ({ item, index, onOpen, viewMode }) => {
 const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) => {
     const [idx, setIdx] = useState(allItems.findIndex(i => i.id === item.id));
     const [imgIdx, setImgIdx] = useState(0); // 현재 작품의 이미지 인덱스
+    const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+    const scrollRef = useRef(null);
     const cur = allItems[idx] ?? item;
 
     // 현재 작품의 이미지 목록: images[] 우선, 없으면 imageUrl 단일
@@ -411,7 +414,25 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
         return () => window.removeEventListener('keydown', h);
     }, [goNextImg, goPrevImg, goNextItem, goPrevItem, images.length, onClose]);
 
-    return (
+    const handleScroll = (e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+        const canScroll = scrollHeight > clientHeight;
+        const isAtBottom = scrollTop + clientHeight >= scrollHeight - 30;
+        setShowScrollIndicator(canScroll && !isAtBottom);
+    };
+
+    useEffect(() => {
+        // LightBox content check
+        const timer = setTimeout(() => {
+            if (scrollRef.current) {
+                const { scrollHeight, clientHeight } = scrollRef.current;
+                setShowScrollIndicator(scrollHeight > clientHeight);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [idx]);
+
+    return createPortal(
         <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[9999] flex items-center justify-center"
@@ -429,18 +450,37 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
             {images.length <= 1 && allItems.length > 1 && ['left', 'right'].map(dir => (
                 <button key={dir}
                     onClick={e => { e.stopPropagation(); dir === 'left' ? goPrevItem() : goNextItem(); }}
-                    className={`absolute ${dir === 'left' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center z-20 hover:bg-white/10 transition-all`}
+                    className={`absolute ${dir === 'left' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center z-[150] hover:bg-white/10 transition-all`}
                     style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
                     {dir === 'left' ? <ChevronLeft size={20} color="white" /> : <ChevronRight size={20} color="white" />}
                 </button>
             ))}
+
+            {/* Scroll Indicator */}
+            <AnimatePresence>
+                {showScrollIndicator && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[200] pointer-events-none md:hidden"
+                    >
+                        <div className="bg-white/10 backdrop-blur-xl text-white/90 py-2.5 px-6 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.3)] flex items-center gap-2.5 animate-bounce border border-white/20">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap">Scroll for Details</span>
+                            <div className="rotate-90"><ChevronRight size={14} strokeWidth={3} /></div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <AnimatePresence mode="wait">
                 <motion.div
                     key={cur.id}
                     initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.22 }}
-                    className="flex flex-col md:flex-row gap-5 w-full max-w-5xl mx-4 md:mx-14 max-h-[92vh]"
+                    className="flex flex-col md:flex-row gap-5 w-full max-w-5xl mx-4 md:mx-14 max-h-[92vh] overflow-y-auto custom-scrollbar relative"
+                    ref={scrollRef}
+                    onScroll={handleScroll}
                     onClick={e => e.stopPropagation()}
                     style={{ paddingTop: '4px' }}
                 >
@@ -454,7 +494,7 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
                                     exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
                                     className="absolute inset-0">
                                     {images[imgIdx]
-                                        ? <img src={images[imgIdx]} alt={`${cur.title} ${imgIdx + 1}`} className="w-full h-full object-cover" />
+                                        ? <img src={images[imgIdx]} alt={`${cur.title} ${imgIdx + 1}`} className="w-full h-full object-contain" />
                                         : <div className="w-full h-full" style={{ minHeight: '300px' }}><PlaceholderCard item={cur} isHovered /></div>
                                     }
                                 </motion.div>
@@ -532,7 +572,7 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
 
                         <div className="flex flex-col gap-2">
                             <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                                onClick={() => onDownload(cur)}
+                                onClick={() => onDownload(images[imgIdx], cur.title)}
                                 className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest"
                                 style={{ background: `linear-gradient(135deg, ${cur.accentColor}, ${cur.accentColor}cc)`, color: '#000', boxShadow: `0 4px 18px ${cur.accentColor}40` }}>
                                 <Download size={13} /> Download
@@ -574,31 +614,59 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
                     </div>
                 </motion.div>
             </AnimatePresence>
-        </motion.div>
+        </motion.div>,
+        document.body
     );
 };
 
 
-// ── Firebase Storage 업로드 헬퍼 ─────────────────────────────────────────────
-const uploadImageToStorage = async (file, path) => {
-    try {
-        const storage = getStorage();
-        const fileRef = storageRef(storage, path);
-        const snap = await uploadBytes(fileRef, file);
-        return await getDownloadURL(snap.ref);
-    } catch (e) {
-        console.warn('Storage upload failed, using object URL fallback:', e);
-        // Storage CORS or permissions issue → return local object URL as fallback
-        return URL.createObjectURL(file);
-    }
+// ── 유틸: 이미지 압축 ──────────────────────────────────────────────────────────
+const compressImage = (file, maxWidth = 1280, quality = 0.8) => {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = (maxWidth / width) * height;
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
+                }, 'image/jpeg', quality);
+            };
+        };
+    });
 };
 
+// ── Firebase Storage 업로드 헬퍼 ─────────────────────────────────────────────
+const uploadImageToStorage = async (file, path) => {
+    const storage = getStorage();
+    const fileRef = storageRef(storage, `artifacts/${appId}/public/data/${path}`);
+    const snapshot = await uploadBytes(fileRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    return downloadURL;
+};
 // ── 업로드 모달 (관리자 전용) ─────────────────────────────────────────────────
 const UploadModal = ({ onClose, onSave, totalCount }) => {
     const [form, setForm] = useState({
         title: '', subtitle: '', year: String(new Date().getFullYear()),
-        tags: '', aspect: '4:3', description: '',
+        tags: '', description: '',
     });
+    const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+    const scrollRef = useRef(null);
     // 선택된 파일 목록 (File[])
     const [files, setFiles] = useState([]);
     // 미리보기 ObjectURL 목록
@@ -629,7 +697,25 @@ const UploadModal = ({ onClose, onSave, totalCount }) => {
     };
 
     // Cleanup on unmount
-    useEffect(() => () => previews.forEach(p => URL.revokeObjectURL(p)), []);
+    useEffect(() => {
+        if (onClose) {
+            const timer = setTimeout(() => {
+                if (scrollRef.current) {
+                    const { scrollHeight, clientHeight } = scrollRef.current;
+                    setShowScrollIndicator(scrollHeight > clientHeight);
+                }
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+        return () => previews.forEach(p => URL.revokeObjectURL(p));
+    }, []);
+
+    const handleScroll = (e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+        const canScroll = scrollHeight > clientHeight;
+        const isAtBottom = scrollTop + clientHeight >= scrollHeight - 30;
+        setShowScrollIndicator(canScroll && !isAtBottom);
+    };
 
     const handleSave = async () => {
         if (!form.title.trim()) return alert('제목을 입력해주세요.');
@@ -638,14 +724,19 @@ const UploadModal = ({ onClose, onSave, totalCount }) => {
         try {
             const colorIndex = totalCount % ACCENT_COLORS.length;
             const timestamp = Date.now();
-            const imageUrls = [];
 
+            setUploadProgress(`준비 중... (0/${files.length})`);
+
+            // 압축 및 업로드 순차 처리가 더 안정적일 수 있음 (UI 업데이트를 위해)
+            const imageUrls = [];
             for (let i = 0; i < files.length; i++) {
-                setUploadProgress(`이미지 업로드 중... ${i + 1}/${files.length}`);
-                const ext = files[i].name.split('.').pop();
+                setUploadProgress(`이미지 처리 중... (${i + 1}/${files.length})`);
+                const compressed = await compressImage(files[i]);
+                const ext = 'jpg';
                 const path = `gallery/${appId}/${timestamp}_${i}.${ext}`;
-                const url = await uploadImageToStorage(files[i], path);
+                const url = await uploadImageToStorage(compressed, path);
                 imageUrls.push(url);
+                setUploadProgress(`업로드 완료... (${i + 1}/${files.length})`);
             }
 
             setUploadProgress('Firestore 저장 중...');
@@ -658,153 +749,172 @@ const UploadModal = ({ onClose, onSave, totalCount }) => {
             });
             onClose();
         } catch (err) {
-            console.error(err);
-            alert('저장 중 오류가 발생했습니다.');
+            console.error('Upload Error:', err);
+            alert(`저장 중 오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
         } finally {
             setSaving(false);
             setUploadProgress('');
         }
     };
 
-    return (
+    return createPortal(
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[9999] flex items-center justify-center"
             style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(24px)' }}
             onClick={onClose}>
             <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }}
-                className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-lg mx-4 max-h-[92vh] overflow-y-auto"
+                className="bg-[#111] border border-white/10 rounded-3xl w-full max-w-lg mx-4 max-h-[90vh] flex flex-col relative overflow-hidden"
                 onClick={e => e.stopPropagation()}>
 
-                {/* Header */}
-                <div className="flex items-center justify-between mb-5">
+                {/* Scroll Indicator */}
+                <AnimatePresence>
+                    {showScrollIndicator && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="absolute bottom-24 left-1/2 -translate-x-1/2 z-[100] pointer-events-none"
+                        >
+                            <div className="bg-white/10 backdrop-blur-xl text-indigo-400 py-1.5 px-4 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.3)] flex items-center gap-2 animate-bounce border border-white/20">
+                                <span className="text-[9px] font-black uppercase tracking-[0.2em] whitespace-nowrap">Scroll for More</span>
+                                <div className="rotate-90"><ChevronRight size={12} strokeWidth={3} /></div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Header - Fixed */}
+                <div className="p-6 border-b border-white/5 flex items-center justify-between shrink-0 bg-[#111] z-10">
                     <div>
                         <h3 className="text-white font-black text-lg tracking-tight">새 작품 추가</h3>
                         <p className="text-white/30 text-xs mt-0.5">총 {totalCount}개 · 최대 8장까지 업로드</p>
                     </div>
-                    <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10">
+                    <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors">
                         <X size={14} color="white" />
                     </button>
                 </div>
 
-                {/* ── 이미지 업로드 영역 ── */}
-                <div className="mb-4">
-                    <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest block mb-2">이미지 파일 (최대 8장) *</label>
+                <div
+                    ref={scrollRef}
+                    onScroll={handleScroll}
+                    className="flex-1 overflow-y-auto custom-scrollbar p-6"
+                >
 
-                    {/* 드롭존 */}
-                    <div
-                        onClick={() => fileInputRef.current?.click()}
-                        onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'rgba(99,102,241,0.6)'; }}
-                        onDragLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
-                        onDrop={e => {
-                            e.preventDefault();
-                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
-                            const dt = e.dataTransfer;
-                            if (dt.files.length) handleFileSelect({ target: { files: dt.files, value: '' } });
-                        }}
-                        className="cursor-pointer rounded-2xl flex flex-col items-center justify-center gap-2 py-6 transition-all hover:bg-white/5"
-                        style={{ border: '2px dashed rgba(255,255,255,0.1)', minHeight: '100px' }}>
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                            style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)' }}>
-                            <Upload size={18} color="#818cf8" />
+                    {/* ── 이미지 업로드 영역 ── */}
+                    <div className="mb-4">
+                        <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest block mb-2">이미지 파일 (최대 8장) *</label>
+
+                        {/* 드롭존 */}
+                        <div
+                            onClick={() => fileInputRef.current?.click()}
+                            onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'rgba(99,102,241,0.6)'; }}
+                            onDragLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                            onDrop={e => {
+                                e.preventDefault();
+                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                                const dt = e.dataTransfer;
+                                if (dt.files.length) handleFileSelect({ target: { files: dt.files, value: '' } });
+                            }}
+                            className="cursor-pointer rounded-2xl flex flex-col items-center justify-center gap-2 py-6 transition-all hover:bg-white/5"
+                            style={{ border: '2px dashed rgba(255,255,255,0.1)', minHeight: '100px' }}>
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                                style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)' }}>
+                                <Upload size={18} color="#818cf8" />
+                            </div>
+                            <p className="text-white/40 text-xs">클릭하거나 파일을 드래그 하세요</p>
+                            <p className="text-white/20 text-[10px]">JPG, PNG, WebP · 최대 8장</p>
                         </div>
-                        <p className="text-white/40 text-xs">클릭하거나 파일을 드래그 하세요</p>
-                        <p className="text-white/20 text-[10px]">JPG, PNG, WebP · 최대 8장</p>
-                    </div>
-                    <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={handleFileSelect} />
+                        <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={handleFileSelect} />
 
-                    {/* 미리보기 그리드 */}
-                    {previews.length > 0 && (
-                        <div className="grid grid-cols-4 gap-2 mt-3">
-                            {previews.map((url, i) => (
-                                <div key={i} className="relative group aspect-square rounded-xl overflow-hidden"
-                                    style={{ border: i === 0 ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.1)' }}>
-                                    <img src={url} alt="" className="w-full h-full object-cover" />
-                                    {/* 첫 번째 = 대표 배지 */}
-                                    {i === 0 && (
-                                        <div className="absolute top-1 left-1 text-[8px] font-black px-1.5 py-0.5 rounded-full"
-                                            style={{ background: '#6366f1', color: '#fff' }}>MAIN</div>
-                                    )}
-                                    {/* 제거 버튼 */}
-                                    <button onClick={() => removeFile(i)}
-                                        className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-                                        style={{ background: 'rgba(0,0,0,0.7)' }}>
-                                        <X size={10} color="white" />
+                        {/* 미리보기 그리드 */}
+                        {previews.length > 0 && (
+                            <div className="grid grid-cols-4 gap-2 mt-3">
+                                {previews.map((url, i) => (
+                                    <div key={i} className="relative group aspect-square rounded-xl overflow-hidden"
+                                        style={{ border: i === 0 ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.1)' }}>
+                                        <img src={url} alt="" className="w-full h-full object-cover" />
+                                        {/* 첫 번째 = 대표 배지 */}
+                                        {i === 0 && (
+                                            <div className="absolute top-1 left-1 text-[8px] font-black px-1.5 py-0.5 rounded-full"
+                                                style={{ background: '#6366f1', color: '#fff' }}>MAIN</div>
+                                        )}
+                                        {/* 제거 버튼 */}
+                                        <button onClick={() => removeFile(i)}
+                                            className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                                            style={{ background: 'rgba(0,0,0,0.7)' }}>
+                                            <X size={10} color="white" />
+                                        </button>
+                                        {/* 순서 번호 */}
+                                        <div className="absolute bottom-1 right-1 text-[8px] font-mono px-1 rounded"
+                                            style={{ background: 'rgba(0,0,0,0.6)', color: 'rgba(255,255,255,0.6)' }}>{i + 1}</div>
+                                    </div>
+                                ))}
+                                {/* 추가 버튼 */}
+                                {previews.length < 8 && (
+                                    <button onClick={() => fileInputRef.current?.click()}
+                                        className="aspect-square rounded-xl flex items-center justify-center transition-all hover:bg-white/8"
+                                        style={{ border: '1px dashed rgba(255,255,255,0.15)' }}>
+                                        <Plus size={18} color="rgba(255,255,255,0.3)" />
                                     </button>
-                                    {/* 순서 번호 */}
-                                    <div className="absolute bottom-1 right-1 text-[8px] font-mono px-1 rounded"
-                                        style={{ background: 'rgba(0,0,0,0.6)', color: 'rgba(255,255,255,0.6)' }}>{i + 1}</div>
-                                </div>
-                            ))}
-                            {/* 추가 버튼 */}
-                            {previews.length < 8 && (
-                                <button onClick={() => fileInputRef.current?.click()}
-                                    className="aspect-square rounded-xl flex items-center justify-center transition-all hover:bg-white/8"
-                                    style={{ border: '1px dashed rgba(255,255,255,0.15)' }}>
-                                    <Plus size={18} color="rgba(255,255,255,0.3)" />
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
 
-                {/* ── 텍스트 필드 ── */}
-                <div className="space-y-3">
-                    {[
-                        { key: 'title', label: '제목 *', placeholder: 'VOID RUNNER 002' },
-                        { key: 'subtitle', label: '시리즈명', placeholder: 'Dark Matter Series' },
-                        { key: 'tags', label: '태그 (쉼표 구분)', placeholder: 'Carbon Fiber, Limited, Speed' },
-                        { key: 'description', label: '설명', placeholder: '디자인 컨셉 설명...' },
-                    ].map(({ key, label, placeholder }) => (
-                        <div key={key}>
-                            <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest block mb-1">{label}</label>
-                            {key === 'description'
-                                ? <textarea rows={2} value={form[key]} placeholder={placeholder}
-                                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-500/50 resize-none placeholder-white/20" />
-                                : <input value={form[key]} placeholder={placeholder}
-                                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-500/50 placeholder-white/20" />}
-                        </div>
-                    ))}
+                    {/* ── 텍스트 필드 ── */}
+                    <div className="space-y-3">
+                        {[
+                            { key: 'title', label: '제목 *', placeholder: 'VOID RUNNER 002' },
+                            { key: 'subtitle', label: '시리즈명', placeholder: 'Dark Matter Series' },
+                            { key: 'tags', label: '태그 (쉼표 구분)', placeholder: 'Carbon Fiber, Limited, Speed' },
+                            { key: 'description', label: '설명', placeholder: '디자인 컨셉 설명...' },
+                        ].map(({ key, label, placeholder }) => (
+                            <div key={key}>
+                                <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest block mb-1">{label}</label>
+                                {key === 'description'
+                                    ? <textarea rows={2} value={form[key]} placeholder={placeholder}
+                                        onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-500/50 resize-none placeholder-white/20" />
+                                    : <input value={form[key]} placeholder={placeholder}
+                                        onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-500/50 placeholder-white/20" />}
+                            </div>
+                        ))}
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest block mb-1">연도</label>
-                            <select value={form.year} onChange={e => setForm(f => ({ ...f, year: e.target.value }))}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-500/50">
-                                {['2024', '2025', '2026', '2027'].map(y => <option key={y} value={y}>{y}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest block mb-1">비율</label>
-                            <select value={form.aspect} onChange={e => setForm(f => ({ ...f, aspect: e.target.value }))}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-500/50">
-                                {['16:9', '4:3', '1:1', '3:4', '2:3'].map(a => <option key={a} value={a}>{a}</option>)}
-                            </select>
+                        <div className="grid grid-cols-1 gap-3">
+                            <div>
+                                <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest block mb-1">연도</label>
+                                <select value={form.year} onChange={e => setForm(f => ({ ...f, year: e.target.value }))}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-500/50">
+                                    {['2024', '2025', '2026', '2027'].map(y => <option key={y} value={y}>{y}</option>)}
+                                </select>
+                            </div>
                         </div>
                     </div>
+
                 </div>
 
-                {/* ── 저장 버튼 ── */}
-                <div className="flex gap-2 mt-5">
+                {/* ── Footer - Fixed ── */}
+                <div className="p-6 border-t border-white/5 flex gap-2 shrink-0 bg-[#111] z-10">
                     <button onClick={onClose} disabled={saving}
-                        className="flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest text-white/40 border border-white/10 hover:bg-white/5 transition-all disabled:opacity-40">
+                        className="flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-widest text-white/40 border border-white/10 hover:bg-white/5 transition-all disabled:opacity-40">
                         취소
                     </button>
                     <button onClick={handleSave} disabled={saving}
-                        className="flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                        className="flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg shadow-indigo-500/10"
                         style={{ background: 'linear-gradient(135deg, #6366f1, #0ea5e9)', color: '#fff' }}>
                         {saving ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
                         {saving ? (uploadProgress || '업로드 중...') : `업로드 (${files.length}장)`}
                     </button>
                 </div>
             </motion.div>
-        </motion.div>
+        </motion.div>,
+        document.body
     );
 };
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────────────────────
-const ShoesGallery = () => {
+const ShoesGallery = ({ onModalChange }) => {
     const { user } = useFirebase();
     const isAdmin = user?.email === ADMIN_EMAIL;
 
@@ -819,6 +929,10 @@ const ShoesGallery = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
     const [showUpload, setShowUpload] = useState(false);
+
+    useEffect(() => {
+        if (onModalChange) onModalChange(!!selectedItem || showUpload);
+    }, [selectedItem, showUpload, onModalChange]);
 
     const containerRef = useRef(null);
     const loaderRef = useRef(null);
@@ -905,31 +1019,71 @@ const ShoesGallery = () => {
         if (!db || !appId) return;
         try {
             const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'gallery');
-            await addDoc(colRef, { ...data, createdAt: serverTimestamp() });
+            const docData = {
+                ...data,
+                authorId: user?.uid || 'anonymous',
+                authorEmail: user?.email || '',
+                createdAt: serverTimestamp()
+            };
+            await addDoc(colRef, docData);
+
             // 새 항목 추가 후 목록 다시 로드
             const q = query(colRef, orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
             const snap = await getDocs(q);
             setItems(snap.docs.map((d, i) => ({ id: d.id, ...d.data(), accentColor: d.data().accentColor || getAccentColor(i) })));
             setLastDoc(snap.docs[snap.docs.length - 1] || null);
             setHasMore(snap.docs.length === PAGE_SIZE);
-        } catch (err) { console.error('handleSave error', err); }
-    }, [db, appId]);
+        } catch (err) {
+            console.error('handleSave error', err);
+            alert('Firestore 저장에 실패했습니다: ' + err.message);
+        }
+    }, [db, appId, user]);
 
     // ── 삭제 ─────────────────────────────────────────────────────────────────
     const handleDelete = useCallback(async (item) => {
-        if (!db || !appId || !confirm(`"${item.title}" 을(를) 삭제하시겠습니까?`)) return;
+        if (!db || !appId) return;
+
+        // Fallback 데이터는 삭제 불가 안내
+        if (item.id.toString().startsWith('f')) {
+            alert('기본 샘플 데이터는 삭제할 수 없습니다.');
+            return;
+        }
+
+        if (!confirm(`"${item.title}" 을(를) 삭제하시겠습니까?`)) return;
+
         try {
+            // 1. Firebase Storage 이미지 삭제 (있는 경우)
+            const storage = getStorage();
+            const targets = item.images?.length ? item.images : (item.imageUrl ? [item.imageUrl] : []);
+
+            for (const url of targets) {
+                // 저장소 URL인 경우만 삭제 시도 (외부 링크일 가능성 대비)
+                if (url.includes('firebasestorage.googleapis.com')) {
+                    try {
+                        const fileRef = storageRef(storage, url);
+                        await deleteObject(fileRef);
+                    } catch (e) {
+                        console.warn('Storage image delete failed:', e);
+                    }
+                }
+            }
+
+            // 2. Firestore 문서 삭제
             await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'gallery', item.id));
             setItems(prev => prev.filter(x => x.id !== item.id));
-        } catch (err) { console.error('handleDelete error', err); }
+            alert('기록이 성공적으로 삭제되었습니다.');
+        } catch (err) {
+            console.error('handleDelete error', err);
+            alert(`삭제 중 오류가 발생했습니다: ${err.message}`);
+        }
     }, [db, appId]);
 
     // ── 다운로드 ─────────────────────────────────────────────────────────────
-    const handleDownload = useCallback((item) => {
-        if (item.imageUrl) {
+    const handleDownload = useCallback((url, title) => {
+        if (url) {
             const a = document.createElement('a');
-            a.href = item.imageUrl;
-            a.download = `${(item.title || 'design').replace(/\s+/g, '_')}_SoleVision.jpg`;
+            a.href = url;
+            a.download = `${(title || 'design').replace(/\s+/g, '_')}_SoleVision.jpg`;
             a.click();
         } else {
             alert('⚠️ 이미지가 아직 준비 중입니다.');
@@ -1165,12 +1319,12 @@ const ShoesGallery = () => {
 
 // ── Fallback 데이터 (Firestore 연결 전) ──────────────────────────────────────
 const FALLBACK_ITEMS = [
-    { id: 'f1', title: 'VOID RUNNER 001', subtitle: 'Dark Matter Series', year: '2025', medium: 'AI Generative · Midjourney', tags: ['Carbon Fiber', 'Void Edition', 'Limited'], description: '빛을 흡수하는 소재와 에어로다이나믹 구조를 결합한 다크 매터 시리즈의 첫 작품.', aspect: '4:3' },
-    { id: 'f2', title: 'LUNAR SPRINT X', subtitle: 'Celestial Collection', year: '2025', medium: 'AI Generative · Stable Diffusion', tags: ['Lunar', 'Ultralight', 'Marathon'], description: '달 표면의 텍스처에서 영감받아 탄생한 초경량 마라톤화.', aspect: '3:4' },
-    { id: 'f3', title: 'NEON GHOST RUN', subtitle: 'Cyberpunk Edition', year: '2024', medium: 'AI Generative · DALL·E 3', tags: ['Neon', 'Night Run', 'Urban'], description: '도시의 밤을 지배하는 사이버펑크 러닝화.', aspect: '4:3' },
-    { id: 'f4', title: 'TERRA PULSE', subtitle: 'Trail Series', year: '2025', medium: 'AI Generative · Firefly', tags: ['Trail', 'Grip+', 'All-terrain'], description: '거친 산악 지형을 위한 오프로드 퍼포먼스화.', aspect: '1:1' },
-    { id: 'f5', title: 'CHROME VELOCITY', subtitle: 'Speed Series', year: '2026', medium: 'AI Generative · Midjourney', tags: ['Chrome', 'Speed', 'Record'], description: '크롬 메탈릭 피니시와 초소형 카본 플레이트로 완성된 기록 갱신을 위한 신발.', aspect: '4:3' },
-    { id: 'f6', title: 'SAKURA DRIFT', subtitle: 'Blossom Edition', year: '2025', medium: 'AI Generative · Stable Diffusion', tags: ['Sakura', 'Spring', 'Limited'], description: '벚꽃의 순간적인 아름다움을 담은 스프링 리미티드 에디션.', aspect: '3:4' },
+    { id: 'f1', title: 'VOID RUNNER 001', subtitle: 'Deep Space Series', year: '2024', medium: 'AI Generative · Midjourney', tags: ['Futuristic', 'Neon', 'Void'], description: '우주 심연의 공허함을 형상화한 익스트림 퍼포먼스 슈즈.' },
+    { id: 'f2', title: 'LUNAR SPRINT X', subtitle: 'Celestial Collection', year: '2025', medium: 'AI Generative · Stable Diffusion', tags: ['Lunar', 'Ultralight', 'Marathon'], description: '달 표면의 텍스처에서 영감받아 탄생한 초경량 마라톤화.' },
+    { id: 'f3', title: 'NEON GHOST RUN', subtitle: 'Cyberpunk Edition', year: '2024', medium: 'AI Generative · DALL·E 3', tags: ['Neon', 'Night Run', 'Urban'], description: '도시의 밤을 지배하는 사이버펑크 러닝화.' },
+    { id: 'f4', title: 'TERRA PULSE', subtitle: 'Trail Series', year: '2025', medium: 'AI Generative · Firefly', tags: ['Trail', 'Grip+', 'All-terrain'], description: '거친 산악 지형을 위한 오프로드 퍼포먼스화.' },
+    { id: 'f5', title: 'CHROME VELOCITY', subtitle: 'Speed Series', year: '2026', medium: 'AI Generative · Midjourney', tags: ['Chrome', 'Speed', 'Record'], description: '크롬 메탈릭 피니시와 초소형 카본 플레이트로 완성된 기록 갱신을 위한 신발.' },
+    { id: 'f6', title: 'SAKURA DRIFT', subtitle: 'Blossom Edition', year: '2025', medium: 'AI Generative · Stable Diffusion', tags: ['Sakura', 'Spring', 'Limited'], description: '벚꽃의 순간적인 아름다움을 담은 스프링 리미티드 에디션.' },
 ];
 
 export default ShoesGallery;

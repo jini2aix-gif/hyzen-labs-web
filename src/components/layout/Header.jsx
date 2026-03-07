@@ -50,7 +50,7 @@ const VisitorCounter = () => {
     );
 };
 
-const Header = ({ onOpenMyPage, onOpenLoginModal, currentIndex, onNavigate }) => {
+const Header = ({ onOpenMyPage, onOpenAuthModal, currentIndex, onNavigate, hidden }) => {
     const { user, profile, logout, db, appId } = useFirebase();
     const [isAdminOpen, setIsAdminOpen] = useState(false);
 
@@ -64,17 +64,18 @@ const Header = ({ onOpenMyPage, onOpenLoginModal, currentIndex, onNavigate }) =>
         { label: 'Playground', index: 0 },
         { label: 'HNRC', index: 1 },
         { label: 'Sole Vision', index: 2 },
-        { label: 'Arbiscan', index: 3 },
+        ...(user ? [{ label: 'Arbiscan', index: 3 }] : []),
     ];
 
     return (
         <>
-            <nav className="fixed top-0 left-0 w-full z-[100] backdrop-blur-md bg-white/80 border-b border-gray-100/50 transition-all duration-300">
+            <nav className={`fixed top-0 left-0 w-full z-[100] backdrop-blur-md bg-white/80 border-b border-gray-100/50 transition-all duration-500 overflow-hidden ${hidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
                 <div className="px-6 py-4 md:px-12 md:py-5 flex justify-between items-center whitespace-nowrap">
                     {/* Logo & Navigation */}
                     <div className="flex items-center gap-8">
-                        <button onClick={handleReload} className="flex flex-col text-left group">
-                            <span className="font-brand text-sm tracking-tighter text-black font-bold uppercase group-hover:text-gray-600 transition-colors">
+                        <button onClick={handleReload} className="flex items-center gap-1.5 group">
+                            <img src="/hl_logo_clean.png" alt="HL Logo" className="h-[14px] w-auto object-contain invert opacity-90 group-hover:opacity-60 transition-opacity" />
+                            <span className="font-brand text-[14px] leading-none tracking-tighter text-black font-bold uppercase group-hover:text-gray-600 transition-colors">
                                 Hyzen Labs.
                             </span>
                         </button>
@@ -155,7 +156,7 @@ const Header = ({ onOpenMyPage, onOpenLoginModal, currentIndex, onNavigate }) =>
                             </div>
                         ) : (
                             <button
-                                onClick={onOpenLoginModal}
+                                onClick={onOpenAuthModal}
                                 className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-black text-white text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all hover:scale-105 shadow-md whitespace-nowrap"
                             >
                                 <span>Sign In</span>

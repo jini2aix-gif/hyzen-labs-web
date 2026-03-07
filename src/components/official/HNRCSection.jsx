@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, MapPin, Calendar, Clock, Trophy, MessageSquare, ChevronRight, PenTool, Trash2, Edit2, Plus, X, ChevronLeft, User, Zap, Heart, MessageCircle, CornerDownRight, Send, Loader2 } from 'lucide-react';
+import { Activity, MapPin, Calendar, Clock, Trophy, MessageSquare, ChevronRight, PenTool, Trash2, Edit2, Plus, X, ChevronLeft, User, Zap, Heart, MessageCircle, CornerDownRight, Send, Loader2, LayoutGrid, LayoutList } from 'lucide-react';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, where, getDocs, setDoc } from 'firebase/firestore';
 import { db, appId } from '../../hooks/useFirebase';
 import HNRCRecordModal from '../modals/HNRCRecordModal';
@@ -16,6 +16,9 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
     const [replyTo, setReplyTo] = useState(null); // { id, author }
     const [isSubmittingComment, setIsSubmittingComment] = useState(false);
     const [visibleCount, setVisibleCount] = useState(10);
+    const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
+    const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+    const scrollRef = useRef(null);
     const incrementCount = 10;
 
     useEffect(() => {
@@ -495,27 +498,44 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
                         <div className="lg:col-span-8">
                             {/* Feed Section Header */}
                             <div className="flex items-center justify-between mb-8">
-                                <div className="flex flex-col">
-                                    <h4 className="font-black tracking-tight text-3xl text-gray-900">Live Feed</h4>
+                                <div className="flex flex-col gap-1">
+                                    <h3 className="text-3xl font-black text-gray-900 tracking-tighter">FEED</h3>
                                     <p className="text-gray-400 text-xs mt-1 font-bold tracking-wide">러닝 크루들의 최신 기록</p>
                                 </div>
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => {
-                                        if (!user) { onOpenLoginModal?.(); return; }
-                                        setEditingRecord(null);
-                                        setIsModalOpen(true);
-                                    }}
-                                    className="px-5 py-3 bg-black text-white rounded-full hover:bg-gray-800 transition-colors shadow-xl shadow-black/10 flex items-center gap-2 font-bold text-xs"
-                                >
-                                    <Plus size={16} />
-                                    <span>기록하기</span>
-                                </motion.button>
+                                <div className="flex items-center gap-3">
+                                    {/* View Toggle */}
+                                    <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-2xl border border-gray-200 shadow-sm sm:flex">
+                                        {[
+                                            { id: 'grid', icon: LayoutGrid },
+                                            { id: 'list', icon: LayoutList }
+                                        ].map(m => (
+                                            <button
+                                                key={m.id}
+                                                onClick={() => setViewMode(m.id)}
+                                                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === m.id ? 'bg-white text-black shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
+                                            >
+                                                <m.icon size={18} />
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => {
+                                            if (!user) { onOpenLoginModal?.(); return; }
+                                            setEditingRecord(null);
+                                            setIsModalOpen(true);
+                                        }}
+                                        className="px-5 py-3 bg-black text-white rounded-full hover:bg-gray-800 transition-colors shadow-xl shadow-black/10 flex items-center gap-2 font-bold text-xs"
+                                    >
+                                        <Plus size={16} />
+                                        <span className="hidden sm:inline">기록하기</span>
+                                    </motion.button>
+                                </div>
                             </div>
 
                             {/* Posts List */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <div className={viewMode === 'grid' ? "grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-6" : "flex flex-col gap-4"}>
                                 <AnimatePresence mode="popLayout">
                                     {posts.length === 0 && (
                                         <motion.div
@@ -536,82 +556,87 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
                                             exit={{ opacity: 0, scale: 0.95 }}
                                             transition={{ delay: idx * 0.05 }}
                                             onClick={() => setSelectedPost(post)}
-                                            className="relative bg-gray-900 rounded-[32px] overflow-hidden group aspect-[4/5] sm:aspect-square flex flex-col justify-end cursor-pointer shadow-2xl hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] transition-all hover:-translate-y-1"
+                                            className={`relative bg-gray-900 rounded-2xl sm:rounded-[32px] overflow-hidden group flex cursor-pointer shadow-2xl transition-all ${viewMode === 'grid'
+                                                ? "flex-col sm:flex-row aspect-[0.75/1] sm:aspect-[1.8/1] hover:-translate-y-1"
+                                                : "flex-row items-center hover:scale-[1.01] h-32 sm:h-40"
+                                                }`}
                                         >
-                                            {/* Background Image with Dark Gradient Overlay */}
-                                            {post.image ? (
-                                                <div className="absolute inset-0 z-0 overflow-hidden bg-black">
-                                                    <img
-                                                        src={post.image}
-                                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100"
-                                                        alt="Run record"
-                                                    />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-black/10 transition-opacity"></div>
-                                                </div>
-                                            ) : (
-                                                <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-br from-indigo-950 via-gray-900 to-black">
-                                                    {/* Abstract shape for posts without image */}
-                                                    <div className="absolute top-[-20%] right-[-20%] w-[80%] h-[80%] rounded-full bg-indigo-500/20 blur-3xl group-hover:bg-indigo-500/30 transition-colors duration-700"></div>
-                                                </div>
-                                            )}
-
-                                            {/* Top Actions (Edit/Delete) */}
+                                            {/* Top Actions (Edit/Delete) - Absolute z-20 */}
                                             {user && user.uid === post.authorId && (
                                                 <div className="absolute top-4 right-4 z-20 flex gap-1.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                                                    <button onClick={(e) => handleEditClick(e, post)} className="p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full text-white/80 hover:text-white transition-all shadow-lg">
-                                                        <Edit2 size={14} className="w-4 h-4" />
+                                                    <button onClick={(e) => { e.stopPropagation(); handleEditClick(e, post); }} className="p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full text-white/80 hover:text-white transition-all shadow-lg">
+                                                        <Edit2 size={12} className="w-3.5 h-3.5" />
                                                     </button>
-                                                    <button onClick={(e) => handleDeleteRecord(e, post.id)} className="p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full text-white/80 hover:text-red-400 transition-all shadow-lg">
-                                                        <Trash2 size={14} className="w-4 h-4" />
+                                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteRecord(e, post.id); }} className="p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full text-white/80 hover:text-red-400 transition-all shadow-lg">
+                                                        <Trash2 size={12} className="w-3.5 h-3.5" />
                                                     </button>
                                                 </div>
                                             )}
 
-                                            {/* Content Area */}
-                                            <div className="relative z-10 w-full p-5 sm:p-6 flex flex-col gap-3">
-                                                {/* Author Profile */}
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <div className="w-7 h-7 rounded-full overflow-hidden bg-white/20 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white text-[10px] font-bold shadow-sm">
+                                            {/* Content area */}
+                                            <div className={`relative z-10 flex flex-col p-3 sm:p-5 order-1 ${viewMode === 'grid'
+                                                ? 'flex-1 h-full sm:w-1/2 bg-gradient-to-br from-black via-black to-gray-900 sm:border-r border-white/5 gap-1.5 sm:gap-3'
+                                                : 'flex-1 h-full gap-1 sm:gap-2 justify-center pr-4 bg-black/40'
+                                                }`}>
+                                                <div className="flex items-center gap-2 mb-0.5">
+                                                    <div className="w-6 h-6 rounded-full overflow-hidden bg-white/20 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white text-[8px] font-bold shadow-sm">
                                                         {(user?.uid === post.authorId && profile?.photoURL) ? <img src={profile.photoURL} className="w-full h-full object-cover" /> : (post.authorPhoto ? <img src={post.authorPhoto} className="w-full h-full object-cover" /> : (post.author || 'Guest').charAt(0).toUpperCase())}
                                                     </div>
                                                     <div className="flex flex-col">
-                                                        <span className="font-bold text-white text-xs truncate max-w-[140px] drop-shadow-md">{(user?.uid === post.authorId && profile?.displayName) ? profile.displayName : post.author}</span>
-                                                        <span className="text-white/60 text-[9px] drop-shadow-md">{post.timestamp.toLocaleDateString()}</span>
+                                                        <span className="font-bold text-white text-[10px] sm:text-xs truncate max-w-[120px] drop-shadow-md">{(user?.uid === post.authorId && profile?.displayName) ? profile.displayName : post.author}</span>
+                                                        <span className="text-white/60 text-[8px] drop-shadow-md">{post.timestamp.toLocaleDateString()}</span>
                                                     </div>
                                                 </div>
 
-                                                {/* Title & Desc */}
-                                                <div>
-                                                    <h3 className="text-xl font-black text-white leading-tight mb-1 truncate drop-shadow-lg">{post.title}</h3>
-                                                    <p className="text-white/70 text-[13px] line-clamp-2 leading-snug drop-shadow-md">{post.content}</p>
+                                                <div className="overflow-hidden">
+                                                    <h3 className={`${viewMode === 'grid' ? 'text-sm sm:text-xl' : 'text-base sm:text-xl'} font-black text-white leading-tight mb-0.5 truncate`}>{post.title}</h3>
+                                                    <p className={`text-white/40 text-[9px] sm:text-xs line-clamp-2 leading-relaxed ${viewMode === 'list' && 'hidden sm:block'}`}>{post.content}</p>
                                                 </div>
 
-                                                {/* Stats Badges */}
-                                                <div className="flex flex-wrap gap-2 mt-2">
-                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white shadow-lg">
-                                                        <MapPin size={12} className="text-indigo-400" />
-                                                        <span className="font-black italic text-sm">{post.distance.toFixed(1)} <span className="text-[10px] not-italic opacity-70">Km</span></span>
+                                                <div className="flex flex-wrap gap-1 sm:gap-2 mt-auto sm:mt-0">
+                                                    <div className="flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white">
+                                                        <MapPin size={8} className="text-indigo-400 sm:w-2.5 sm:h-2.5" />
+                                                        <span className="font-black italic text-[9px] sm:text-xs">{post.distance.toFixed(1)} <span className="text-[8px] sm:text-[10px] not-italic opacity-70">Km</span></span>
                                                     </div>
-                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white shadow-lg">
-                                                        <Zap size={12} className="text-yellow-400" />
-                                                        <span className="font-black italic text-[11px]">{post.pace || "--'--\""}</span>
+                                                    <div className="flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white">
+                                                        <Zap size={8} className="text-yellow-400 sm:w-2.5 sm:h-2.5" />
+                                                        <span className="font-black italic text-[8px] sm:text-[10px]">{post.pace || "--'--\""}</span>
                                                     </div>
                                                 </div>
 
-                                                {/* Meta Info (Likes, Comments) */}
-                                                <div className="flex items-center gap-4 text-white/60 mt-2 pt-3 border-t border-white/10">
+                                                <div className="flex items-center gap-4 text-white/40 mt-1 pt-2 border-t border-white/5">
                                                     <button
-                                                        onClick={(e) => handleToggleLike(e, post)}
+                                                        onClick={(e) => { e.stopPropagation(); handleToggleLike(e, post); }}
                                                         className={`flex items-center gap-1.5 transition-colors ${post.likes?.includes(user?.uid) ? 'text-red-500 hover:text-red-400' : 'hover:text-white'}`}
                                                     >
-                                                        <Heart size={14} fill={post.likes?.includes(user?.uid) ? "currentColor" : "none"} className="drop-shadow-md" />
-                                                        <span className="text-xs font-bold drop-shadow-md">{post.likes?.length || 0}</span>
+                                                        <Heart size={12} fill={post.likes?.includes(user?.uid) ? "currentColor" : "none"} />
+                                                        <span className="text-[10px] font-bold">{post.likes?.length || 0}</span>
                                                     </button>
                                                     <div className="flex items-center gap-1.5">
-                                                        <MessageSquare size={14} className="drop-shadow-md" />
-                                                        <span className="text-xs font-bold drop-shadow-md">{post.commentCount || 0}</span>
+                                                        <MessageSquare size={12} />
+                                                        <span className="text-[10px] font-bold">{post.commentCount || 0}</span>
                                                     </div>
                                                 </div>
+                                            </div>
+
+                                            <div className={`relative z-0 overflow-hidden bg-black order-2 ${viewMode === 'grid' ? "h-24 sm:h-full sm:w-1/2" : "flex-[0_0_120px] sm:flex-[0_0_200px] h-full"}`}>
+                                                {post.image ? (
+                                                    <>
+                                                        <img
+                                                            src={post.image}
+                                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100"
+                                                            alt="Run record"
+                                                        />
+                                                        <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-black/40 to-transparent"></div>
+                                                    </>
+                                                ) : (
+                                                    <div className="w-full h-full bg-gradient-to-br from-indigo-950 via-gray-900 to-black relative">
+                                                        <div className="absolute top-[-20%] right-[-20%] w-[80%] h-[80%] rounded-full bg-indigo-500/20 blur-3xl"></div>
+                                                        <div className="absolute inset-0 flex items-center justify-center opacity-10">
+                                                            <Activity size={40} className="text-white" />
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </motion.article>
                                     ))}
@@ -652,19 +677,46 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
                             className="w-full max-w-6xl h-[88vh] sm:h-[85vh] bg-white rounded-t-[24px] sm:rounded-[40px] shadow-2xl flex flex-col md:flex-row relative overflow-hidden"
                             onClick={e => e.stopPropagation()}
                         >
-                            {/* Desktop Close Button */}
+                            {/* Universal Close Button - Fixed at top right */}
                             <button
                                 onClick={() => { setSelectedPost(null); setReplyTo(null); }}
-                                className="absolute top-6 right-6 z-[160] p-3 bg-white/20 backdrop-blur-xl hover:bg-white/40 text-black rounded-full transition-all hidden md:flex border border-white/30 shadow-sm"
+                                className="absolute top-4 right-4 sm:top-6 sm:right-6 z-[200] p-2.5 sm:p-3 bg-white/80 backdrop-blur-xl hover:bg-white text-black rounded-full transition-all flex border border-gray-100 shadow-xl active:scale-90"
                             >
-                                <X size={24} />
+                                <X size={20} className="sm:w-6 sm:h-6" />
                             </button>
+
+                            {/* Scroll Indicator */}
+                            <AnimatePresence>
+                                {showScrollIndicator && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 10 }}
+                                        className="absolute bottom-24 left-1/2 -translate-x-1/2 z-[180] pointer-events-none md:hidden"
+                                    >
+                                        <div className="bg-white/10 backdrop-blur-xl text-indigo-600/80 py-1.5 px-4 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.08)] flex items-center gap-2 animate-bounce border border-white/40">
+                                            <span className="text-[9px] font-black uppercase tracking-[0.2em] whitespace-nowrap">SCROLL FOR MORE</span>
+                                            <div className="rotate-90"><ChevronRight size={12} strokeWidth={3} /></div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
                             {/* Mobile Pull Indicator */}
                             <div className="md:hidden w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
 
                             {/* Left Side: Post Content & Data (Scrolls naturally) */}
-                            <div className="w-full md:w-[60%] h-full shrink-0 flex flex-col bg-white border-b md:border-b-0 border-gray-100 md:border-r overflow-y-auto overflow-x-hidden custom-scrollbar relative" style={{ touchAction: 'pan-y' }}>
+                            <div
+                                ref={scrollRef}
+                                onScroll={(e) => {
+                                    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+                                    const canScroll = scrollHeight > clientHeight;
+                                    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 40;
+                                    setShowScrollIndicator(canScroll && !isAtBottom);
+                                }}
+                                className="w-full md:w-[60%] h-full shrink-0 flex flex-col bg-white border-b md:border-b-0 border-gray-100 md:border-r overflow-y-auto overflow-x-hidden custom-scrollbar relative"
+                                style={{ touchAction: 'pan-y' }}
+                            >
                                 {/* Image Box */}
                                 {selectedPost.image ? (
                                     <div className="w-full bg-gray-100 flex shrink-0 justify-center bg-black relative">
@@ -686,25 +738,10 @@ const HNRCSection = ({ user, profile, onModalChange, onOpenLoginModal }) => {
                                         <div className="absolute inset-0 z-0 opacity-50 blur-xl overflow-hidden">
                                             <img src={selectedPost.image} className="w-full h-full object-cover" />
                                         </div>
-
-                                        {/* Mobile Exit Button on Image */}
-                                        <button
-                                            onClick={() => { setSelectedPost(null); setReplyTo(null); }}
-                                            className="absolute top-4 right-4 z-[110] p-2 bg-black/40 backdrop-blur-md text-white rounded-full transition-all md:hidden border border-white/20 shadow-lg"
-                                        >
-                                            <X size={20} />
-                                        </button>
                                     </div>
                                 ) : (
                                     <div className="w-full h-[180px] md:h-[250px] bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center relative shrink-0">
                                         <Activity size={48} className="text-white/20" />
-                                        {/* Mobile Exit Button */}
-                                        <button
-                                            onClick={() => { setSelectedPost(null); setReplyTo(null); }}
-                                            className="absolute top-4 right-4 z-[110] p-2 bg-black/20 backdrop-blur-md text-white rounded-full transition-all md:hidden border border-white/20 shadow-lg"
-                                        >
-                                            <X size={20} />
-                                        </button>
                                     </div>
                                 )}
 
