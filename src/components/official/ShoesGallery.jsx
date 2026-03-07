@@ -635,11 +635,20 @@ const loadWatermark = () => {
         const img = new Image();
         img.src = '/hl_logo_clean.png';
         img.crossOrigin = 'anonymous';
+
+        // 3초 타임아웃 (워터마크 때문에 전체가 멈추지 않도록)
+        const timeout = setTimeout(() => {
+            console.warn('Watermark load timeout');
+            resolve(null);
+        }, 3000);
+
         img.onload = () => {
+            clearTimeout(timeout);
             watermarkCache = img;
             resolve(img);
         };
         img.onerror = () => {
+            clearTimeout(timeout);
             console.warn('Watermark load failed');
             resolve(null);
         };
@@ -696,24 +705,39 @@ const compressImage = async (file, maxWidth = 800, quality = 0.6) => {
     });
 };
 
-// ── Firebase Storage 업로드 헬퍼 (진행률 콜백 추가) ─────────────────────────────
+// ── Firebase Storage 업로드 헬퍼 (진행률 콜백 및 상세 로그 추가) ─────────────
 const uploadImageToStorage = (file, path, onProgress) => {
     return new Promise((resolve, reject) => {
-        const storage = getStorage();
-        const fileRef = storageRef(storage, `artifacts/${appId}/public/data/${path}`);
-        const uploadTask = uploadBytesResumable(fileRef, file);
+        try {
+            const storage = getStorage();
+            if (!appId) throw new Error('App ID is missing');
 
-        uploadTask.on('state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                if (onProgress) onProgress(progress);
-            },
-            (error) => reject(error),
-            async () => {
-                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                resolve(downloadURL);
-            }
-        );
+            const fullPath = `artifacts/${appId}/public/data/${path}`;
+            console.log(`[Firebase Storage] Starting upload to: ${fullPath}`);
+
+            const fileRef = storageRef(storage, fullPath);
+            const uploadTask = uploadBytesResumable(fileRef, file);
+
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    console.log(`[Firebase Storage] Progress for ${path}: ${Math.round(progress)}%`);
+                    if (onProgress) onProgress(progress);
+                },
+                (error) => {
+                    console.error(`[Firebase Storage] Upload failed for ${path}:`, error);
+                    reject(error);
+                },
+                async () => {
+                    console.log(`[Firebase Storage] Success! Getting URL for ${path}`);
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    resolve(downloadURL);
+                }
+            );
+        } catch (err) {
+            console.error('[Firebase Storage] Setup Error:', err);
+            reject(err);
+        }
     });
 };
 // ── 업로드 모달 (관리자 전용) ─────────────────────────────────────────────────
@@ -799,28 +823,35 @@ const UploadModal = ({ onClose, onSave, totalCount, editItem }) => {
         try {
             const colorIndex = totalCount % ACCENT_COLORS.length;
             const timestamp = Date.now();
-            let imageUrls = isEditMode ? [...(editItem.images || [editItem.imageUrl])] : [];
+            let imageUrls = isEditMode ? [...(editItem.images || (editItem.imageUrl ? [editItem.imageUrl] : []))] : [];
 
             if (files.length > 0) {
-                setUploadProgress(`이미지 처리 중...`);
-                // UI 인덱스 보정을 위해 기존 이미지 개수만큼 오프셋 설정
+                console.log(`[Gallery] Starting compression for ${files.length} images...`);
                 const offset = existingImages.length;
-
-                // 1. 순차적 최적화 (CPU 과부하 방지 및 UI 반응성 유지)
                 const compressedFiles = [];
+
+                // 1. 순차적 최적화 (CPU 과부환 방지 및 상세 피드백)
                 for (let i = 0; i < files.length; i++) {
                     const uiIdx = offset + i;
+                    setUploadProgress(`${i + 1}/${files.length} 압축 중...`);
                     setFileStatuses(prev => ({ ...prev, [uiIdx]: { status: 'compressing', progress: 0 } }));
-                    const result = await compressImage(files[i]);
+
+                    const result = await compressImage(files[i]).catch(err => {
+                        console.error(`Compression failed for image ${i}:`, err);
+                        throw new Error(`이미지 압축 실패 (${i + 1}번째)`);
+                    });
+
                     compressedFiles.push(result);
                     setFileStatuses(prev => ({ ...prev, [uiIdx]: { status: 'uploading', progress: 0 } }));
                 }
 
+                console.log(`[Gallery] Compression complete. Starting parallel uploads...`);
+                setUploadProgress(`서버로 전송 중...`);
+
                 // 2. 병렬 업로드 (Network)
                 const newUploadPromises = compressedFiles.map(async (file, i) => {
                     const uiIdx = offset + i;
-                    const ext = 'jpg';
-                    const path = `gallery/${appId}/${timestamp}_${i}.${ext}`;
+                    const path = `gallery/${timestamp}_${i}.jpg`; // appId 중복 제거
 
                     try {
                         return await uploadImageToStorage(file, path, (progress) => {
@@ -830,12 +861,13 @@ const UploadModal = ({ onClose, onSave, totalCount, editItem }) => {
                             }));
                         });
                     } catch (err) {
-                        console.error(`Upload failed for index ${i}:`, err);
+                        console.error(`[Gallery] Upload Error for image ${i}:`, err);
                         throw err;
                     }
                 });
 
                 const uploadedUrls = await Promise.all(newUploadPromises);
+                console.log(`[Gallery] All uploads complete!`);
                 imageUrls = [...existingImages, ...uploadedUrls];
             } else {
                 imageUrls = [...existingImages];
