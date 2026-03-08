@@ -5,10 +5,10 @@ import {
     Download, X, ZoomIn, ChevronLeft, ChevronRight,
     Sparkles, Eye, Heart, Share2, Info, Loader2,
     Plus, Upload, Trash2, LayoutGrid, LayoutList,
-    Search, SlidersHorizontal, RefreshCw
+    Search, SlidersHorizontal, RefreshCw, Edit, Check
 } from 'lucide-react';
 import {
-    collection, getDocs, addDoc, deleteDoc, doc,
+    collection, getDocs, addDoc, updateDoc, deleteDoc, doc,
     query, orderBy, startAfter, limit,
     serverTimestamp
 } from 'firebase/firestore';
@@ -382,7 +382,7 @@ const GalleryCard = ({ item, index, onOpen, viewMode }) => {
     );
 };
 
-const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) => {
+const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete, onEdit }) => {
     const [idx, setIdx] = useState(allItems.findIndex(i => i.id === item.id));
     const [imgIdx, setImgIdx] = useState(0); // 현재 작품의 이미지 인덱스
     const [showScrollIndicator, setShowScrollIndicator] = useState(false);
@@ -399,10 +399,10 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
     // 작품 변경 시 이미지 인덱스 초기화
     useEffect(() => { setImgIdx(0); }, [idx]);
 
-    const goNextItem = useCallback(() => { setIdx(i => (i + 1) % allItems.length); }, [allItems.length]);
-    const goPrevItem = useCallback(() => { setIdx(i => (i - 1 + allItems.length) % allItems.length); }, [allItems.length]);
-    const goNextImg = useCallback(() => setImgIdx(i => (i + 1) % images.length), [images.length]);
-    const goPrevImg = useCallback(() => setImgIdx(i => (i - 1 + images.length) % images.length), [images.length]);
+    const goNextItem = useCallback(() => { if (allItems.length > 0) setIdx(i => (i + 1) % allItems.length); }, [allItems.length]);
+    const goPrevItem = useCallback(() => { if (allItems.length > 0) setIdx(i => (i - 1 + allItems.length) % allItems.length); }, [allItems.length]);
+    const goNextImg = useCallback(() => { if (images.length > 0) setImgIdx(i => (i + 1) % images.length); }, [images.length]);
+    const goPrevImg = useCallback(() => { if (images.length > 0) setImgIdx(i => (i - 1 + images.length) % images.length); }, [images.length]);
 
     useEffect(() => {
         const h = (e) => {
@@ -589,7 +589,7 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete }) =>
                             </div>
                             {isAdmin && (
                                 <div className="flex gap-2">
-                                    <button onClick={() => { setEditItem(cur); setSelectedItem(null); }}
+                                    <button onClick={() => { onEdit(cur); onClose(); }}
                                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-indigo-500/15 transition-all"
                                         style={{ border: '1px solid rgba(99,102,241,0.25)', color: 'rgba(129,140,248,0.7)' }}>
                                         <Edit size={11} /> Edit
@@ -1476,6 +1476,7 @@ const ShoesGallery = ({ onModalChange }) => {
                         onDownload={handleDownload}
                         isAdmin={isAdmin}
                         onDelete={handleDelete}
+                        onEdit={setEditItem}
                     />
                 )}
             </AnimatePresence>
