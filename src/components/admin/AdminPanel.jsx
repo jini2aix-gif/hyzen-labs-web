@@ -46,7 +46,7 @@ const StatCard = ({ icon: Icon, label, value, sub, color = 'blue', loading }) =>
 // AdminPanel
 // ────────────────────────────────────────
 const AdminPanel = ({ isOpen, onClose, db, appId }) => {
-    const [stats, setStats] = useState({ members: 0, visitors: 0, hnrcPosts: 0, todayLogins: 0 });
+    const [stats, setStats] = useState({ members: 0, visitors: 0, todayLogins: 0 });
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -63,14 +63,6 @@ const AdminPanel = ({ isOpen, onClose, db, appId }) => {
             const memberList = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
             setMembers(memberList);
 
-            // HNRC posts
-            let hnrcCount = 0;
-            try {
-                const postsRef = collection(db, 'artifacts', appId, 'public', 'data', 'posts');
-                const postsSnap = await getDocs(postsRef);
-                hnrcCount = postsSnap.size;
-            } catch (_) { }
-
             // Today logins (lastLoginAt within 24h)
             const now = Date.now();
             const todayLogins = memberList.filter(m => {
@@ -81,7 +73,6 @@ const AdminPanel = ({ isOpen, onClose, db, appId }) => {
             setStats(prev => ({
                 ...prev,
                 members: memberList.length,
-                hnrcPosts: hnrcCount,
                 todayLogins,
             }));
         } catch (e) {
@@ -191,8 +182,8 @@ const AdminPanel = ({ isOpen, onClose, db, appId }) => {
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-[10px] font-bold uppercase tracking-widest transition-all border-b-2 ${activeTab === tab.id
-                                            ? 'border-black text-black'
-                                            : 'border-transparent text-gray-400 hover:text-gray-600'
+                                        ? 'border-black text-black'
+                                        : 'border-transparent text-gray-400 hover:text-gray-600'
                                         }`}
                                 >
                                     <tab.icon size={12} />
@@ -210,7 +201,6 @@ const AdminPanel = ({ isOpen, onClose, db, appId }) => {
                                         <StatCard icon={Users} label="총 회원수" value={stats.members.toLocaleString()} sub="누적 가입자" color="blue" loading={loading} />
                                         <StatCard icon={Eye} label="총 방문자" value={stats.visitors.toLocaleString()} sub="세션 기반" color="purple" loading={loading} />
                                         <StatCard icon={UserCheck} label="오늘 로그인" value={stats.todayLogins.toLocaleString()} sub="최근 24시간" color="green" loading={loading} />
-                                        <StatCard icon={Activity} label="HNRC 기록" value={stats.hnrcPosts.toLocaleString()} sub="총 게시물" color="orange" loading={loading} />
                                     </div>
 
                                     {/* Conversion Rate */}

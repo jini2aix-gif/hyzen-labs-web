@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import Header from './components/layout/Header';
 const GamePage = React.lazy(() => import('./components/official/GamePage'));
-const HNRCSection = React.lazy(() => import('./components/official/HNRCSection'));
 const ShoesGallery = React.lazy(() => import('./components/official/ShoesGallery'));
 const ArbiscanDashboard = React.lazy(() => import('./components/dashboard/ArbiscanDashboard'));
 
@@ -33,15 +32,14 @@ const App = () => {
   const [isZeroGOpen, setIsZeroGOpen] = useState(false);
   const [isPulseDashOpen, setIsPulseDashOpen] = useState(false);
   const [isNeonGhostOpen, setIsNeonGhostOpen] = useState(false);
-  const [isHNRCModalOpen, setIsHNRCModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState('login');
   const [showSplash, setShowSplash] = useState(true);
   const [isAnyModalOpenFromSections, setIsAnyModalOpenFromSections] = useState(false);
 
   const isAnyModalOpen = React.useMemo(() => {
-    return isMyPageOpen || isZeroGOpen || isPulseDashOpen || isNeonGhostOpen || isHNRCModalOpen || isAuthModalOpen || isAnyModalOpenFromSections;
-  }, [isMyPageOpen, isZeroGOpen, isPulseDashOpen, isNeonGhostOpen, isHNRCModalOpen, isAuthModalOpen, isAnyModalOpenFromSections]);
+    return isMyPageOpen || isZeroGOpen || isPulseDashOpen || isNeonGhostOpen || isAuthModalOpen || isAnyModalOpenFromSections;
+  }, [isMyPageOpen, isZeroGOpen, isPulseDashOpen, isNeonGhostOpen, isAuthModalOpen, isAnyModalOpenFromSections]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -134,7 +132,7 @@ const App = () => {
         // Block right swipe on first page (would trigger browser back)
         if (distanceX < 0 && viewIndex === 0) e.preventDefault();
         // Block left swipe on last page (would trigger browser forward)
-        const maxIndex = 3;
+        const maxIndex = 2;
         if (distanceX > 0 && viewIndex === maxIndex) e.preventDefault();
       }
     }
@@ -165,7 +163,7 @@ const App = () => {
       const isRightSwipe = distanceX < -minSwipeDistance;
 
       if (isLeftSwipe) {
-        const maxIndex = 3;
+        const maxIndex = 2;
         if (viewIndex < maxIndex) {
           handleNavigate(viewIndex + 1);
         }
@@ -294,15 +292,6 @@ const App = () => {
                     />
                   </div>
                 ) : viewIndex === 1 ? (
-                  <div className="h-full overflow-y-auto bg-gray-50 scroll-smooth">
-                    <HNRCSection
-                      user={user}
-                      profile={profile}
-                      onModalChange={setIsAnyModalOpenFromSections}
-                      onOpenLoginModal={handleOpenAuthModal}
-                    />
-                  </div>
-                ) : viewIndex === 2 ? (
                   <div className="h-full overflow-y-auto">
                     <ShoesGallery onModalChange={setIsAnyModalOpenFromSections} />
                   </div>
@@ -333,37 +322,25 @@ const App = () => {
           <button
             onClick={() => handleNavigate(1)}
             className={`relative overflow-hidden flex items-center justify-center rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 1 ? 'bg-white text-black px-4 py-1.5' : 'bg-transparent text-white/50 w-8 h-8 hover:bg-white/10'}`}
-            aria-label="HNRC"
-          >
-            <span className={`text-[10px] font-bold tracking-widest uppercase transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 1 ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0 pointer-events-none'}`}>
-              HNRC
-            </span>
-            <span className={`text-[10px] font-bold transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] absolute ${viewIndex === 1 ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
-              H
-            </span>
-          </button>
-          <button
-            onClick={() => handleNavigate(2)}
-            className={`relative overflow-hidden flex items-center justify-center rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 2 ? 'bg-white text-black px-4 py-1.5' : 'bg-transparent text-white/50 w-8 h-8 hover:bg-white/10'}`}
             aria-label="Hyzen Collection"
           >
-            <span className={`text-[10px] font-bold tracking-widest uppercase transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 2 ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0 pointer-events-none'}`}>
+            <span className={`text-[10px] font-bold tracking-widest uppercase transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 1 ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0 pointer-events-none'}`}>
               Hyzen
             </span>
-            <span className={`text-[10px] font-bold transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] absolute ${viewIndex === 2 ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
+            <span className={`text-[10px] font-bold transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] absolute ${viewIndex === 1 ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
               C
             </span>
           </button>
 
           <button
-            onClick={() => handleNavigate(3)}
-            className={`relative overflow-hidden flex items-center justify-center rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 3 ? 'bg-white text-black px-4 py-1.5' : 'bg-transparent text-white/50 w-8 h-8 hover:bg-white/10'}`}
+            onClick={() => handleNavigate(2)}
+            className={`relative overflow-hidden flex items-center justify-center rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 2 ? 'bg-white text-black px-4 py-1.5' : 'bg-transparent text-white/50 w-8 h-8 hover:bg-white/10'}`}
             aria-label="Arbiscan"
           >
-            <span className={`text-[10px] font-bold tracking-widest uppercase transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 3 ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0 pointer-events-none'}`}>
+            <span className={`text-[10px] font-bold tracking-widest uppercase transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 2 ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0 pointer-events-none'}`}>
               Arbi
             </span>
-            <span className={`text-[10px] font-bold transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] absolute ${viewIndex === 3 ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
+            <span className={`text-[10px] font-bold transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] absolute ${viewIndex === 2 ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
               A
             </span>
           </button>

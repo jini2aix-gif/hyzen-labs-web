@@ -11,7 +11,6 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
     const [profileImage, setProfileImage] = useState('');
     const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
     const [gameStats, setGameStats] = useState({ score: 0, rank: '-' });
-    const [hnrcStats, setHNRCStats] = useState({ totalDistance: 0, rank: '-' });
     const fileInputRef = useRef(null);
 
     // ── Delete Account State ──
@@ -48,7 +47,6 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
             setNickname(profile?.displayName || user.displayName || '');
             setProfileImage(profile?.photoURL || user.photoURL || '');
             fetchGameStats();
-            fetchHNRCStats();
         }
     }, [isOpen, user, profile]);
 
@@ -61,32 +59,6 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
             } catch (error) {
                 console.error('Image compression error:', error);
             }
-        }
-    };
-
-    const fetchHNRCStats = async () => {
-        if (!user || !db || !appId) return;
-        try {
-            const postsRef = collection(db, 'artifacts', appId, 'public', 'data', 'hnrc_posts');
-            const now = new Date();
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            const q = query(postsRef, where('timestamp', '>=', startOfMonth));
-            const querySnapshot = await getDocs(q);
-
-            const userDistances = {};
-            querySnapshot.docs.forEach(docSnap => {
-                const data = docSnap.data();
-                const uid = data.authorId;
-                const dist = parseFloat(data.distance) || 0;
-                userDistances[uid] = (userDistances[uid] || 0) + dist;
-            });
-
-            const myDist = userDistances[user.uid] || 0;
-            const sortedDistances = Object.values(userDistances).sort((a, b) => b - a);
-            const rank = myDist > 0 ? sortedDistances.indexOf(myDist) + 1 : '-';
-            setHNRCStats({ totalDistance: myDist, rank });
-        } catch (error) {
-            console.error('Error fetching HNRC stats:', error);
         }
     };
 
@@ -359,37 +331,6 @@ const MyPageModal = ({ isOpen, onClose, user, profile }) => {
                                             <span className="text-sm text-gray-300 ml-1 not-italic">s</span>
                                         </div>
                                         <div className="text-[9px] font-mono text-gray-400 tracking-widest uppercase mt-1">Best Survival</div>
-                                    </div>
-                                </motion.div>
-                            </section>
-
-                            {/* ── Section 3: Running Stats ── */}
-                            <section className="mb-6">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <div className="w-1 h-4 bg-emerald-500 rounded-full" />
-                                    <h3 className="text-[11px] font-bold font-tech uppercase text-gray-900 tracking-wider">러닝 기록</h3>
-                                </div>
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} whileHover={{ y: -2 }}
-                                    className="bg-gray-50/80 rounded-[24px] p-6 border border-gray-100 flex items-center justify-between group transition-all hover:shadow-lg hover:shadow-gray-200/50"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 text-emerald-500">
-                                            <Activity size={20} />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-brand font-bold text-gray-800 text-base">HNRC RUNNING</h4>
-                                            <div className="text-[10px] font-tech text-gray-400 uppercase tracking-wider">
-                                                시즌 순위: <span className="text-emerald-500 font-bold">{hnrcStats.rank !== '-' ? `#${hnrcStats.rank}` : '순위 없음'}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="text-right text-gray-900">
-                                        <div className="text-3xl font-mono font-black leading-none italic">
-                                            {hnrcStats.totalDistance.toFixed(1)}
-                                            <span className="text-sm text-gray-300 ml-1 not-italic">km</span>
-                                        </div>
-                                        <div className="text-[9px] font-mono text-gray-400 tracking-widest uppercase mt-1">Monthly Total</div>
                                     </div>
                                 </motion.div>
                             </section>

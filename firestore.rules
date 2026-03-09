@@ -37,54 +37,7 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    // Posts collection
-    match /artifacts/{appId}/public/data/posts/{postId} {
-      allow read: if true;
-      allow create: if isAuthenticated() && !isBanned(appId, request.auth.uid)
-        && request.resource.data.authorId == request.auth.uid
-        && isValidText(request.resource.data.title, 200)
-        && isValidText(request.resource.data.content, 5000);
-      allow update: if isAuthenticated() && !isBanned(appId, request.auth.uid)
-        && resource.data.authorId == request.auth.uid;
-      allow delete: if isAuthenticated() && (
-        resource.data.authorId == request.auth.uid || isAdmin()
-      );
-    }
 
-    // Comments sub-collection
-    match /artifacts/{appId}/public/data/posts/{postId}/comments/{cid} {
-      allow read: if true;
-      allow create: if isAuthenticated() && !isBanned(appId, request.auth.uid)
-        && request.resource.data.authorId == request.auth.uid
-        && isValidText(request.resource.data.text, 1000);
-      allow update: if isAuthenticated() && !isBanned(appId, request.auth.uid)
-        && resource.data.authorId == request.auth.uid;
-      allow delete: if isAuthenticated() && (
-        resource.data.authorId == request.auth.uid || isAdmin()
-      );
-    }
-
-    // HNRC Posts collection
-    match /artifacts/{appId}/public/data/hnrc_posts/{postId} {
-      allow read: if true;
-      allow create: if isAuthenticated() && !isBanned(appId, request.auth.uid)
-        && request.resource.data.authorId == request.auth.uid;
-      allow update: if isAuthenticated() && !isBanned(appId, request.auth.uid);
-      allow delete: if isAuthenticated() && (
-        resource.data.authorId == request.auth.uid || isAdmin()
-      );
-    }
-    
-    // HNRC Posts Comments sub-collection
-    match /artifacts/{appId}/public/data/hnrc_posts/{postId}/comments/{cid} {
-      allow read: if true;
-      allow create: if isAuthenticated() && !isBanned(appId, request.auth.uid)
-        && request.resource.data.authorId == request.auth.uid;
-      allow update: if isAuthenticated() && !isBanned(appId, request.auth.uid);
-      allow delete: if isAuthenticated() && (
-        resource.data.authorId == request.auth.uid || isAdmin()
-      );
-    }
 
     // Gallery (Sole Vision) collection
     match /artifacts/{appId}/public/data/gallery/{docId} {
