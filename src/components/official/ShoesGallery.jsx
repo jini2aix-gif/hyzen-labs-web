@@ -30,8 +30,9 @@ const getAccentColor = (index) => ACCENT_COLORS[index % ACCENT_COLORS.length];
 
 // ── 카드 높이 계산 ────────────────────────────────────────────────────────────
 const getCardHeight = (aspect) => {
-    // Return a fixed height for all cards to ensure uniformity on the grid
-    return "320px";
+    // Return a larger fixed height for PC screens, slightly smaller for mobile
+    if (typeof window !== 'undefined' && window.innerWidth < 640) return "320px";
+    return "420px"; // Increased from 340px for a more premium look
 };
 
 // ── 은하수 파티클 캔버스 ────────────────────────────────────────────────────────
@@ -268,18 +269,18 @@ const GalleryCard = ({ item, index, onOpen, viewMode }) => {
                         : <PlaceholderCard item={item} isHovered={false} />}
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-[9px] uppercase tracking-[0.2em] font-bold mb-0.5 truncate" style={{ color: item.accentColor }}>
+                    <p className="text-[10px] uppercase tracking-[0.2em] font-bold mb-0.5 truncate" style={{ color: item.accentColor }}>
                         {item.subtitle}
                     </p>
-                    <h3 className="text-white font-black text-sm tracking-tight truncate">{item.title}</h3>
-                    <p className="text-white/30 text-[10px] font-mono truncate">{item.medium}</p>
+                    <h3 className="text-white font-black text-base tracking-tight truncate">{item.title}</h3>
+                    <p className="text-white/40 text-[11px] font-mono truncate">{item.medium}</p>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-[9px] text-white/30 font-mono">{item.year}</span>
-                    <div className="flex gap-1">
+                <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className="text-[10px] text-white/30 font-mono">{item.year}</span>
+                    <div className="flex gap-1.5">
                         {item.tags?.slice(0, 2).map(tag => (
-                            <span key={tag} className="text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase"
-                                style={{ background: `${item.accentColor}20`, color: item.accentColor }}>
+                            <span key={tag} className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase"
+                                style={{ background: `${item.accentColor}25`, color: item.accentColor }}>
                                 {tag}
                             </span>
                         ))}
@@ -327,11 +328,11 @@ const GalleryCard = ({ item, index, onOpen, viewMode }) => {
                     }} />
 
                 {/* Tags */}
-                <div className="absolute top-3 left-3 right-3 flex justify-between items-start z-10">
-                    <div className="flex flex-wrap gap-1">
-                        {item.tags?.slice(0, 2).map(tag => (
-                            <span key={tag} className="text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full backdrop-blur-md"
-                                style={{ background: `${item.accentColor}20`, color: item.accentColor, border: `1px solid ${item.accentColor}30` }}>
+                <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10">
+                    <div className="flex flex-wrap gap-2">
+                        {item.tags?.slice(0, 3).map(tag => (
+                            <span key={tag} className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl backdrop-blur-2xl"
+                                style={{ background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid rgba(255,255,255,0.15)' }}>
                                 {tag}
                             </span>
                         ))}
@@ -339,13 +340,19 @@ const GalleryCard = ({ item, index, onOpen, viewMode }) => {
                 </div>
 
                 {/* Info */}
-                <div className="absolute bottom-0 left-0 right-0 p-3.5 z-10">
-                    <div style={{ transform: isHovered ? 'translateY(0)' : 'translateY(3px)', transition: 'transform 0.3s' }}>
-                        <p className="text-[8px] uppercase tracking-[0.2em] font-bold mb-0.5" style={{ color: item.accentColor }}>
+                <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
+                    {/* Stronger bottom gradient for text legibility */}
+                    <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/80 to-transparent opacity-95" />
+                    <div style={{ transform: isHovered ? 'translateY(0)' : 'translateY(4px)', transition: 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)' }}>
+                        <p className="text-[10px] uppercase tracking-[0.3em] font-black mb-1.5" style={{ color: item.accentColor }}>
                             {item.subtitle}
                         </p>
-                        <h3 className="text-white font-black text-sm tracking-tight leading-tight">{item.title}</h3>
-                        <p className="text-white/35 text-[10px] font-mono mt-0.5">{item.medium}</p>
+                        <h3 className="text-white font-black text-xl md:text-2xl tracking-tight leading-tight mb-2 drop-shadow-lg">{item.title}</h3>
+                        <div className="flex items-center gap-2">
+                            <p className="text-white/50 text-[12px] font-medium tracking-wide">{item.medium}</p>
+                            <span className="w-1 h-1 rounded-full bg-white/20" />
+                            <span className="text-[11px] text-white/30 font-mono tracking-tighter">{item.year}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -478,16 +485,16 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete, onEd
                     key={cur.id}
                     initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.22 }}
-                    className="flex flex-col md:flex-row gap-5 w-full max-w-5xl mx-4 md:mx-14 max-h-[92vh] overflow-y-auto custom-scrollbar relative"
                     ref={scrollRef}
                     onScroll={handleScroll}
                     onClick={e => e.stopPropagation()}
                     style={{ paddingTop: '4px' }}
+                    className="flex flex-col lg:flex-row gap-8 w-full max-w-[1500px] mx-4 md:mx-auto max-h-[95vh] overflow-y-auto custom-scrollbar relative"
                 >
                     {/* ── Image Slider ── */}
-                    <div className="flex-1 flex flex-col gap-2 min-w-0">
-                        <div className="relative rounded-2xl overflow-hidden flex-1"
-                            style={{ minHeight: '260px', maxHeight: '70vh', border: `1px solid ${cur.accentColor}30` }}>
+                    <div className="flex-1 flex flex-col gap-3 min-w-0">
+                        <div className="relative rounded-[32px] overflow-hidden flex-1 bg-black/40"
+                            style={{ minHeight: '400px', maxHeight: '85vh', border: `1px solid rgba(255,255,255,0.08)` }}>
                             <AnimatePresence mode="wait">
                                 <motion.div key={imgIdx}
                                     initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
@@ -525,13 +532,13 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete, onEd
                             )}
                         </div>
 
-                        {/* 썸네일 스트립 (3장 이상일 때) */}
-                        {images.length >= 3 && (
-                            <div className="flex gap-2 overflow-x-auto pb-1">
+                        {/* 썸네일 스트립 (2장 이상일 때) */}
+                        {images.length >= 2 && (
+                            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                                 {images.map((url, i) => (
                                     <button key={i} onClick={() => setImgIdx(i)}
-                                        className="flex-shrink-0 w-14 h-10 rounded-lg overflow-hidden transition-all duration-200"
-                                        style={{ border: `2px solid ${i === imgIdx ? cur.accentColor : 'transparent'}`, opacity: i === imgIdx ? 1 : 0.5 }}>
+                                        className="flex-shrink-0 w-20 h-14 rounded-xl overflow-hidden transition-all duration-300"
+                                        style={{ border: `2px solid ${i === imgIdx ? cur.accentColor : 'transparent'}`, opacity: i === imgIdx ? 1 : 0.4 }}>
                                         {url
                                             ? <img src={url} alt="" className="w-full h-full object-cover" />
                                             : <div className="w-full h-full" style={{ background: `${cur.accentColor}20` }} />}
@@ -542,49 +549,47 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete, onEd
                     </div>
 
                     {/* ── Info Panel ── */}
-                    <div className="md:w-72 flex flex-col justify-between gap-4 py-1 overflow-y-auto">
+                    <div className="lg:w-[460px] flex flex-col justify-between gap-6 py-2 overflow-y-auto shrink-0">
                         <div>
-                            <div className="flex flex-wrap gap-1.5 mb-3">
+                            <div className="flex flex-wrap gap-2 mb-4">
                                 {cur.tags?.map(tag => (
-                                    <span key={tag} className="text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full"
+                                    <span key={tag} className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full"
                                         style={{ background: `${cur.accentColor}15`, color: cur.accentColor, border: `1px solid ${cur.accentColor}30` }}>
                                         {tag}
                                     </span>
                                 ))}
                             </div>
-                            <p className="text-[10px] uppercase tracking-[0.28em] font-bold mb-1" style={{ color: cur.accentColor }}>{cur.subtitle}</p>
-                            <h2 className="text-white font-black text-xl tracking-tight mb-1">{cur.title}</h2>
-                            <div className="flex items-center gap-2 text-white/35 mb-3">
-                                <span className="text-[9px] font-mono">{cur.year}</span>
+                            <p className="text-[11px] uppercase tracking-[0.3em] font-bold mb-1.5" style={{ color: cur.accentColor }}>{cur.subtitle}</p>
+                            <h2 className="text-white font-black text-3xl tracking-tight mb-2 leading-tight">{cur.title}</h2>
+                            <div className="flex items-center gap-3 text-white/40 mb-5">
+                                <span className="text-[11px] font-mono px-2 py-0.5 bg-white/5 rounded-md border border-white/10">{cur.year}</span>
                                 {images.length > 1 && (
                                     <>
-                                        <span className="w-0.5 h-0.5 rounded-full bg-white/20" />
-                                        <span className="text-[9px] font-mono" style={{ color: cur.accentColor }}>
-                                            {imgIdx + 1} / {images.length} photos
+                                        <span className="w-1 h-1 rounded-full bg-white/20" />
+                                        <span className="text-[11px] font-mono font-bold" style={{ color: cur.accentColor }}>
+                                            {imgIdx + 1} / {images.length} PHOTOS
                                         </span>
                                     </>
                                 )}
                             </div>
-                            <div className="h-px mb-3"
-                                style={{ background: `linear-gradient(90deg, ${cur.accentColor}40, transparent)` }} />
-                            <p className="text-white/55 text-xs leading-relaxed">{cur.description}</p>
+                            <div className="h-px mb-5"
+                                style={{ background: `linear-gradient(90deg, ${cur.accentColor}50, transparent)` }} />
+                            <p className="text-white/60 text-[13px] leading-relaxed mb-8">{cur.description}</p>
                         </div>
 
-                        <div className="flex flex-col gap-2">
-                            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                        <div className="flex flex-col gap-3">
+                            <motion.button whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
                                 onClick={() => onDownload(images[imgIdx], cur.title)}
-                                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest"
-                                style={{ background: `linear-gradient(135deg, ${cur.accentColor}, ${cur.accentColor}cc)`, color: '#000', boxShadow: `0 4px 18px ${cur.accentColor}40` }}>
-                                <Download size={13} /> Download
+                                className="flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest"
+                                style={{ background: `linear-gradient(135deg, ${cur.accentColor}, ${cur.accentColor}dd)`, color: '#000', boxShadow: `0 8px 30px ${cur.accentColor}35` }}>
+                                <Download size={14} strokeWidth={3} /> Download Work
                             </motion.button>
                             <div className="flex gap-2">
-                                <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
-                                    style={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.45)' }}>
-                                    <Share2 size={11} /> Share
+                                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10 text-white/50">
+                                    <Share2 size={12} /> Share
                                 </button>
-                                <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
-                                    style={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.45)' }}>
-                                    <Info size={11} /> Details
+                                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10 text-white/50">
+                                    <Info size={12} /> Details
                                 </button>
                             </div>
                             {isAdmin && (
@@ -633,7 +638,7 @@ const loadWatermark = () => {
     if (watermarkCache) return Promise.resolve(watermarkCache);
     return new Promise((resolve) => {
         const img = new Image();
-        img.src = '/hl_logo_clean.png';
+        img.src = '/hyzen_logo_mark.png';
         img.crossOrigin = 'anonymous';
 
         // 3초 타임아웃 (워터마크 때문에 전체가 멈추지 않도록)
@@ -655,8 +660,22 @@ const loadWatermark = () => {
     });
 };
 
-// ── 유틸: 이미지 압축 및 워터마크 추가 (최적화 강도 상향: 800px / 0.6) ──
-const compressImage = async (file, maxWidth = 800, quality = 0.6) => {
+// ── 유틸: 배경 밝기 분석 ──
+const checkBrightness = (ctx, x, y, w, h) => {
+    try {
+        const data = ctx.getImageData(x, y, w, h).data;
+        let brightness = 0;
+        for (let i = 0; i < data.length; i += 4) {
+            brightness += (data[i] * 299 + data[i + 1] * 587 + data[i + 2] * 114) / 1000;
+        }
+        return brightness / (data.length / 4);
+    } catch (e) {
+        return 128; // 에러 시 중간값
+    }
+};
+
+// ── 유틸: 이미지 압축 및 워터마크 추가 (최적화 강도 상향: 1000px / 0.75) ──
+const compressImage = async (file, maxWidth = 1000, quality = 0.75) => {
     const [img, watermark] = await Promise.all([
         new Promise((resolve, reject) => {
             const i = new Image();
@@ -682,17 +701,34 @@ const compressImage = async (file, maxWidth = 800, quality = 0.6) => {
 
     canvas.width = width;
     canvas.height = height;
-    const ctx = canvas.getContext('2d', { alpha: false }); // 성능 향상을 위해 alpha: false
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.drawImage(img, 0, 0, width, height);
 
     if (watermark) {
-        const padding = width * 0.03;
-        const wWidth = width * 0.12;
+        const padding = width * 0.04;
+        const wWidth = width * 0.15;
         const wHeight = (watermark.height / watermark.width) * wWidth;
+        const wx = width - wWidth - padding;
+        const wy = height - wHeight - padding;
 
-        ctx.globalAlpha = 0.7;
-        ctx.drawImage(watermark, width - wWidth - padding, height - wHeight - padding, wWidth, wHeight);
-        ctx.globalAlpha = 1.0;
+        // 배경 밝기 체크
+        const brightness = checkBrightness(ctx, wx, wy, wWidth, wHeight);
+        const isLight = brightness > 180;
+
+        ctx.save();
+        ctx.globalAlpha = 0.95;
+
+        if (isLight) {
+            ctx.filter = 'invert(1) brightness(0.1)';
+            ctx.shadowColor = 'rgba(255,255,255,0.4)';
+            ctx.shadowBlur = 6;
+        } else {
+            ctx.shadowColor = 'rgba(0,0,0,0.6)';
+            ctx.shadowBlur = 10;
+        }
+
+        ctx.drawImage(watermark, wx, wy, wWidth, wHeight);
+        ctx.restore();
     }
 
     return new Promise((resolve) => {
@@ -1256,14 +1292,77 @@ const ShoesGallery = ({ onModalChange }) => {
     }, [db, appId]);
 
     // ── 다운로드 ─────────────────────────────────────────────────────────────
-    const handleDownload = useCallback((url, title) => {
-        if (url) {
+    const handleDownload = useCallback(async (url, title) => {
+        if (!url) return alert('⚠️ 이미지가 아직 준비 중입니다.');
+
+        try {
+            // 1. 이미지와 워터마크 동시 로드
+            const [img, watermark] = await Promise.all([
+                new Promise((resolve, reject) => {
+                    const i = new Image();
+                    i.crossOrigin = 'anonymous';
+                    i.onload = () => resolve(i);
+                    i.onerror = () => reject(new Error('이미지 로드 실패'));
+                    i.src = url;
+                }),
+                loadWatermark()
+            ]);
+
+            // 2. 캔버스 작업
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+            // 본래 이미지 그리기
+            ctx.drawImage(img, 0, 0);
+
+            // 워터마크 그리기 (배경색에 따라 반전)
+            if (watermark) {
+                const padding = canvas.width * 0.04;
+                const wWidth = canvas.width * 0.15;
+                const wHeight = (watermark.height / watermark.width) * wWidth;
+                const wx = canvas.width - wWidth - padding;
+                const wy = canvas.height - wHeight - padding;
+
+                const brightness = checkBrightness(ctx, wx, wy, wWidth, wHeight);
+                const isLight = brightness > 180;
+
+                ctx.save();
+                ctx.globalAlpha = 0.95;
+
+                if (isLight) {
+                    ctx.filter = 'invert(1) brightness(0.1)';
+                    ctx.shadowColor = 'rgba(255,255,255,0.4)';
+                    ctx.shadowBlur = 6;
+                } else {
+                    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+                    ctx.shadowBlur = 10;
+                }
+
+                ctx.drawImage(watermark, wx, wy, wWidth, wHeight);
+                ctx.restore();
+            }
+
+            // 3. 다운로드 트리거
+            canvas.toBlob((blob) => {
+                const downloadUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `${(title || 'design').replace(/\s+/g, '_')}_HyzenCollection.jpg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(downloadUrl);
+            }, 'image/jpeg', 0.95);
+
+        } catch (err) {
+            console.error('Download error:', err);
+            // 에러 시 (CORS 등) 원본 파일이라도 다운로드 시도
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${(title || 'design').replace(/\s+/g, '_')}_SoleVision.jpg`;
+            a.download = `${(title || 'design').replace(/\s+/g, '_')}_HyzenCollection.jpg`;
             a.click();
-        } else {
-            alert('⚠️ 이미지가 아직 준비 중입니다.');
         }
     }, []);
 
@@ -1321,17 +1420,17 @@ const ShoesGallery = ({ onModalChange }) => {
                         <div>
                             <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
                                 className="text-5xl md:text-6xl font-black text-white tracking-tighter leading-none mb-2">
-                                SOLE
+                                HYZEN
                                 <span className="block" style={{
                                     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                                     backgroundImage: 'linear-gradient(135deg, #6366f1, #0ea5e9, #22d3ee)',
                                     backgroundClip: 'text',
-                                }}>VISION</span>
+                                }}>COLLECTION</span>
                             </motion.h1>
                             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.08 }}
                                 className="text-white/35 text-sm max-w-xs leading-relaxed">
-                                상상 속의 러닝화, AI로 시각화한 나의 디자인 비전.
-                                <br /><span className="text-white/18 text-xs">Every sole tells a story.</span>
+                                AI로 시각화한 Hyzen의 디자인 비전.
+                                <br /><span className="text-white/18 text-xs">Innovation in every detail.</span>
                             </motion.p>
                         </div>
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.12 }}
@@ -1426,8 +1525,8 @@ const ShoesGallery = ({ onModalChange }) => {
                 ) : viewMode === 'grid' ? (
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                        gap: '16px',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
+                        gap: '32px',
                         alignItems: 'start',
                     }}>
                         {displayed.map((item, i) => (

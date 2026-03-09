@@ -345,13 +345,13 @@ const App = () => {
           <button
             onClick={() => handleNavigate(2)}
             className={`relative overflow-hidden flex items-center justify-center rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 2 ? 'bg-white text-black px-4 py-1.5' : 'bg-transparent text-white/50 w-8 h-8 hover:bg-white/10'}`}
-            aria-label="Sole Vision"
+            aria-label="Hyzen Collection"
           >
             <span className={`text-[10px] font-bold tracking-widest uppercase transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 2 ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0 pointer-events-none'}`}>
-              Sole
+              Hyzen
             </span>
             <span className={`text-[10px] font-bold transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] absolute ${viewIndex === 2 ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
-              S
+              C
             </span>
           </button>
 

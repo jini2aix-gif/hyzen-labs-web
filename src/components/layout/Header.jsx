@@ -63,7 +63,7 @@ const Header = ({ onOpenMyPage, onOpenAuthModal, currentIndex, onNavigate, hidde
     const navItems = [
         { label: 'Playground', index: 0 },
         { label: 'HNRC', index: 1 },
-        { label: 'Sole Vision', index: 2 },
+        { label: 'Hyzen Collection', index: 2 },
         ...(user ? [{ label: 'Arbiscan', index: 3 }] : []),
     ];
 
