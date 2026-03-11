@@ -250,24 +250,24 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
                 </div>
 
                 {/* ── Status Widget ── */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-                    <div className="bg-black/30 border border-emerald-900/40 rounded-xl p-3 flex flex-col justify-center">
-                        <div className="text-[9px] text-gray-500 font-mono uppercase tracking-wider mb-1">Navigation Status</div>
-                        <div className="text-xs font-bold font-mono uppercase tracking-tight flex items-center gap-2" style={{ color: statusColor }}>
-                            <div className={`w-1.5 h-1.5 rounded-full animate-pulse`} style={{ backgroundColor: statusColor }} />
-                            {status}
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-3 mb-6">
+                    <div className="bg-black/30 border border-emerald-900/40 rounded-lg sm:rounded-xl p-2 sm:p-3 flex flex-col justify-center">
+                        <div className="text-[7px] sm:text-[9px] text-gray-500 font-mono uppercase tracking-tighter sm:tracking-wider mb-0.5 sm:mb-1 truncate">Navigation</div>
+                        <div className="text-[9px] sm:text-xs font-bold font-mono uppercase tracking-tighter sm:tracking-tight flex items-center gap-1 sm:gap-2" style={{ color: statusColor }}>
+                            <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full animate-pulse shrink-0" style={{ backgroundColor: statusColor }} />
+                            <span className="truncate">{status}</span>
                         </div>
                     </div>
-                    <div className="bg-black/30 border border-emerald-900/40 rounded-xl p-3 flex flex-col justify-center text-center">
-                        <div className="text-[9px] text-gray-500 font-mono uppercase tracking-wider mb-1">Lower Band Deviation</div>
-                        <div className="text-sm font-black font-mono text-[#10B981]">
-                            {lowerDev >= 0 ? '+' : ''}{lowerDev.toFixed(1)}% <span className="text-[10px] text-gray-600 font-normal">above base</span>
+                    <div className="bg-black/30 border border-emerald-900/40 rounded-lg sm:rounded-xl p-2 sm:p-3 flex flex-col justify-center text-center">
+                        <div className="text-[7px] sm:text-[9px] text-gray-500 font-mono uppercase tracking-tighter sm:tracking-wider mb-0.5 sm:mb-1 truncate">Lower Dev</div>
+                        <div className="text-[10px] sm:text-sm font-black font-mono text-[#10B981] truncate">
+                            {lowerDev >= 0 ? '+' : ''}{lowerDev.toFixed(1)}% <span className="hidden sm:inline text-[10px] text-gray-600 font-normal ml-0.5">above base</span>
                         </div>
                     </div>
-                    <div className="bg-black/30 border border-emerald-900/40 rounded-xl p-3 flex flex-col justify-center text-right">
-                        <div className="text-[9px] text-gray-500 font-mono uppercase tracking-wider mb-1">Upper Band Deviation</div>
-                        <div className="text-sm font-black font-mono" style={{ color: upperDev > 0 ? '#DC3545' : '#10B981' }}>
-                            {upperDev >= 0 ? '+' : ''}{upperDev.toFixed(1)}% <span className="text-[10px] text-gray-600 font-normal">from cap</span>
+                    <div className="bg-black/30 border border-emerald-900/40 rounded-lg sm:rounded-xl p-2 sm:p-3 flex flex-col justify-center text-right">
+                        <div className="text-[7px] sm:text-[9px] text-gray-500 font-mono uppercase tracking-tighter sm:tracking-wider mb-0.5 sm:mb-1 truncate">Upper Dev</div>
+                        <div className="text-[10px] sm:text-sm font-black font-mono truncate" style={{ color: upperDev > 0 ? '#DC3545' : '#10B981' }}>
+                            {upperDev >= 0 ? '+' : ''}{upperDev.toFixed(1)}% <span className="hidden sm:inline text-[10px] text-gray-600 font-normal ml-0.5">from cap</span>
                         </div>
                     </div>
                 </div>
