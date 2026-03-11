@@ -3,14 +3,14 @@
  */
 
 const TTL = {
-    SHORT: 1 * 60 * 1000,    // 1 min
+    SHORT: 20 * 1000,        // 20s (Live Market Data)
     MEDIUM: 5 * 60 * 1000,   // 5 min
     LONG: 24 * 60 * 60 * 1000, // 24 h
 };
 
 export const REFRESH = {
     FAST: 20 * 1000,     // 20s
-    NORMAL: 5 * 60 * 1000, // 5m
+    NORMAL: 60 * 1000,   // 1m (Reduce from 5m for better sync)
     SLOW: 24 * 60 * 60 * 1000, // 24h
 };
 
@@ -51,9 +51,8 @@ const fetchWithCache = async (url, cacheKey, ttl = 0, fallbackMock = null) => {
 // ─── 1. Market Data (CoinGecko) ──────────────────────────────────────────────
 export const fetchMarketComparison = async () => {
     const defaultData = {
-        arbitrum: { usd: 0.7, krw: 1000, usd_market_cap: 2500000000 },
-        optimism: { usd: 1.5, krw: 2100, usd_market_cap: 1500000000 },
-        base: { usd: 0, krw: 0, usd_market_cap: 0 } // Base has no token
+        arbitrum: { usd: 0.55, krw: 780, usd_market_cap: 2200000000, usd_24h_change: -1.2 },
+        optimism: { usd: 1.25, krw: 1750, usd_market_cap: 1100000000 }
     };
 
     const ds = await fetchWithCache(
@@ -79,9 +78,9 @@ export const fetchMarketComparison = async () => {
 // ─── 2. TVL Data (DeFiLlama) ─────────────────────────────────────────────────
 export const fetchChainTVLs = async () => {
     const defaultChains = [
-        { name: 'Arbitrum', tvl: 2500000000 },
-        { name: 'Optimism', tvl: 750000000 },
-        { name: 'Base', tvl: 1200000000 }
+        { name: 'Arbitrum', tvl: 3450000000 },
+        { name: 'Optimism', tvl: 680000000 },
+        { name: 'Base', tvl: 2200000000 }
     ];
 
     const ds = await fetchWithCache('https://api.llama.fi/v2/chains', 'chains_tvl', TTL.MEDIUM, defaultChains);

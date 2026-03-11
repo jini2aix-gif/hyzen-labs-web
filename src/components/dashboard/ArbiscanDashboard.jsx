@@ -323,8 +323,8 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
 
                 const today = new Date().toISOString().split('T')[0];
                 const krwRateRes = krwRate || 1350;
-                const currentValueKRW = TREASURY_ARB * market.arb.priceKRW;
-                const currentValueUSD = currentValueKRW / krwRateRes;
+                const currentValueUSD = TREASURY_ARB * market.arb.priceUSD;
+                const currentValueKRW = currentValueUSD * krwRateRes;
                 let th = [];
 
                 if (db && appId) {
@@ -341,18 +341,19 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                         const historyDocs = snap.docs.map(d => d.data());
                         const lastRecordDate = historyDocs[0]?.date;
 
-                        // 오늘 날짜의 기록이 없으면 현재 시세를 9시 기준 시세로 저장
-                        if (lastRecordDate !== today) {
+                        // 오늘 날짜의 기록이 없거나, 보유량이 바뀌었다면 현재 시세를 기록/업데이트
+                        if (lastRecordDate !== today || historyDocs[0]?.arbAmount !== TREASURY_ARB) {
                             await setDoc(todayRef, {
                                 date: today,
                                 timestamp: Date.now(),
                                 arbAmount: TREASURY_ARB,
                                 priceKRW: market.arb.priceKRW,
+                                priceUSD: market.arb.priceUSD, // Added priceUSD for better tracking
                                 krwRate: krwRateRes,
                                 valueKRW: currentValueKRW,
                                 valueUSD: currentValueUSD
                             }, { merge: true });
-                            console.log('Daily treasury snap recorded at 9 AM KST (or first load after 9 AM)');
+                            console.log('Daily treasury snap recorded or updated (amount change/new day)');
                         }
 
                         th = snap.docs.map(d => {
