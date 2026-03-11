@@ -76,7 +76,7 @@ const SupplyCountdown = () => {
     }, []);
 
     return (
-        <div className="flex items-center gap-3 font-mono text-2xl md:text-3xl font-black text-[#00D1FF] drop-shadow-[0_0_15px_rgba(0,209,255,0.4)]">
+        <div className="flex items-center gap-1.5 sm:gap-3 font-mono text-xl sm:text-2xl md:text-3xl font-black text-[#00D1FF] drop-shadow-[0_0_15px_rgba(0,209,255,0.4)]">
             <div className="flex flex-col items-center"><span className="leading-none">{timeLeft.d}</span><span className="text-[10px] text-gray-500 uppercase">Days</span></div>
             <span className="text-gray-600 pb-3">:</span>
             <div className="flex flex-col items-center"><span className="leading-none">{timeLeft.h}</span><span className="text-[10px] text-gray-500 uppercase">Hrs</span></div>
@@ -89,14 +89,14 @@ const SupplyCountdown = () => {
 };
 
 const ValueMetricCard = ({ title, value, subValue, change, icon: Icon, colorClass, highlight = false }) => (
-    <div className={`relative p-6 rounded-2xl border ${highlight ? 'bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A] border-[#00D1FF]/30 shadow-[0_0_30px_rgba(0,209,255,0.05)]' : 'bg-[#111111] border-gray-800'}`}>
+    <div className={`relative p-4 sm:p-6 rounded-2xl border ${highlight ? 'bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A] border-[#00D1FF]/30 shadow-[0_0_30px_rgba(0,209,255,0.05)]' : 'bg-[#111111] border-gray-800'}`}>
         <div className="flex items-center justify-between mb-4">
             <h3 className="text-gray-400 font-mono text-[11px] tracking-widest uppercase">{title}</h3>
             <Icon size={18} className={colorClass} />
         </div>
         <div className="flex items-end justify-between">
             <div>
-                <div className="text-2xl font-bold text-white tracking-tight">{value}</div>
+                <div className="text-xl sm:text-2xl font-bold text-white tracking-tight">{value}</div>
                 {subValue && <div className="text-gray-500 text-sm mt-1">{subValue}</div>}
             </div>
             {change !== undefined && (
@@ -228,12 +228,12 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
                     backgroundSize: '100% 4px'
                 }} />
 
-            <div className="relative z-10 p-5 sm:p-7">
+            <div className="relative z-10 p-4 sm:p-7">
                 {/* ── Title Area ── */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
-                        <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-                            <span className="w-2 h-6 bg-[#10B981] rounded-full inline-block" />
+                        <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
+                            <span className="w-2 h-5 sm:h-6 bg-[#10B981] rounded-full inline-block" />
                             Hyzen Labs. Predictive Asset Navigation
                         </h2>
                         <p className="text-[10px] text-gray-500 font-mono mt-1 uppercase tracking-widest">Autonomous Financial Trajectory Monitor</p>
@@ -273,30 +273,30 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
                 </div>
 
                 {/* ── Main Figures ── */}
-                <div className="flex flex-col sm:flex-row items-end justify-between gap-6 mb-8 mt-2 p-6 rounded-2xl bg-gradient-to-br from-emerald-900/10 to-transparent border border-emerald-500/10">
+                <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 mb-8 mt-2 p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-emerald-900/10 to-transparent border border-emerald-500/10">
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono font-bold border border-emerald-500/20">REAL-TIME POSITION</span>
                         </div>
-                        <div className="text-4xl sm:text-5xl font-black text-white tracking-tighter leading-none mb-2">
+                        <div className="text-3xl sm:text-5xl font-black text-white tracking-tighter leading-none mb-2 tabular-nums">
                             ₩{Math.round(currentValueKRW).toLocaleString()}
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="text-lg text-gray-400 font-mono font-bold tracking-tight">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <div className="text-sm sm:text-lg text-gray-400 font-mono font-bold tracking-tight">
                                 ≈ ${currentValueUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })} USD
                             </div>
-                            <div className="h-4 w-px bg-gray-800" />
-                            <div className="text-xs text-gray-500 font-mono uppercase tracking-widest">
+                            <div className="hidden sm:block h-4 w-px bg-gray-800" />
+                            <div className="text-[10px] sm:text-xs text-gray-500 font-mono uppercase tracking-widest">
                                 {TREASURY_ARB.toLocaleString()} ARB
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex gap-4 shrink-0">
-                        <div className="text-right">
-                            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-wider mb-1">Live ARB Price</div>
-                            <div className="text-xl font-black text-white font-mono leading-none">₩{(priceKRW || 0).toLocaleString()}</div>
-                            <div className="text-xs text-emerald-500/70 font-mono mt-1">${priceUSD?.toFixed(4) ?? '—'}</div>
+                    <div className="flex gap-4 shrink-0 w-full sm:w-auto justify-between sm:justify-end border-t border-emerald-500/10 sm:border-0 pt-4 sm:pt-0">
+                        <div className="text-left sm:text-right">
+                            <div className="text-[9px] text-gray-500 font-mono uppercase tracking-wider mb-1">Live ARB Price</div>
+                            <div className="text-lg sm:text-xl font-black text-white font-mono leading-none">₩{(priceKRW || 0).toLocaleString()}</div>
+                            <div className="text-[10px] sm:text-xs text-emerald-500/70 font-mono mt-1">${priceUSD?.toFixed(4) ?? '—'}</div>
                         </div>
                     </div>
                 </div>
@@ -361,7 +361,7 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
                                     type="monotone"
                                     dataKey="valueKRW"
                                     stroke={neonGreen}
-                                    strokeWidth={4}
+                                    strokeWidth={1.5}
                                     dot={false}
                                     activeDot={{ r: 6, fill: neonGreen, strokeWidth: 0, shadow: '0 0 10px #39FF14' }}
                                     style={{ filter: 'drop-shadow(0 0 8px rgba(57, 255, 20, 0.4))' }}
@@ -534,7 +534,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
         : 1;
 
     return (
-        <section className="relative bg-[#050505] min-h-screen text-gray-200 font-sans pt-24 pb-20 px-4 md:px-8 overflow-hidden">
+        <section className="relative bg-[#050505] min-h-screen text-gray-200 font-sans pt-20 sm:pt-24 pb-12 sm:pb-20 px-3 sm:px-8 overflow-hidden">
             {/* ─── Non-member Auth Overlay ─── */}
             <AnimatePresence>
                 {isAuthGated && (
@@ -1180,7 +1180,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                                     <div>
                                         {/* SVG arc gauge */}
                                         <div className="flex items-center justify-between mb-2">
-                                            <span className="text-2xl font-black font-mono" style={{ color: sentColor }}>{longPct}%</span>
+                                            <span className="text-xl sm:text-2xl font-black font-mono" style={{ color: sentColor }}>{longPct}%</span>
                                             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold" style={{ color: sentColor, background: `${sentColor}18` }}>
                                                 {bullish ? '🟢 LONG BIAS' : '🔴 SHORT BIAS'}
                                             </span>
@@ -1217,7 +1217,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                                 return (
                                     <div>
                                         <div className="flex items-end justify-between mb-2">
-                                            <span className="text-2xl font-black font-mono" style={{ color: marginColor }}>{marginPct}%</span>
+                                            <span className="text-xl sm:text-2xl font-black font-mono" style={{ color: marginColor }}>{marginPct}%</span>
                                             <span className="text-[10px] font-mono text-gray-500">
                                                 {trend === 'up' ? '↑' : '↓'} 24h rev: ${(revenue24h / 1000).toFixed(1)}K
                                             </span>
