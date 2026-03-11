@@ -108,7 +108,7 @@ const ValueMetricCard = ({ title, value, subValue, change, icon: Icon, colorClas
 );
 
 // ─── Treasury Constants ───────────────────────────────────────────────────────
-const TREASURY_ARB = 141202;
+const TREASURY_ARB = 130766;
 
 // ─── Value Gap Gauge Component ────────────────────────────────────────────────
 const ValueGapGauge = ({ index }) => {
