@@ -29,6 +29,7 @@ import {
     fetchKRWRate,
     REFRESH
 } from '../../lib/api-fetcher';
+import { MONTHLY_REALISTIC_BAND, TREASURY_ARB } from '../../constants/simulation-data';
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -107,8 +108,7 @@ const ValueMetricCard = ({ title, value, subValue, change, icon: Icon, colorClas
     </div>
 );
 
-// ─── Treasury Constants ───────────────────────────────────────────────────────
-const TREASURY_ARB = 130766;
+// TREASURY_ARB is now imported from constants/simulation-data.js
 
 // ─── Value Gap Gauge Component ────────────────────────────────────────────────
 const ValueGapGauge = ({ index }) => {
@@ -166,115 +166,220 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
     const currentValueKRW = TREASURY_ARB * (priceKRW || 0);
     const currentValueUSD = currentValueKRW / (krwRate || 1350);
 
-    const gold = '#D4AF37';
-    const goldFaint = 'rgba(212,175,55,0.12)';
-    const goldFainter = 'rgba(212,175,55,0.06)';
+    // Find current month band for deviation logic
+    const todayStr = new Date().toISOString().substring(0, 7).replace('-', '/');
+    const currentBand = MONTHLY_REALISTIC_BAND.find(b => b.date === todayStr);
+
+    let lowerDev = 0;
+    let upperDev = 0;
+    let status = "계산 중...";
+    let statusColor = "#555";
+
+    if (currentBand && priceKRW) {
+        lowerDev = ((priceKRW - currentBand.priceLow) / currentBand.priceLow) * 100;
+        upperDev = ((priceKRW - currentBand.priceHigh) / currentBand.priceHigh) * 100;
+
+        if (priceKRW < currentBand.priceLow) {
+            status = "저평가 (과매도) 구간 진입";
+            statusColor = "#FFD700"; // Gold/Yellow
+        } else if (priceKRW > currentBand.priceHigh) {
+            status = "고평가 (과매수) 구간 도달";
+            statusColor = "#DC3545"; // Red
+        } else {
+            status = "밴드 내 정상 순항 중";
+            statusColor = "#10B981"; // Emerald
+        }
+    }
+
+    const targetRate = ((priceKRW || 0) / 7500) * 100;
+
+    // Merge history with band data
+    const chartData = history.map(h => {
+        const monthStr = h.date.substring(0, 7).replace('-', '/');
+        const band = MONTHLY_REALISTIC_BAND.find(b => b.date === monthStr);
+        return {
+            ...h,
+            bandLow: band?.valueLow,
+            bandHigh: band?.valueHigh,
+        };
+    });
+
+    const emerald = '#10B981';
+    const neonGreen = '#39FF14';
+    // eslint-disable-next-line no-unused-vars
+    const emeraldFaint = 'rgba(16, 185, 129, 0.12)';
+    // eslint-disable-next-line no-unused-vars
+    const emeraldFainter = 'rgba(16, 185, 129, 0.06)';
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
             className="relative overflow-hidden rounded-3xl mb-6"
             style={{
-                background: 'linear-gradient(135deg, #0D0D0D 0%, #1A1200 100%)',
-                border: `1px solid rgba(212,175,55,0.3)`,
-                boxShadow: '0 0 40px rgba(212,175,55,0.07), inset 0 1px 0 rgba(212,175,55,0.12)'
+                background: 'linear-gradient(135deg, #050505 0%, #0A0A0A 100%)',
+                border: `1px solid rgba(16, 185, 129, 0.2)`,
+                boxShadow: '0 0 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(16, 185, 129, 0.1)'
             }}
         >
-            {/* shimmer */}
-            <div className="absolute inset-0 pointer-events-none"
-                style={{ background: 'radial-gradient(ellipse at top left, rgba(212,175,55,0.07) 0%, transparent 55%)' }} />
+            {/* Background scanner effect */}
+            <div className="absolute inset-0 pointer-events-none opacity-20"
+                style={{
+                    background: 'linear-gradient(transparent 0%, rgba(16, 185, 129, 0.1) 50%, transparent 100%)',
+                    backgroundSize: '100% 4px'
+                }} />
 
             <div className="relative z-10 p-5 sm:p-7">
-
-                {/* ── Row 1: Label + ARB count ── */}
-                <div className="flex items-center justify-between mb-5">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                            style={{ background: 'rgba(212,175,55,0.15)', border: `1px solid ${goldFaint}` }}>
-                            <span className="text-xs">🏛️</span>
+                {/* ── Title Area ── */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+                            <span className="w-2 h-6 bg-[#10B981] rounded-full inline-block" />
+                            Hyzen Labs. Predictive Asset Navigation
+                        </h2>
+                        <p className="text-[10px] text-gray-500 font-mono mt-1 uppercase tracking-widest">Autonomous Financial Trajectory Monitor</p>
+                    </div>
+                    <div className="flex items-center gap-3 bg-black/40 border border-emerald-900/50 rounded-2xl px-4 py-2">
+                        <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                            <Target size={14} className="text-[#10B981]" />
                         </div>
                         <div>
-                            <div className="text-[10px] font-mono tracking-[0.18em] uppercase" style={{ color: gold }}>Hyzen Treasure</div>
-                            <div className="text-[10px] text-gray-600 font-mono">Private · Real-time ARB</div>
-                        </div>
-                    </div>
-                    <div className="text-right shrink-0 ml-3">
-                        <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider">Holdings</div>
-                        <div className="text-base font-black font-mono leading-tight" style={{ color: gold }}>
-                            {TREASURY_ARB.toLocaleString()} ARB
+                            <div className="text-[9px] text-gray-500 font-mono uppercase tracking-tighter line-clamp-1">2027 Target (7,500 KRW)</div>
+                            <div className="text-sm font-bold font-mono text-white">{targetRate.toFixed(1)}% Achieved</div>
                         </div>
                     </div>
                 </div>
 
-                {/* ── Row 2: KRW Value + Price Pills ── */}
-                <div className="flex flex-col sm:flex-row sm:items-stretch gap-3">
-                    {/* Big KRW value */}
+                {/* ── Status Widget ── */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                    <div className="bg-black/30 border border-emerald-900/40 rounded-xl p-3 flex flex-col justify-center">
+                        <div className="text-[9px] text-gray-500 font-mono uppercase tracking-wider mb-1">Navigation Status</div>
+                        <div className="text-xs font-bold font-mono uppercase tracking-tight flex items-center gap-2" style={{ color: statusColor }}>
+                            <div className={`w-1.5 h-1.5 rounded-full animate-pulse`} style={{ backgroundColor: statusColor }} />
+                            {status}
+                        </div>
+                    </div>
+                    <div className="bg-black/30 border border-emerald-900/40 rounded-xl p-3 flex flex-col justify-center text-center">
+                        <div className="text-[9px] text-gray-500 font-mono uppercase tracking-wider mb-1">Lower Band Deviation</div>
+                        <div className="text-sm font-black font-mono text-[#10B981]">
+                            {lowerDev >= 0 ? '+' : ''}{lowerDev.toFixed(1)}% <span className="text-[10px] text-gray-600 font-normal">above base</span>
+                        </div>
+                    </div>
+                    <div className="bg-black/30 border border-emerald-900/40 rounded-xl p-3 flex flex-col justify-center text-right">
+                        <div className="text-[9px] text-gray-500 font-mono uppercase tracking-wider mb-1">Upper Band Deviation</div>
+                        <div className="text-sm font-black font-mono" style={{ color: upperDev > 0 ? '#DC3545' : '#10B981' }}>
+                            {upperDev >= 0 ? '+' : ''}{upperDev.toFixed(1)}% <span className="text-[10px] text-gray-600 font-normal">from cap</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Main Figures ── */}
+                <div className="flex flex-col sm:flex-row items-end justify-between gap-6 mb-8 mt-2 p-6 rounded-2xl bg-gradient-to-br from-emerald-900/10 to-transparent border border-emerald-500/10">
                     <div className="flex-1 min-w-0">
-                        <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">Estimated Value</div>
-                        <div className="text-2xl sm:text-3xl font-black tracking-tight leading-none" style={{ color: gold }}>
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono font-bold border border-emerald-500/20">REAL-TIME POSITION</span>
+                        </div>
+                        <div className="text-4xl sm:text-5xl font-black text-white tracking-tighter leading-none mb-2">
                             ₩{Math.round(currentValueKRW).toLocaleString()}
                         </div>
-                        <div className="text-xs text-gray-500 font-mono mt-1.5">
-                            ≈ ${currentValueUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })} USD
+                        <div className="flex items-center gap-3">
+                            <div className="text-lg text-gray-400 font-mono font-bold tracking-tight">
+                                ≈ ${currentValueUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })} USD
+                            </div>
+                            <div className="h-4 w-px bg-gray-800" />
+                            <div className="text-xs text-gray-500 font-mono uppercase tracking-widest">
+                                {TREASURY_ARB.toLocaleString()} ARB
+                            </div>
                         </div>
                     </div>
-                    {/* Right pills */}
-                    <div className="flex sm:flex-col gap-2 shrink-0">
-                        <div className="flex-1 sm:flex-none rounded-xl px-4 py-3" style={{ background: goldFainter, border: `1px solid ${goldFaint}` }}>
-                            <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">Live ARB</div>
-                            <div className="text-lg font-black text-white font-mono leading-none">${priceUSD?.toFixed(4) ?? '—'}</div>
-                            <div className="text-xs text-gray-500 font-mono mt-0.5">₩{(priceKRW || 0).toLocaleString()}</div>
-                        </div>
-                        <div className="flex-1 sm:flex-none rounded-xl px-4 py-3" style={{ background: goldFainter, border: `1px solid ${goldFaint}` }}>
-                            <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">USD Value</div>
-                            <div className="text-lg font-black font-mono leading-none" style={{ color: gold }}>
-                                ${currentValueUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                            </div>
-                            <div className="text-xs text-gray-500 font-mono mt-0.5">{(currentValueUSD / 1000).toFixed(1)}K</div>
+
+                    <div className="flex gap-4 shrink-0">
+                        <div className="text-right">
+                            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-wider mb-1">Live ARB Price</div>
+                            <div className="text-xl font-black text-white font-mono leading-none">₩{(priceKRW || 0).toLocaleString()}</div>
+                            <div className="text-xs text-emerald-500/70 font-mono mt-1">${priceUSD?.toFixed(4) ?? '—'}</div>
                         </div>
                     </div>
                 </div>
 
-                {/* ── Row 3: Historical Chart ── */}
-                {history && history.length > 0 && (
-                    <div className="mt-6 pt-6 border-t border-[rgba(212,175,55,0.15)]">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-wider">Treasury Value History (KRW)</div>
-                            <div className="text-[10px] text-gray-500 font-mono tracking-wider">{history.length} Days</div>
-                        </div>
-                        <div className="h-[140px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={history} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="colorValueKRW" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor={gold} stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor={gold} stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(212,175,55,0.05)" vertical={false} />
-                                    <XAxis dataKey="shortDate" stroke="rgba(212,175,55,0.3)" fontSize={9} tickLine={false} axisLine={false} dy={5} />
-                                    <YAxis
-                                        domain={['auto', 'auto']}
-                                        stroke="rgba(212,175,55,0.3)"
-                                        fontSize={9}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickFormatter={(val) => `₩${(val / 1e6).toFixed(1)}M`}
-                                        width={52}
-                                    />
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(212,175,55,0.3)', borderRadius: '8px' }}
-                                        itemStyle={{ color: gold, fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace' }}
-                                        labelStyle={{ color: '#888', fontSize: '10px', marginBottom: '4px', fontFamily: 'monospace' }}
-                                        formatter={(value) => [`₩${Math.round(value).toLocaleString()}`, 'Value']}
-                                    />
-                                    <Area type="monotone" dataKey="valueKRW" stroke={gold} strokeWidth={2} fillOpacity={1} fill="url(#colorValueKRW)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                {/* ── Predictive Chart ── */}
+                <div className="pt-6 border-t border-emerald-500/10">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <Activity size={14} className="text-emerald-500" />
+                            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">Asset Value Trajectory vs 2027 Realistic Band</div>
                         </div>
                     </div>
-                )}
-
+                    <div className="h-[240px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={chartData} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="bandGrad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={emerald} stopOpacity={0.15} />
+                                        <stop offset="95%" stopColor={emerald} stopOpacity={0.02} />
+                                    </linearGradient>
+                                    <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={neonGreen} stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor={neonGreen} stopOpacity={0.2} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(16, 185, 129, 0.05)" vertical={false} />
+                                <XAxis dataKey="shortDate" stroke="rgba(16, 185, 129, 0.2)" fontSize={9} tickLine={false} axisLine={false} dy={5} />
+                                <YAxis
+                                    domain={['auto', 'auto']}
+                                    stroke="rgba(16, 185, 129, 0.2)"
+                                    fontSize={9}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tickFormatter={(val) => `₩${(val / 1e6).toFixed(0)}M`}
+                                    width={45}
+                                />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#050505', borderColor: 'rgba(16, 185, 129, 0.3)', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }}
+                                    itemStyle={{ color: neonGreen, fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace' }}
+                                    labelStyle={{ color: '#888', fontSize: '10px', marginBottom: '4px', fontFamily: 'monospace', fontWeight: 'bold' }}
+                                    formatter={(value, name) => {
+                                        const label = name === 'valueKRW' ? 'Current Value' : name === 'bandLow' ? 'Band Min' : 'Band Max';
+                                        return [`₩${Math.round(value).toLocaleString()}`, label];
+                                    }}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="bandHigh"
+                                    stroke="transparent"
+                                    fill={emerald}
+                                    fillOpacity={0.1}
+                                    name="Band Projection"
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="bandLow"
+                                    stroke="transparent"
+                                    fill="#050505"
+                                    fillOpacity={1}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="valueKRW"
+                                    stroke={neonGreen}
+                                    strokeWidth={4}
+                                    dot={false}
+                                    activeDot={{ r: 6, fill: neonGreen, strokeWidth: 0, shadow: '0 0 10px #39FF14' }}
+                                    style={{ filter: 'drop-shadow(0 0 8px rgba(57, 255, 20, 0.4))' }}
+                                />
+                            </ComposedChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <div className="flex items-center gap-6 mt-4 justify-center">
+                        <div className="flex items-center gap-2">
+                            <div className="w-10 h-3 rounded-sm opacity-20" style={{ backgroundColor: emerald }} />
+                            <span className="text-[10px] text-gray-600 font-mono uppercase tracking-widest underline decoration-emerald-500/30 underline-offset-4">Realistic Band (2026-2027)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-10 h-1 rounded-full" style={{ backgroundColor: neonGreen }} />
+                            <span className="text-[10px] text-gray-600 font-mono uppercase tracking-widest underline decoration-neonGreen/30 underline-offset-4">Actual Asset Value</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </motion.div>
     );
