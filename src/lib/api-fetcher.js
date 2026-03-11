@@ -48,31 +48,60 @@ const fetchWithCache = async (url, cacheKey, ttl = 0, fallbackMock = null) => {
     }
 };
 
-// ─── 1. Market Data (CoinGecko) ──────────────────────────────────────────────
+// ─── 1. Market Data (Multi-source: Upbit, Binance, CoinGecko) ────────────────
 export const fetchMarketComparison = async () => {
     const defaultData = {
-        arbitrum: { usd: 0.55, krw: 780, usd_market_cap: 2200000000, usd_24h_change: -1.2 },
-        optimism: { usd: 1.25, krw: 1750, usd_market_cap: 1100000000 }
+        arbitrum: { usd: 0.65, krw: 920, usd_market_cap: 2800000000, usd_24h_change: 0 },
+        optimism: { usd: 1.45, krw: 2000, usd_market_cap: 1700000000 }
     };
 
-    const ds = await fetchWithCache(
-        'https://api.coingecko.com/api/v3/simple/price?ids=arbitrum,optimism&vs_currencies=usd,krw&include_market_cap=true&include_24hr_vol=true&include_24hr_change=true',
-        'market_comp_cg',
-        TTL.SHORT,
-        defaultData
-    );
+    try {
+        // Fetch from multiple sources in parallel
+        const [upbit, binance, cg] = await Promise.allSettled([
+            fetch('https://api.upbit.com/v1/ticker?markets=KRW-ARB').then(r => r.json()),
+            fetch('https://api.binance.com/api/v3/ticker/price?symbol=ARBUSDT').then(r => r.json()),
+            fetchWithCache(
+                'https://api.coingecko.com/api/v3/simple/price?ids=arbitrum,optimism&vs_currencies=usd,krw&include_market_cap=true&include_24hr_change=true',
+                'market_comp_cg',
+                TTL.SHORT,
+                null
+            )
+        ]);
 
-    return {
-        arb: {
-            priceUSD: ds?.arbitrum?.usd || defaultData.arbitrum.usd,
-            priceKRW: ds?.arbitrum?.krw || defaultData.arbitrum.krw,
-            mcapUSD: ds?.arbitrum?.usd_market_cap || defaultData.arbitrum.usd_market_cap,
-            change24h: ds?.arbitrum?.usd_24h_change || 0
-        },
-        op: {
-            mcapUSD: ds?.optimism?.usd_market_cap || defaultData.optimism.usd_market_cap
-        }
-    };
+        const upbitPrice = upbit.status === 'fulfilled' ? upbit.value[0]?.trade_price : null;
+        const binancePrice = binance.status === 'fulfilled' ? Number(binance.value?.price) : null;
+        
+        let arbUSD = binancePrice || (cg.status === 'fulfilled' ? cg.value?.arbitrum?.usd : null) || defaultData.arbitrum.usd;
+        let arbKRW = upbitPrice || (cg.status === 'fulfilled' ? cg.value?.arbitrum?.krw : null) || (arbUSD * 1400); // fallback rate
+        let arbMcap = (cg.status === 'fulfilled' ? cg.value?.arbitrum?.usd_market_cap : null) || defaultData.arbitrum.usd_market_cap;
+        let arbChange = (cg.status === 'fulfilled' ? cg.value?.arbitrum?.usd_24h_change : 0);
+        let opMcap = (cg.status === 'fulfilled' ? cg.value?.optimism?.usd_market_cap : null) || defaultData.optimism.usd_market_cap;
+
+        return {
+            arb: {
+                priceUSD: arbUSD,
+                priceKRW: arbKRW,
+                mcapUSD: arbMcap,
+                change24h: arbChange
+            },
+            op: {
+                mcapUSD: opMcap
+            }
+        };
+    } catch (e) {
+        console.warn('Market Data Fetch Failed', e);
+        return {
+            arb: {
+                priceUSD: defaultData.arbitrum.usd,
+                priceKRW: defaultData.arbitrum.krw,
+                mcapUSD: defaultData.arbitrum.usd_market_cap,
+                change24h: defaultData.arbitrum.usd_24h_change
+            },
+            op: {
+                mcapUSD: defaultData.optimism.usd_market_cap
+            }
+        };
+    }
 };
 
 // ─── 2. TVL Data (DeFiLlama) ─────────────────────────────────────────────────
@@ -97,21 +126,24 @@ export const fetchChainTVLs = async () => {
     };
 };
 
-// ─── 2b. USD/KRW Exchange Rate (ExchangeRate-API free tier) ──────────────────
+// ─── 2b. USD/KRW Exchange Rate (ExchangeRate-API) ───────────────────────────
 export const fetchKRWRate = async () => {
     try {
-        // CoinGecko already gives us arb.krw / arb.usd — derive rate from that
         const ds = await fetchWithCache(
-            'https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd,krw',
-            'usd_krw_rate',
+            'https://api.exchangerate-api.com/v4/latest/USD',
+            'usd_krw_rate_v2',
             TTL.SHORT,
-            { tether: { usd: 1, krw: 1350 } }
+            null
         );
-        const usd = ds?.tether?.usd || 1;
-        const krw = ds?.tether?.krw || 1350;
-        return krw / usd; // ~1350
+        if (ds && ds.rates && ds.rates.KRW) {
+            return ds.rates.KRW;
+        }
+        
+        // Secondary fallback to CoinGecko
+        const cg = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=krw').then(r => r.json());
+        return cg?.tether?.krw || 1400;
     } catch {
-        return 1350;
+        return 1400; // Realistic recent fallback
     }
 };
 

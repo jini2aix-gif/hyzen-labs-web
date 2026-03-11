@@ -429,7 +429,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                 const today = new Date().toISOString().split('T')[0];
                 const krwRateRes = krwRate || 1350;
                 const currentValueUSD = TREASURY_ARB * market.arb.priceUSD;
-                const currentValueKRW = currentValueUSD * krwRateRes;
+                const currentValueKRW = TREASURY_ARB * market.arb.priceKRW;
                 let th = [];
 
                 if (db && appId) {
