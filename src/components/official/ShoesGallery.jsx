@@ -269,22 +269,7 @@ const GalleryCard = ({ item, index, onOpen, viewMode }) => {
                         : <PlaceholderCard item={item} isHovered={false} />}
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-[10px] uppercase tracking-[0.2em] font-bold mb-0.5 truncate" style={{ color: item.accentColor }}>
-                        {item.subtitle}
-                    </p>
-                    <h3 className="text-white font-black text-base tracking-tight truncate">{item.title}</h3>
-                    <p className="text-white/40 text-[11px] font-mono truncate">{item.medium}</p>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-[10px] text-white/30 font-mono">{item.year}</span>
-                    <div className="flex gap-1.5">
-                        {item.tags?.slice(0, 2).map(tag => (
-                            <span key={tag} className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase"
-                                style={{ background: `${item.accentColor}25`, color: item.accentColor }}>
-                                {tag}
-                            </span>
-                        ))}
-                    </div>
+                    <h3 className="text-white font-black text-lg sm:text-xl tracking-tight truncate">{item.title}</h3>
                 </div>
             </motion.article>
         );
@@ -320,6 +305,37 @@ const GalleryCard = ({ item, index, onOpen, viewMode }) => {
                         : <PlaceholderCard item={item} isHovered={isHovered} />}
                 </div>
 
+                {/* Multi-Image Indicator (Stack & Badge) - Below Top Tags */}
+                {item.images?.length > 1 && (
+                    <div className="absolute top-[52px] right-3 z-30 flex items-center gap-2.5 transition-all duration-500"
+                        style={{
+                            opacity: isHovered ? 1 : 0.8,
+                            transform: isHovered ? 'translateY(0)' : 'translateY(2px)'
+                        }}>
+                        <div className="relative w-9 h-9">
+                            {[2, 1, 0].map((offset) => {
+                                if (offset >= item.images.length) return null;
+                                return (
+                                    <div key={offset}
+                                        className="absolute inset-0 rounded-lg border transition-all duration-500 overflow-hidden bg-[#0a0a0a] shadow-2xl"
+                                        style={{
+                                            transform: `translate(${offset * 3}px, ${-offset * 3}px)`,
+                                            zIndex: 10 - offset,
+                                            borderColor: offset === 0 && isHovered ? item.accentColor : 'rgba(255,255,255,0.15)',
+                                            opacity: 1 - (offset * 0.25)
+                                        }}>
+                                        <img src={item.images[offset]} alt="" className="w-full h-full object-cover"
+                                            style={{ opacity: isHovered ? 1 : 0.8 }} />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="h-6 px-2.5 rounded-lg bg-black/60 backdrop-blur-xl border border-white/10 flex items-center justify-center shadow-lg">
+                            <span className="text-[10px] font-black tracking-tighter" style={{ color: item.accentColor }}>{item.images.length} VIEWS</span>
+                        </div>
+                    </div>
+                )}
+
                 {/* Gradient */}
                 <div className="absolute inset-0 transition-opacity duration-300"
                     style={{
@@ -327,12 +343,12 @@ const GalleryCard = ({ item, index, onOpen, viewMode }) => {
                         opacity: isHovered ? 1 : 0.82,
                     }} />
 
-                {/* Tags */}
-                <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10">
-                    <div className="flex flex-wrap gap-2">
+                {/* Tags (Top Left) */}
+                <div className="absolute top-3 left-3 z-10 pointer-events-none">
+                    <div className="flex flex-wrap gap-1.5">
                         {item.tags?.slice(0, 3).map(tag => (
-                            <span key={tag} className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl backdrop-blur-2xl"
-                                style={{ background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid rgba(255,255,255,0.15)' }}>
+                            <span key={tag} className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg backdrop-blur-md"
+                                style={{ background: 'rgba(0,0,0,0.3)', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.1)' }}>
                                 {tag}
                             </span>
                         ))}
@@ -391,8 +407,9 @@ const GalleryCard = ({ item, index, onOpen, viewMode }) => {
 
 const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete, onEdit }) => {
     const [idx, setIdx] = useState(allItems.findIndex(i => i.id === item.id));
-    const [imgIdx, setImgIdx] = useState(0); // 현재 작품의 이미지 인덱스
+    const [imgIdx, setImgIdx] = useState(0);
     const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+    const [showDetails, setShowDetails] = useState(false);
     const scrollRef = useRef(null);
     const cur = allItems[idx] ?? item;
 
@@ -438,6 +455,59 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete, onEd
         }, 500);
         return () => clearTimeout(timer);
     }, [idx]);
+
+    // ── Professional Shoe Design Insight Generator ──
+    const getShoeDesignInsight = (item) => {
+        const title = item.title.toLowerCase();
+        const color = item.accentColor;
+
+        return [
+            {
+                label: 'Conceptual Aesthetic & Colorway',
+                content: `'${item.title}' 모델은 하이테크 미래주의를 표방하며, 특히 ${color} 컬러 포인트는 정교하게 계산된 에너지의 흐름을 상징합니다. ${item.tags?.includes('Dark') || title.includes('dark') ? '심해의 심연을 연상시키는 블랙 베이스' : '도시적인 세련미를 담은 메탈릭 실버톤'}의 메인 바디와 대비되어 시각적인 파괴력을 전달합니다.`
+            },
+            {
+                label: 'Structural Engineering',
+                content: `이 제품의 핵심은 다이내믹 발란스를 구현한 중창(Midsole) 구조에 있습니다. ${item.tags?.includes('Carbon') || title.includes('carbon') ? '초경량 고강도 탄소 섬유 플레이트가 전장(Full-length) 삽입되어' : '진화된 반응형 폼 기술이 적용되어'} 매 발걸음마다 폭발적인 추진력을 제공합니다. 힐 카운터의 유선형 디자인은 공기 저항을 최소화하는 에어로다이내믹 설계를 반영했습니다.`
+            },
+            {
+                label: 'Advanced Materials',
+                content: `최첨단 '리퀴드 스킨' 니트 기술로 제작된 갑피는 신는 순간 발의 모양에 맞게 밀착되며, 습기와 열을 실시간으로 배출하는 벤틸레이션 존이 전략적으로 배치되었습니다. 안감에는 마찰을 극소화한 마이크로 파이버 소재를 사용해 전문 마라토너 수준의 극한 주행 조건에서도 물집 없는 쾌적한 피팅감을 유지합니다.`
+            }
+        ];
+    };
+
+    const handleShare = async (item) => {
+        const shareUrl = window.location.href;
+        const shareTitle = `[Hyzen Collection] ${item.title}`;
+        const shareText = `${item.subtitle}\n\nHyzen의 새로운 디자인 비전을 확인해보세요.`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: shareTitle,
+                    text: shareText,
+                    url: shareUrl,
+                });
+                return;
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.log('Native share failed', err);
+                } else {
+                    return; // User cancelled
+                }
+            }
+        }
+
+        // Fallback for desktop or when native share fails
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            alert("링크가 클립보드에 복사되었습니다.");
+        } catch (err) {
+            const mailto = `mailto:?subject=${encodeURIComponent(shareTitle)}&body=${encodeURIComponent(shareText + "\n\nLink: " + shareUrl)}`;
+            window.location.href = mailto;
+        }
+    };
 
     return createPortal(
         <motion.div
@@ -491,14 +561,15 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete, onEd
                     style={{ paddingTop: '4px' }}
                     className="flex flex-col lg:flex-row gap-8 w-full max-w-[1500px] mx-4 md:mx-auto max-h-[95vh] overflow-y-auto custom-scrollbar relative"
                 >
-                    {/* ── Image Slider ── */}
-                    <div className="flex-1 flex flex-col gap-3 min-w-0">
-                        <div className="relative rounded-[32px] overflow-hidden flex-1 bg-black/40"
-                            style={{ minHeight: '400px', maxHeight: '85vh', border: `1px solid rgba(255,255,255,0.08)` }}>
+                    {/* ── Image & Side Thumbnails ── */}
+                    <div className="flex-1 flex flex-row gap-4 min-w-0 min-h-[400px]">
+                        {/* Main Image */}
+                        <div className="relative flex-1 rounded-[32px] overflow-hidden bg-black/40"
+                            style={{ maxHeight: '85vh', border: `1px solid rgba(255,255,255,0.08)` }}>
                             <AnimatePresence mode="wait">
                                 <motion.div key={imgIdx}
-                                    initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
+                                    initial={{ opacity: 0, scale: 1.05 }} animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }}
                                     className="absolute inset-0">
                                     {images[imgIdx]
                                         ? <img src={images[imgIdx]} alt={`${cur.title} ${imgIdx + 1}`} className="w-full h-full object-contain" />
@@ -506,42 +577,38 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete, onEd
                                     }
                                 </motion.div>
                             </AnimatePresence>
-                            <div className="absolute inset-0 rounded-2xl pointer-events-none"
-                                style={{ boxShadow: `inset 0 0 60px ${cur.accentColor}0d` }} />
 
                             {/* 이미지 내부 좌우 버튼 */}
                             {images.length > 1 && (
                                 <>
                                     {[['left', goPrevImg], ['right', goNextImg]].map(([dir, fn]) => (
                                         <button key={dir} onClick={e => { e.stopPropagation(); fn(); }}
-                                            className={`absolute ${dir === 'left' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110`}
-                                            style={{ background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
-                                            {dir === 'left' ? <ChevronLeft size={16} color="white" /> : <ChevronRight size={16} color="white" />}
+                                            className={`absolute ${dir === 'left' ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 group`}
+                                            style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)' }}>
+                                            {dir === 'left' ? <ChevronLeft size={20} color="white" /> : <ChevronRight size={20} color="white" />}
                                         </button>
                                     ))}
-                                    {/* 이미지 인덱스 표시 */}
-                                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full"
-                                        style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
-                                        {images.map((_, i) => (
-                                            <button key={i} onClick={e => { e.stopPropagation(); setImgIdx(i); }}
-                                                className="rounded-full transition-all duration-300"
-                                                style={{ width: i === imgIdx ? '18px' : '5px', height: '5px', background: i === imgIdx ? cur.accentColor : 'rgba(255,255,255,0.3)' }} />
-                                        ))}
-                                    </div>
                                 </>
                             )}
                         </div>
 
-                        {/* 썸네일 스트립 (2장 이상일 때) */}
+                        {/* Side Thumbnails (Right) */}
                         {images.length >= 2 && (
-                            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                            <div className="flex flex-col gap-3 w-16 sm:w-20 shrink-0 py-2 items-center overflow-y-auto no-scrollbar">
                                 {images.map((url, i) => (
                                     <button key={i} onClick={() => setImgIdx(i)}
-                                        className="flex-shrink-0 w-20 h-14 rounded-xl overflow-hidden transition-all duration-300"
-                                        style={{ border: `2px solid ${i === imgIdx ? cur.accentColor : 'transparent'}`, opacity: i === imgIdx ? 1 : 0.4 }}>
+                                        className="relative flex-shrink-0 w-full aspect-[4/3] rounded-xl overflow-hidden transition-all duration-300 group"
+                                        style={{
+                                            border: `2px solid ${i === imgIdx ? cur.accentColor : 'rgba(255,255,255,0.05)'}`,
+                                            opacity: i === imgIdx ? 1 : 0.5,
+                                            boxShadow: i === imgIdx ? `0 0 15px ${cur.accentColor}40` : 'none'
+                                        }}>
                                         {url
                                             ? <img src={url} alt="" className="w-full h-full object-cover" />
-                                            : <div className="w-full h-full" style={{ background: `${cur.accentColor}20` }} />}
+                                            : <div className="w-full h-full" style={{ background: `${cur.accentColor}10` }} />}
+                                        {i === imgIdx && (
+                                            <div className="absolute inset-0 bg-white/5" />
+                                        )}
                                     </button>
                                 ))}
                             </div>
@@ -549,49 +616,76 @@ const LightBox = ({ item, allItems, onClose, onDownload, isAdmin, onDelete, onEd
                     </div>
 
                     {/* ── Info Panel ── */}
-                    <div className="lg:w-[460px] flex flex-col justify-between gap-6 py-2 overflow-y-auto shrink-0">
+                    <div className="lg:w-[440px] flex flex-col justify-between gap-6 py-2 overflow-y-auto shrink-0">
                         <div>
-                            <div className="flex flex-wrap gap-2 mb-4">
+                            <div className="flex flex-wrap gap-1.5 mb-5">
                                 {cur.tags?.map(tag => (
-                                    <span key={tag} className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full"
-                                        style={{ background: `${cur.accentColor}15`, color: cur.accentColor, border: `1px solid ${cur.accentColor}30` }}>
+                                    <span key={tag} className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg"
+                                        style={{ background: `${cur.accentColor}12`, color: cur.accentColor, border: `1px solid ${cur.accentColor}25` }}>
                                         {tag}
                                     </span>
                                 ))}
                             </div>
-                            <p className="text-[11px] uppercase tracking-[0.3em] font-bold mb-1.5" style={{ color: cur.accentColor }}>{cur.subtitle}</p>
-                            <h2 className="text-white font-black text-3xl tracking-tight mb-2 leading-tight">{cur.title}</h2>
-                            <div className="flex items-center gap-3 text-white/40 mb-5">
-                                <span className="text-[11px] font-mono px-2 py-0.5 bg-white/5 rounded-md border border-white/10">{cur.year}</span>
+                            <p className="text-[11px] uppercase tracking-[0.4em] font-bold mb-2 opacity-50" style={{ color: cur.accentColor }}>{cur.subtitle}</p>
+                            <h2 className="text-white font-black text-3xl md:text-4xl tracking-tighter mb-3 leading-none italic">{cur.title}</h2>
+                            <div className="flex items-center gap-3 text-white/30 mb-6">
+                                <span className="text-[10px] font-mono px-2 py-0.5 bg-white/5 rounded-md border border-white/10 uppercase tracking-widest">{cur.year} COLLECTION</span>
                                 {images.length > 1 && (
                                     <>
                                         <span className="w-1 h-1 rounded-full bg-white/20" />
-                                        <span className="text-[11px] font-mono font-bold" style={{ color: cur.accentColor }}>
-                                            {imgIdx + 1} / {images.length} PHOTOS
+                                        <span className="text-[10px] font-mono font-bold tracking-tighter" style={{ color: cur.accentColor }}>
+                                            VIEW {imgIdx + 1} OF {images.length}
                                         </span>
                                     </>
                                 )}
                             </div>
-                            <div className="h-px mb-5"
-                                style={{ background: `linear-gradient(90deg, ${cur.accentColor}50, transparent)` }} />
-                            <p className="text-white/60 text-[13px] leading-relaxed mb-8">{cur.description}</p>
+                            <div className="h-[2px] mb-6 w-12" style={{ background: cur.accentColor }} />
+                            <p className="text-white/60 text-[13px] leading-relaxed mb-8 font-medium">{cur.description}</p>
                         </div>
 
                         <div className="flex flex-col gap-3">
                             <motion.button whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
                                 onClick={() => onDownload(images[imgIdx], cur.title)}
-                                className="flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest"
-                                style={{ background: `linear-gradient(135deg, ${cur.accentColor}, ${cur.accentColor}dd)`, color: '#000', boxShadow: `0 8px 30px ${cur.accentColor}35` }}>
-                                <Download size={14} strokeWidth={3} /> Download Work
+                                className="flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em]"
+                                style={{ background: `linear-gradient(135deg, ${cur.accentColor}, ${cur.accentColor}cc)`, color: '#000', boxShadow: `0 8px 30px ${cur.accentColor}25` }}>
+                                <Download size={14} strokeWidth={3} /> Download
                             </motion.button>
+
                             <div className="flex gap-2">
-                                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10 text-white/50">
+                                <button
+                                    onClick={() => handleShare(cur)}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10 text-white/50 hover:text-white">
                                     <Share2 size={12} /> Share
                                 </button>
-                                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10 text-white/50">
-                                    <Info size={12} /> Details
+                                <button
+                                    onClick={() => setShowDetails(!showDetails)}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10 text-white/50 hover:text-white">
+                                    <Info size={12} /> {showDetails ? "Overview" : "Design Details"}
                                 </button>
                             </div>
+
+                            <AnimatePresence>
+                                {showDetails && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mt-2">
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: cur.accentColor }}>Designer's Insight</h4>
+                                            <div className="space-y-4 text-[12px] leading-relaxed text-white/70">
+                                                {getShoeDesignInsight(cur).map((section, si) => (
+                                                    <div key={si}>
+                                                        <span className="font-black text-white/90 block mb-1 uppercase tracking-tighter">[{section.label}]</span>
+                                                        <p className="font-medium">{section.content}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                             {isAdmin && (
                                 <div className="flex gap-2">
                                     <button onClick={() => { onEdit(cur); onClose(); }}
@@ -674,8 +768,8 @@ const checkBrightness = (ctx, x, y, w, h) => {
     }
 };
 
-// ── 유틸: 이미지 압축 및 워터마크 추가 (최적화 강도 상향: 1000px / 0.75) ──
-const compressImage = async (file, maxWidth = 1000, quality = 0.75) => {
+// ── 유틸: 이미지 압축 및 워터마크 추가 (해상도 및 품질 상향: 2400px / 0.82) ──
+const compressImage = async (file, maxWidth = 2400, quality = 0.82) => {
     const [img, watermark] = await Promise.all([
         new Promise((resolve, reject) => {
             const i = new Image();

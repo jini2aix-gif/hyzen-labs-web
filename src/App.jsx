@@ -296,7 +296,7 @@ const App = () => {
                     <ShoesGallery onModalChange={setIsAnyModalOpenFromSections} />
                   </div>
                 ) : (
-                  <div className="h-full overflow-y-auto bg-gray-50 scroll-smooth">
+                  <div className="h-full overflow-y-auto bg-[#050505] scroll-smooth">
                     <ArbiscanDashboard user={user} onOpenLoginModal={handleOpenAuthModal} onOpenRegisterModal={handleOpenRegisterModal} />
                   </div>
                 )}

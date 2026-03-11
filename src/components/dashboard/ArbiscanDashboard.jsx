@@ -108,7 +108,7 @@ const ValueMetricCard = ({ title, value, subValue, change, icon: Icon, colorClas
 );
 
 // ─── Treasury Constants ───────────────────────────────────────────────────────
-const TREASURY_ARB = 130766;
+const TREASURY_ARB = 141202;
 
 // ─── Value Gap Gauge Component ────────────────────────────────────────────────
 const ValueGapGauge = ({ index }) => {
@@ -194,7 +194,7 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
                             <span className="text-xs">🏛️</span>
                         </div>
                         <div>
-                            <div className="text-[10px] font-mono tracking-[0.18em] uppercase" style={{ color: gold }}>HYZEN Labs. Treasury</div>
+                            <div className="text-[10px] font-mono tracking-[0.18em] uppercase" style={{ color: gold }}>Hyzen Treasure</div>
                             <div className="text-[10px] text-gray-600 font-mono">Private · Real-time ARB</div>
                         </div>
                     </div>
@@ -435,7 +435,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                         <motion.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-[#050505]/60 backdrop-blur-md pointer-events-none"
+                            className="absolute inset-0 bg-[#050505]/40 backdrop-blur-sm pointer-events-none"
                         />
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -467,7 +467,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
             </AnimatePresence>
 
             {/* ─── Main Dashboard Content (Blurred if gated) ─── */}
-            <div className={`max-w-[1400px] mx-auto transition-all duration-700 ${isAuthGated ? 'blur-xl grayscale pointer-events-none select-none opacity-40' : ''}`}>
+            <div className={`max-w-[1400px] mx-auto transition-all duration-700 ${isAuthGated ? 'blur-[1px] grayscale-[30%] pointer-events-none select-none opacity-60' : ''}`}>
 
                 {/* === TREASURY STATUS === */}
                 <TreasuryCard
