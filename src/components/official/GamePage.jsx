@@ -7,11 +7,13 @@ import { db, appId } from '../../hooks/useFirebase';
 import zeroGBg from '../../assets/games/zero-g-drift-bg.png';
 import pulseDashBg from '../../assets/games/pulse-dash-bg.png';
 import neonGhostBg from '../../assets/games/neon-ghost-run-bg.png';
+import likeADinoBg from '../../assets/games/like-a-dino-bg.png';
 
 const UnifiedLeaderboardTicker = () => {
     const [zeroGRanks, setZeroGRanks] = useState([]);
     const [pulseRanks, setPulseRanks] = useState([]);
     const [ngrRanks, setNgrRanks] = useState([]);
+    const [dinoRanks, setDinoRanks] = useState([]);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     useEffect(() => {
@@ -39,7 +41,14 @@ const UnifiedLeaderboardTicker = () => {
             setNgrRanks(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         });
 
-        return () => { unsub0(); unsub1(); unsub2(); };
+        // Fetch Like a Dino
+        const dinoRef = collection(db, 'artifacts', appId, 'public', 'data', 'games', 'like-a-dino', 'scores');
+        const q3 = query(dinoRef, orderBy('score', 'desc'), limit(3));
+        const unsub3 = onSnapshot(q3, (snap) => {
+            setDinoRanks(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+
+        return () => { unsub0(); unsub1(); unsub2(); unsub3(); };
     }, [db, appId]);
 
     const renderRanks = (ranks, label, color, isTime) => (
@@ -68,12 +77,14 @@ const UnifiedLeaderboardTicker = () => {
             {renderRanks(pulseRanks, 'PULSE DASH', 'text-indigo-500', false)}
             <div className="w-[1px] h-4 bg-gray-200 mx-4"></div>
             {renderRanks(ngrRanks, 'NEON GHOST RUN', 'text-fuchsia-500', false)}
+            <div className="w-[1px] h-4 bg-gray-200 mx-4"></div>
+            {renderRanks(dinoRanks, 'LIKE A DINO!', 'text-[#8AB87A]', false)}
             {/* Loop Padding for smoothness */}
             <div className="w-[100px]"></div>
         </div>
     );
 
-    const hasData = (zeroGRanks?.length || 0) > 0 || (pulseRanks?.length || 0) > 0 || (ngrRanks?.length || 0) > 0;
+    const hasData = (zeroGRanks?.length || 0) > 0 || (pulseRanks?.length || 0) > 0 || (ngrRanks?.length || 0) > 0 || (dinoRanks?.length || 0) > 0;
 
     return (
         <div className="w-full bg-gray-50/30 border-b border-gray-100/50 overflow-hidden py-2 relative min-h-[40px] flex items-center">
@@ -110,7 +121,7 @@ const UnifiedLeaderboardTicker = () => {
     );
 };
 
-const GameGrid = ({ onOpenZeroG, onOpenPulseDash, onOpenNeonGhost }) => {
+const GameGrid = ({ onOpenZeroG, onOpenPulseDash, onOpenNeonGhost, onOpenLikeADino }) => {
     return (
         <div className="w-full px-4 md:px-10 pb-20">
             <div className="flex items-center gap-4 mb-8">
@@ -119,8 +130,8 @@ const GameGrid = ({ onOpenZeroG, onOpenPulseDash, onOpenNeonGhost }) => {
                 <div className="h-[1px] flex-1 bg-gray-200"></div>
             </div>
 
-            {/* Compact Grid: 3 cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[160px]">
+            {/* Compact Grid: 4 cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-[160px]">
                 {/* Zero-G Drift Card */}
                 <div
                     onClick={onOpenZeroG}
@@ -247,12 +258,54 @@ const GameGrid = ({ onOpenZeroG, onOpenPulseDash, onOpenNeonGhost }) => {
                         </div>
                     </div>
                 </div>
+
+                {/* Like a Dino! Card */}
+                <div
+                    onClick={onOpenLikeADino}
+                    className="group relative w-full h-full rounded-3xl overflow-hidden border border-gray-200 transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-[#8AB87A]/30 cursor-pointer"
+                    style={{ background: '#F0EAD6' }}
+                >
+                    <div className="absolute inset-0">
+                        <img
+                            src={likeADinoBg}
+                            alt="Like a Dino!"
+                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
+                        />
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(240,234,214,0.95)_0%,_rgba(240,234,214,0.6)_30%,_transparent_70%)]"></div>
+                        <div className="absolute inset-0 bg-gradient-to-tr from-[#F0EAD6]/70 via-transparent to-transparent"></div>
+                    </div>
+
+                    <div className="absolute top-1/2 right-6 -translate-y-1/2 w-36 h-36 bg-[#8AB87A]/15 blur-[60px] rounded-full group-hover:bg-[#8AB87A]/25 transition-colors"></div>
+
+                    <div className="absolute inset-0 p-6 z-10 flex flex-col justify-between">
+                        <div className="flex justify-end items-start mt-2">
+                            <h3 className="font-brand text-2xl md:text-3xl font-black italic tracking-tighter group-hover:text-[#3D5A3E] transition-all duration-500 text-right leading-[0.9]" style={{ color: '#4A7C59' }}>
+                                LIKE A<br />DINO!
+                            </h3>
+                        </div>
+
+                        <div className="flex items-end justify-between">
+                            <div className="flex items-center gap-2 bg-white/60 backdrop-blur-sm px-3 py-1 rounded-full border border-[#8AB87A]/20 translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#8AB87A] animate-pulse"></span>
+                                <p className="font-tech text-[8px] tracking-[0.2em] text-gray-500 uppercase">
+                                    Note Catcher
+                                </p>
+                            </div>
+
+                            <div className="opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300">
+                                <div className="w-10 h-10 rounded-full bg-[#8AB87A] text-white flex items-center justify-center shadow-[0_0_20px_rgba(138,184,122,0.4)] hover:bg-[#6A9E5A]">
+                                    <Play size={16} fill="currentColor" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     )
 }
 
-const GamePage = ({ user, onOpenZeroG, onOpenPulseDash, onOpenNeonGhost }) => {
+const GamePage = ({ user, onOpenZeroG, onOpenPulseDash, onOpenNeonGhost, onOpenLikeADino }) => {
     const scrollContainerRef = useRef(null);
 
     return (
@@ -276,7 +329,7 @@ const GamePage = ({ user, onOpenZeroG, onOpenPulseDash, onOpenNeonGhost }) => {
             <div className="relative pt-0 pb-24 flex flex-col">
                 <UnifiedLeaderboardTicker />
                 <div className="pt-24">
-                    <GameGrid onOpenZeroG={onOpenZeroG} onOpenPulseDash={onOpenPulseDash} onOpenNeonGhost={onOpenNeonGhost} />
+                    <GameGrid onOpenZeroG={onOpenZeroG} onOpenPulseDash={onOpenPulseDash} onOpenNeonGhost={onOpenNeonGhost} onOpenLikeADino={onOpenLikeADino} />
                 </div>
 
                 {/* Footer moved inside scroll container */}

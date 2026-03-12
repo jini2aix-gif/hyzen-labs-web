@@ -10,6 +10,7 @@ const MyPageModal = React.lazy(() => import('./components/modals/MyPageModal'));
 const ZeroGDrift = React.lazy(() => import('./components/games/ZeroGDrift'));
 const PulseDash = React.lazy(() => import('./components/games/PulseDash'));
 const NeonGhostRun = React.lazy(() => import('./components/games/NeonGhostRun'));
+const LikeADino = React.lazy(() => import('./components/games/LikeADino'));
 const AuthModal = React.lazy(() => import('./components/modals/AuthModal'));
 
 import { useFirebase } from './hooks/useFirebase';
@@ -32,14 +33,15 @@ const App = () => {
   const [isZeroGOpen, setIsZeroGOpen] = useState(false);
   const [isPulseDashOpen, setIsPulseDashOpen] = useState(false);
   const [isNeonGhostOpen, setIsNeonGhostOpen] = useState(false);
+  const [isLikeADinoOpen, setIsLikeADinoOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState('login');
   const [showSplash, setShowSplash] = useState(true);
   const [isAnyModalOpenFromSections, setIsAnyModalOpenFromSections] = useState(false);
 
   const isAnyModalOpen = React.useMemo(() => {
-    return isMyPageOpen || isZeroGOpen || isPulseDashOpen || isNeonGhostOpen || isAuthModalOpen || isAnyModalOpenFromSections;
-  }, [isMyPageOpen, isZeroGOpen, isPulseDashOpen, isNeonGhostOpen, isAuthModalOpen, isAnyModalOpenFromSections]);
+    return isMyPageOpen || isZeroGOpen || isPulseDashOpen || isNeonGhostOpen || isLikeADinoOpen || isAuthModalOpen || isAnyModalOpenFromSections;
+  }, [isMyPageOpen, isZeroGOpen, isPulseDashOpen, isNeonGhostOpen, isLikeADinoOpen, isAuthModalOpen, isAnyModalOpenFromSections]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -108,6 +110,14 @@ const App = () => {
 
   const handleCloseNeonGhost = useCallback(() => {
     setIsNeonGhostOpen(false);
+  }, []);
+
+  const handleOpenLikeADino = useCallback(() => {
+    setIsLikeADinoOpen(true);
+  }, []);
+
+  const handleCloseLikeADino = useCallback(() => {
+    setIsLikeADinoOpen(false);
   }, []);
 
   // Swipe Handlers
@@ -289,6 +299,7 @@ const App = () => {
                       onOpenZeroG={handleOpenZeroG}
                       onOpenPulseDash={handleOpenPulseDash}
                       onOpenNeonGhost={handleOpenNeonGhost}
+                      onOpenLikeADino={handleOpenLikeADino}
                     />
                   </div>
                 ) : viewIndex === 1 ? (
@@ -369,6 +380,12 @@ const App = () => {
           <NeonGhostRun
             isOpen={isNeonGhostOpen}
             onClose={handleCloseNeonGhost}
+            user={user}
+          />
+
+          <LikeADino
+            isOpen={isLikeADinoOpen}
+            onClose={handleCloseLikeADino}
             user={user}
           />
 
