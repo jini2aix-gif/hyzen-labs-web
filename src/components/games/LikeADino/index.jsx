@@ -29,7 +29,6 @@ class DinoAudio {
     constructor() {
         this.ctx = null;
         this.muted = false;
-        this._bpmInterval = null;
     }
 
     _ensure() {
@@ -51,7 +50,6 @@ class DinoAudio {
     }
 
     playCatch() {
-        // Juicy double-note catch sound
         this.playNote(523, 0.08, 'triangle', 0.2);
         setTimeout(() => this.playNote(659, 0.12, 'sine', 0.18), 60);
         if (navigator.vibrate) navigator.vibrate(40);
@@ -67,29 +65,23 @@ class DinoAudio {
             setTimeout(() => this.playNote(f, 0.3, 'sawtooth', 0.2), i * 120));
     }
 
-    startBGM(bpm) {
-        if (this._bpmInterval) clearInterval(this._bpmInterval);
-        this._bpmInterval = null;
+    // Beat-sync BGM — called from Phaser update() at exact beat tick
+    // beatIdx drives an 8-step pattern: bass kick on 0&4, melody on all, hi-hat accent on 2&6
+    playBGMBeat(beatIdx, bpm) {
         if (this.muted) return;
-        const ms = (60 / bpm) * 1000;
-        const notes = [261, 329, 392, 329];
-        let idx = 0;
-        const tick = () => {
-            this.playNote(notes[idx % notes.length], 0.06, 'sine', 0.06);
-            idx++;
-        };
-        tick();
-        this._bpmInterval = setInterval(tick, ms);
+        const b = beatIdx % 8;
+        const beatDur = (60 / bpm) * 0.45;
+        const MELODY = [261, 329, 392, 329, 261, 392, 329, 196];
+        const GAINS  = [0.10, 0.07, 0.09, 0.07, 0.10, 0.08, 0.07, 0.06];
+        // Melody (every beat)
+        this.playNote(MELODY[b], beatDur, 'triangle', GAINS[b]);
+        // Bass kick on downbeats 0 & 4
+        if (b === 0 || b === 4) this.playNote(65, beatDur * 0.6, 'sine', 0.18);
+        // Hi-hat accent on 2 & 6
+        if (b === 2 || b === 6) this.playNote(1400, 0.035, 'sawtooth', 0.025);
     }
 
-    stopBGM() {
-        if (this._bpmInterval) { clearInterval(this._bpmInterval); this._bpmInterval = null; }
-    }
-
-    setMute(v) {
-        this.muted = v;
-        if (v) this.stopBGM();
-    }
+    setMute(v) { this.muted = v; }
 }
 
 const dinoAudio = new DinoAudio();
@@ -117,13 +109,15 @@ function createScene({ onScore, onGameOver, onCatch, onMiss }) {
             this.level = 1;
             this.bpm   = 80;
             this.beatMs = (60 / this.bpm) * 1000;
-            this.lastBeat = 0;
-            this.segments = [];      // neck segments
-            this.notes    = [];      // falling notes
-            this.particles= [];      // catch particles
+            this.segments = [];
+            this.notes    = [];
+            this.particles= [];
             this.gameRunning = true;
-            this.catchAnim = 0;      // squash/stretch timer
-            this.bgHue = 0;
+            this.catchAnim = 0;
+            // Beat-sync tracking (note spawn + BGM fired together)
+            this.gameClock  = 0;
+            this.nextBeatAt = this.beatMs; // first beat after 1 full beat interval
+            this.bgmBeatIdx = 0;
 
             // Background — gradient
             this._bg = this.add.graphics();
@@ -174,7 +168,7 @@ function createScene({ onScore, onGameOver, onCatch, onMiss }) {
             // Dino X target / current
             this.dinoX = W / 2;
             this.dinoTargetX = W / 2;
-            this.dinoY = H - 60;
+            this.dinoY = H - 155; // raised so finger doesn't obscure dino on mobile
             this.DINO_HALF = Math.round(W * 0.055);
 
             // Input — pointer / touch
@@ -188,9 +182,6 @@ function createScene({ onScore, onGameOver, onCatch, onMiss }) {
             // Keyboard
             this._cursors = this.input.keyboard?.createCursorKeys();
             this._wasd = this.input.keyboard?.addKeys('A,D');
-
-            // First note spawn
-            this._scheduleNote();
 
             // Draw initial dino
             this._drawDino(0);
@@ -210,15 +201,7 @@ function createScene({ onScore, onGameOver, onCatch, onMiss }) {
             this._bg.fillRect(0, 0, W, H);
         }
 
-        _scheduleNote() {
-            if (!this.gameRunning) return;
-            // Spawn on next beat
-            const delay = Math.max(200, this.beatMs - 40);
-            this._noteTimer = this.time.delayedCall(delay, () => {
-                this._spawnNote();
-                this._scheduleNote();
-            });
-        }
+
 
         _spawnNote() {
             if (!this.gameRunning) return;
@@ -352,8 +335,16 @@ function createScene({ onScore, onGameOver, onCatch, onMiss }) {
             const W = this.W, H = this.H;
             const R = this.DINO_HALF;
 
+            // ── Beat-sync: note spawn + BGM at same tick ───
+            this.gameClock += delta;
+            if (this.gameClock >= this.nextBeatAt) {
+                this.nextBeatAt += this.beatMs;
+                this._spawnNote();
+                dinoAudio.playBGMBeat(this.bgmBeatIdx, this.bpm);
+                this.bgmBeatIdx++;
+            }
+
             // ── Background parallax shift ──────
-            this.bgHue = this.score;
             if (this.score % 80 < 2) this._drawBg(this.score);
 
             // ── Parallax dots ──────────────────
@@ -453,7 +444,6 @@ function createScene({ onScore, onGameOver, onCatch, onMiss }) {
                         this.beatMs = (60 / this.bpm) * 1000;
                         this._levelTxt.setText(`LV.${newLevel}`);
                         dinoAudio.playLevelUp();
-                        dinoAudio.startBGM(this.bpm);
                         // Level text bounce
                         this.tweens.add({
                             targets: this._levelTxt,
@@ -498,7 +488,6 @@ function createScene({ onScore, onGameOver, onCatch, onMiss }) {
 
         destroy() {
             this.gameRunning = false;
-            if (this._noteTimer) this._noteTimer.remove();
         }
     };
 }
@@ -572,11 +561,9 @@ const DinoCanvas = ({ onScore, onGameOver, onCatch, onMiss, gameKey }) => {
                 banner: false,
             });
             gameRef.current = game;
-            dinoAudio.startBGM(80);
         });
 
         return () => {
-            dinoAudio.stopBGM();
             if (gameRef.current) {
                 gameRef.current.destroy(true);
                 gameRef.current = null;
@@ -598,40 +585,39 @@ const LikeADino = ({ isOpen, onClose, user }) => {
     const [missCount, setMissCount] = useState(0);
     const MAX_MISS = 5;
 
+    // Ref tracks latest score to avoid stale closure in handleMiss
+    const scoreRef = useRef(0);
+    const gameOverFiredRef = useRef(false);
+
     // Lock scroll when open
     useEffect(() => {
         if (isOpen) {
             setGameState('start');
             setScore(0);
+            scoreRef.current = 0;
             setMissCount(0);
+            gameOverFiredRef.current = false;
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = 'unset';
-            dinoAudio.stopBGM();
         }
-        return () => { document.body.style.overflow = 'unset'; dinoAudio.stopBGM(); };
+        return () => { document.body.style.overflow = 'unset'; };
     }, [isOpen]);
 
-    const handleScore = useCallback((s) => setScore(s), []);
-
-    const handleCatch = useCallback(() => {
-        // No miss reset — pure catch tracking
+    const handleScore = useCallback((s) => {
+        setScore(s);
+        scoreRef.current = s; // keep ref in sync for callbacks
     }, []);
 
-    const handleMiss = useCallback(() => {
-        setMissCount(prev => {
-            const next = prev + 1;
-            if (next >= MAX_MISS) {
-                handleGameOver(score);
-            }
-            return next;
-        });
-    }, [score]);
+    const handleCatch = useCallback(() => {}, []);
 
+    // handleGameOver defined first so handleMiss can reference it via ref
     const handleGameOver = useCallback(async (finalScore) => {
-        dinoAudio.stopBGM();
+        if (gameOverFiredRef.current) return;
+        gameOverFiredRef.current = true;
         dinoAudio.playGameOver();
         setGameState('gameover');
+        setScore(finalScore);
 
         if (user && db && appId) {
             try {
@@ -644,24 +630,42 @@ const LikeADino = ({ isOpen, onClose, user }) => {
                 });
             } catch (e) { console.error('Score save error', e); }
         }
-    }, [user, score]);
+    }, [user]);
+
+    // Keep a stable ref to handleGameOver so handleMiss never captures stale version
+    const handleGameOverRef = useRef(handleGameOver);
+    useEffect(() => { handleGameOverRef.current = handleGameOver; }, [handleGameOver]);
+
+    const handleMiss = useCallback(() => {
+        setMissCount(prev => {
+            const next = prev + 1;
+            if (next >= MAX_MISS) {
+                handleGameOverRef.current(scoreRef.current); // always latest score
+            }
+            return next;
+        });
+    }, []);
 
     const startGame = () => {
         setScore(0);
+        scoreRef.current = 0;
         setMissCount(0);
+        gameOverFiredRef.current = false;
         setGameKey(k => k + 1);
         setGameState('playing');
     };
 
     const requestQuit = () => {
+        gameOverFiredRef.current = false;
         setGameState('start');
         setScore(0);
+        scoreRef.current = 0;
         setMissCount(0);
         setGameKey(k => k + 1);
     };
 
     const handleExitClick = () => setShowConfirmQuit(true);
-    const confirmExit = () => { setShowConfirmQuit(false); dinoAudio.stopBGM(); onClose(); };
+    const confirmExit = () => { setShowConfirmQuit(false); onClose(); };
     const cancelExit = () => setShowConfirmQuit(false);
 
     if (!isOpen) return null;
