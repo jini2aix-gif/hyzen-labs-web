@@ -1,9 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { LogIn, LogOut, User, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useFirebase } from '../../hooks/useFirebase';
 import { doc, setDoc, increment, updateDoc, onSnapshot } from 'firebase/firestore';
-import AdminPanel, { ADMIN_EMAIL } from '../admin/AdminPanel';
 
 const VisitorCounter = () => {
     const { db, appId } = useFirebase();
@@ -50,11 +48,8 @@ const VisitorCounter = () => {
     );
 };
 
-const Header = ({ onOpenMyPage, onOpenAuthModal, currentIndex, onNavigate, hidden }) => {
-    const { user, profile, logout, db, appId } = useFirebase();
-    const [isAdminOpen, setIsAdminOpen] = useState(false);
-
-    const isAdmin = user?.email === ADMIN_EMAIL;
+const Header = ({ currentIndex, onNavigate, hidden }) => {
+    const { db, appId } = useFirebase();
 
     const handleReload = () => {
         window.location.reload();
@@ -105,64 +100,6 @@ const Header = ({ onOpenMyPage, onOpenAuthModal, currentIndex, onNavigate, hidde
 
                     {/* Actions Area */}
                     <div className="flex items-center gap-3 md:gap-4">
-                        {/* Admin Gear (only for admin) */}
-                        {isAdmin && (
-                            <motion.button
-                                whileHover={{ rotate: 45 }}
-                                whileTap={{ scale: 0.9 }}
-                                transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                                onClick={() => setIsAdminOpen(true)}
-                                className="p-1.5 md:p-2 rounded-full hover:bg-yellow-50 transition-all text-yellow-500 hover:text-yellow-600"
-                                title="Admin Panel"
-                            >
-                                <Settings size={16} className="md:w-[18px] md:h-[18px]" />
-                            </motion.button>
-                        )}
-
-                        {user ? (
-                            <div className="flex flex-col items-end gap-1">
-                                <div className="flex items-center gap-2 md:gap-3">
-                                    <button
-                                        onClick={onOpenMyPage}
-                                        className="flex flex-row items-center gap-2 md:gap-3 group"
-                                        title="My Page"
-                                    >
-                                        {(profile?.photoURL || user.photoURL) ? (
-                                            <img
-                                                src={profile?.photoURL || user.photoURL}
-                                                alt="Profile"
-                                                className="w-6 h-6 md:w-8 md:h-8 rounded-full border border-gray-200 group-hover:border-blue-600 transition-colors object-cover"
-                                            />
-                                        ) : (
-                                            <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 group-hover:border-blue-600 transition-colors">
-                                                <User size={12} className="text-gray-500 group-hover:text-blue-600 transition-colors" />
-                                            </div>
-                                        )}
-                                    </button>
-                                    <button
-                                        onClick={logout}
-                                        className="p-1.5 md:p-2 rounded-full hover:bg-gray-100 transition-all text-gray-500 hover:text-black"
-                                        title="Sign out"
-                                    >
-                                        <LogOut size={14} className="md:w-[16px] md:h-[16px]" />
-                                    </button>
-                                </div>
-                                <div className="hidden md:flex">
-                                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                                        <span className="text-black/70">{profile?.displayName || user.displayName || 'Guest'}</span>님 환영합니다. ✨
-                                    </span>
-                                </div>
-                            </div>
-                        ) : (
-                            <button
-                                onClick={onOpenAuthModal}
-                                className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-black text-white text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all hover:scale-105 shadow-md whitespace-nowrap"
-                            >
-                                <span>Sign In</span>
-                                <LogIn size={10} className="md:w-[12px] md:h-[12px]" />
-                            </button>
-                        )}
-
                         {/* Visitor Counter (desktop) */}
                         <div className="hidden md:block">
                             <VisitorCounter />
@@ -171,13 +108,6 @@ const Header = ({ onOpenMyPage, onOpenAuthModal, currentIndex, onNavigate, hidde
                 </div>
             </nav>
 
-            {/* Admin Panel Slide-over */}
-            <AdminPanel
-                isOpen={isAdminOpen}
-                onClose={() => setIsAdminOpen(false)}
-                db={db}
-                appId={appId}
-            />
         </>
     );
 };

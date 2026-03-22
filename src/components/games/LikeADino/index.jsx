@@ -619,18 +619,18 @@ const LikeADino = ({ isOpen, onClose, user }) => {
         setGameState('gameover');
         setScore(finalScore);
 
-        if (user && db && appId) {
+        if (db && appId) {
             try {
                 await addDoc(LAD_COLLECTION(db, appId), {
-                    uid: user.uid,
-                    displayName: user.displayName || 'Anonymous',
-                    photoURL: user.photoURL,
+                    uid: user?.uid || 'guest-visitor',
+                    displayName: user?.displayName || 'Visitor',
+                    photoURL: user?.photoURL || null,
                     score: finalScore,
                     timestamp: serverTimestamp(),
                 });
             } catch (e) { console.error('Score save error', e); }
         }
-    }, [user]);
+    }, [user, db, appId]);
 
     // Keep a stable ref to handleGameOver so handleMiss never captures stale version
     const handleGameOverRef = useRef(handleGameOver);
@@ -844,11 +844,6 @@ const LikeADino = ({ isOpen, onClose, user }) => {
                                 <Leaderboard currentUserScore={gameState === 'gameover' ? { uid: user?.uid, score } : null} />
                             </div>
 
-                            {!user && (
-                                <p className="text-[10px] text-gray-400 font-mono uppercase tracking-wider">
-                                    * 기록 저장은 로그인 후 가능합니다
-                                </p>
-                            )}
                         </div>
                     </motion.div>
                 )}

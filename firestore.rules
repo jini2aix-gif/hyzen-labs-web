@@ -2,74 +2,35 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    function isOwner(uid) {
-      return isAuthenticated() && request.auth.uid == uid;
-    }
     function isAdmin() {
-      return isAuthenticated() && request.auth.token.email == 'jini2aix@gmail.com';
+      return request.auth != null && request.auth.token.email == 'jini2aix@gmail.com';
     }
-    // Check if user is in banned collection
-    function isBanned(appId, uid) {
-      return exists(/databases/$(database)/documents/artifacts/$(appId)/public/data/banned/$(uid));
-    }
-    function isValidText(text, maxLen) {
-      return text is string && text.size() >= 0 && text.size() <= maxLen;
-    }
-
-    // global guard removed; relies on specific rules
-
-    // Users collection
-    match /artifacts/{appId}/public/data/users/{uid} {
-      allow read: if isOwner(uid) || isAdmin() || isAuthenticated();
-      allow create: if isOwner(uid) && !isBanned(appId, uid)
-        && request.resource.data.uid == uid
-        && request.resource.data.email == request.auth.token.email;
-      allow update: if (isOwner(uid) || isAdmin()) && !isBanned(appId, uid)
-        && request.resource.data.uid == resource.data.uid;
-      allow delete: if isOwner(uid) || isAdmin();
-    }
-
-    // Banned Collection (Admin Only)
-    match /artifacts/{appId}/public/data/banned/{uid} {
-      allow read, write: if isAdmin();
-    }
-
-
 
     // Gallery (Sole Vision) collection
     match /artifacts/{appId}/public/data/gallery/{docId} {
-      allow read: if true;
-      allow create: if isAdmin() || (isAuthenticated() && !isBanned(appId, request.auth.uid));
-      allow update: if isAdmin() || (isAuthenticated() && !isBanned(appId, request.auth.uid));
-      allow delete: if isAdmin() || (isAuthenticated() && !isBanned(appId, request.auth.uid) && resource.data.authorId == request.auth.uid);
+      allow read, write: if true;
     }
 
     // Games Scores collection
     match /artifacts/{appId}/public/data/games/{gameId}/scores/{docId} {
-      allow read: if true;
-      allow create: if isAuthenticated() && !isBanned(appId, request.auth.uid)
-        && request.resource.data.uid == request.auth.uid;
+      allow read, create: if true;
       allow update: if false;
       allow delete: if isAdmin();
     }
 
     // Stats
     match /artifacts/{appId}/public/data/stats/{docId} {
-      allow read: if true;
-      allow update: if isAdmin() ||
-        (!isBanned(appId, request.auth.uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['visitorCount'])
-         && request.resource.data.visitorCount == resource.data.visitorCount + 1);
-      allow create: if isAdmin() ||
-        (request.resource.data.keys().hasOnly(['visitorCount'])
-         && request.resource.data.visitorCount == 1);
+      allow read, write: if true;
     }
 
     // Treasury History
     match /artifacts/{appId}/public/data/treasury_history/{docId} {
-      allow read, write: if isAuthenticated() && !isBanned(appId, request.auth.uid);
+      allow read, write: if true;
+    }
+
+    // Users (Deprecated)
+    match /artifacts/{appId}/public/data/users/{uid} {
+      allow read, write: if isAdmin();
     }
   }
 }

@@ -305,7 +305,7 @@ const GameGrid = ({ onOpenZeroG, onOpenPulseDash, onOpenNeonGhost, onOpenLikeADi
     )
 }
 
-const GamePage = ({ user, onOpenZeroG, onOpenPulseDash, onOpenNeonGhost, onOpenLikeADino }) => {
+const GamePage = ({ onOpenZeroG, onOpenPulseDash, onOpenNeonGhost, onOpenLikeADino }) => {
     const scrollContainerRef = useRef(null);
 
     return (

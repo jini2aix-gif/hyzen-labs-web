@@ -57,13 +57,13 @@ const PulseDash = ({ isOpen, onClose, user }) => {
         gameAudio.playSFX('crash');
         gameAudio.stopBGM();
 
-        if (user && db && appId) {
+        if (db && appId) {
             try {
                 const scoresCollection = collection(db, 'artifacts', appId, 'public', 'data', 'games', 'pulse-dash', 'scores');
                 await addDoc(scoresCollection, {
-                    uid: user.uid,
-                    displayName: user.displayName || 'Anonymous',
-                    photoURL: user.photoURL,
+                    uid: user?.uid || 'guest-visitor',
+                    displayName: user?.displayName || 'Visitor',
+                    photoURL: user?.photoURL || null,
                     score: finalScore,
                     timestamp: serverTimestamp()
                 });
@@ -288,11 +288,6 @@ const PulseDash = ({ isOpen, onClose, user }) => {
                                 />
                             </div>
 
-                            {!user && (
-                                <p className="text-[10px] text-gray-400 font-mono">
-                                    * 랭킹에 등록하려면 로그인이 필요합니다.
-                                </p>
-                            )}
                         </div>
                     </motion.div>
                 )}

@@ -139,20 +139,20 @@ const NeonGhostRun = ({ isOpen, onClose, user }) => {
         } catch { /* ignore */ }
 
         // Save to Firebase
-        if (user && db && appId) {
+        if (db && appId) {
             try {
                 const ref = collection(db, 'artifacts', appId, 'public', 'data', 'games', 'neon-ghost-run', 'scores');
                 await addDoc(ref, {
-                    uid: user.uid,
-                    displayName: user.displayName || 'Ghost Runner',
-                    photoURL: user.photoURL || null,
+                    uid: user?.uid || 'guest-visitor',
+                    displayName: user?.displayName || 'Visitor',
+                    photoURL: user?.photoURL || null,
                     score: finalScore,
                     maxCombo: finalMaxCombo,
                     timestamp: serverTimestamp(),
                 });
             } catch (e) { console.error('Score save error', e); }
         }
-    }, [user]);
+    }, [user, db, appId]);
 
     // ─── Level change ──────────────────────────────────────────────────────
     const handleLevelChange = useCallback((lvl) => {
@@ -465,11 +465,6 @@ const NeonGhostRun = ({ isOpen, onClose, user }) => {
                                 />
                             </div>
 
-                            {!user && (
-                                <p className="text-[10px] text-gray-400 font-mono">
-                                    * 랭킹에 등록하려면 로그인이 필요합니다.
-                                </p>
-                            )}
                         </div>
                     </motion.div>
                 )}

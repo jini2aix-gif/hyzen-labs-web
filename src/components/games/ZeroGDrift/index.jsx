@@ -75,14 +75,14 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
         setGameState('gameover');
         gameAudio.playSFX('crash');
 
-        if (user && db && appId) {
+        if (db && appId) {
             try {
                 // Use addDoc to create a NEW record every time (Permanent History)
                 const scoresCollection = collection(db, 'artifacts', appId, 'public', 'data', 'games', 'zero-g-drift', 'scores');
                 await addDoc(scoresCollection, {
-                    uid: user.uid,
-                    displayName: user.displayName || 'Anonymous',
-                    photoURL: user.photoURL,
+                    uid: user?.uid || 'guest-visitor',
+                    displayName: user?.displayName || 'Visitor',
+                    photoURL: user?.photoURL || null,
                     score: finalScore,
                     timestamp: serverTimestamp()
                 });
@@ -417,11 +417,6 @@ const ZeroGDrift = ({ isOpen, onClose, user }) => {
                                     <Leaderboard currentUserScore={gameState === 'gameover' ? { uid: user?.uid, score } : null} />
                                 </div>
 
-                                {!user && (
-                                    <p className="text-[10px] text-gray-500 font-mono uppercase">
-                                        * 기록을 저장하려면 로그인이 필요합니다.
-                                    </p>
-                                )}
                             </div>
                         )}
                     </motion.div>

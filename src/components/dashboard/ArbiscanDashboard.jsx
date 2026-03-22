@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Activity, TrendingUp, DollarSign, Database,
-    Lock, Clock, BarChart2, LogIn, Target, ChevronRight, Zap
+    Clock, BarChart2, LogIn, Target, ChevronRight, Zap
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -163,11 +163,12 @@ const ValueGapGauge = ({ index }) => {
 
 // ─── Treasury Card ────────────────────────────────────────────────────────────
 const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
+    const [chartRange, setChartRange] = useState('ALL');
     const currentValueKRW = TREASURY_ARB * (priceKRW || 0);
     const currentValueUSD = currentValueKRW / (krwRate || 1350);
 
     // Find current month band for deviation logic
-    const todayStr = new Date().toISOString().substring(0, 7).replace('-', '/');
+    const todayStr = new Date().toISOString().substring(0, 7);
     const currentBand = MONTHLY_REALISTIC_BAND.find(b => b.date === todayStr);
 
     let lowerDev = 0;
@@ -193,18 +194,52 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
 
     const targetRate = ((priceKRW || 0) / 7500) * 100;
 
-    // Merge history with band data
-    const chartData = history.map(h => {
-        const monthStr = h.date.substring(0, 7).replace('-', '/');
+    const enrichedHistory = history.map(h => {
+        const monthStr = h.date.substring(0, 7);
         const band = MONTHLY_REALISTIC_BAND.find(b => b.date === monthStr);
         return {
             ...h,
             bandLow: band?.valueLow,
+            bandTarget: band?.valueTarget,
             bandHigh: band?.valueHigh,
+            displayDate: h.shortDate // Use shortDate ("03/18") for historic points
         };
     });
 
-    const emerald = '#10B981';
+    const lastDate = history.length > 0 ? new Date(history[history.length - 1].date) : new Date();
+    const futureProjections = MONTHLY_REALISTIC_BAND.filter(b => {
+        const [y, m] = b.date.split('-').map(Number);
+        const bandDate = new Date(y, m - 1, 1);
+        return bandDate > lastDate;
+    }).map(b => ({
+        date: b.date + '-01',
+        displayDate: b.date.substring(2).replace('-', '/'), // e.g., "26/04"
+        bandLow: b.valueLow,
+        bandTarget: b.valueTarget,
+        bandHigh: b.valueHigh,
+        valueKRW: null
+    }));
+
+    const fullChartData = [...enrichedHistory, ...futureProjections];
+
+    const filteredData = React.useMemo(() => {
+        if (chartRange === 'ALL') return fullChartData;
+        if (chartRange === 'Mid Term') {
+            const limit = new Date('2026-12-31');
+            return fullChartData.filter(d => new Date(d.date) <= limit);
+        }
+        // Short Term: Last 30 records
+        return enrichedHistory.slice(-30);
+    }, [chartRange, fullChartData, enrichedHistory]);
+
+    const formatKRW = (val) => {
+        if (val >= 1e8) return `₩${(val / 1e8).toFixed(1)}억`;
+        if (val >= 1e4) return `₩${(val / 1e4).toFixed(0)}만`;
+        return `₩${val.toLocaleString()}`;
+    };
+
+    const bandColor = '#6366f1'; // Indigo for Prediction
+    const bandColorOpacity = 'rgba(99, 102, 241, 0.15)';
     const neonGreen = '#39FF14';
     // eslint-disable-next-line no-unused-vars
     const emeraldFaint = 'rgba(16, 185, 129, 0.12)';
@@ -217,8 +252,8 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
             className="relative overflow-hidden rounded-3xl mb-6"
             style={{
                 background: 'linear-gradient(135deg, #050505 0%, #0A0A0A 100%)',
-                border: `1px solid rgba(16, 185, 129, 0.2)`,
-                boxShadow: '0 0 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(16, 185, 129, 0.1)'
+                border: `1px solid rgba(0, 209, 255, 0.2)`,
+                boxShadow: '0 0 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(0, 209, 255, 0.1)'
             }}
         >
             {/* Background scanner effect */}
@@ -233,14 +268,14 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
                         <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
-                            <span className="w-2 h-5 sm:h-6 bg-[#10B981] rounded-full inline-block" />
+                            <span className="w-2 h-5 sm:h-6 bg-[#00D1FF] rounded-full inline-block" />
                             Hyzen Labs. Predictive Asset Navigation
                         </h2>
                         <p className="text-[10px] text-gray-500 font-mono mt-1 uppercase tracking-widest">Autonomous Financial Trajectory Monitor</p>
                     </div>
                     <div className="flex items-center gap-3 bg-black/40 border border-emerald-900/50 rounded-2xl px-4 py-2">
                         <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                            <Target size={14} className="text-[#10B981]" />
+                            <Target size={14} className="text-[#00D1FF]" />
                         </div>
                         <div>
                             <div className="text-[9px] text-gray-500 font-mono uppercase tracking-tighter line-clamp-1">2027 Target (7,500 KRW)</div>
@@ -260,7 +295,7 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
                     </div>
                     <div className="bg-black/30 border border-emerald-900/40 rounded-lg sm:rounded-xl p-2 sm:p-3 flex flex-col justify-center text-center">
                         <div className="text-[7px] sm:text-[9px] text-gray-500 font-mono uppercase tracking-tighter sm:tracking-wider mb-0.5 sm:mb-1 truncate">Lower Dev</div>
-                        <div className="text-[10px] sm:text-sm font-black font-mono text-[#10B981] truncate">
+                        <div className="text-[10px] sm:text-sm font-black font-mono text-[#00D1FF] truncate">
                             {lowerDev >= 0 ? '+' : ''}{lowerDev.toFixed(1)}% <span className="hidden sm:inline text-[10px] text-gray-600 font-normal ml-0.5">above base</span>
                         </div>
                     </div>
@@ -273,10 +308,10 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
                 </div>
 
                 {/* ── Main Figures ── */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 mb-8 mt-2 p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-emerald-900/10 to-transparent border border-emerald-500/10">
+                <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 mb-8 mt-2 p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-[#00D1FF]/10 to-transparent border border-[#00D1FF]/10">
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono font-bold border border-emerald-500/20">REAL-TIME POSITION</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00D1FF]/20 text-[#00D1FF] font-mono font-bold border border-[#00D1FF]/20">REAL-TIME POSITION</span>
                         </div>
                         <div className="text-3xl sm:text-5xl font-black text-white tracking-tighter leading-none mb-2 tabular-nums">
                             ₩{Math.round(currentValueKRW).toLocaleString()}
@@ -292,63 +327,81 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
                         </div>
                     </div>
 
-                    <div className="flex gap-4 shrink-0 w-full sm:w-auto justify-between sm:justify-end border-t border-emerald-500/10 sm:border-0 pt-4 sm:pt-0">
+                    <div className="flex gap-4 shrink-0 w-full sm:w-auto justify-between sm:justify-end border-t border-[#00D1FF]/10 sm:border-0 pt-4 sm:pt-0">
                         <div className="text-left sm:text-right">
                             <div className="text-[9px] text-gray-500 font-mono uppercase tracking-wider mb-1">Live ARB Price</div>
                             <div className="text-lg sm:text-xl font-black text-white font-mono leading-none">₩{(priceKRW || 0).toLocaleString()}</div>
-                            <div className="text-[10px] sm:text-xs text-emerald-500/70 font-mono mt-1">${priceUSD?.toFixed(4) ?? '—'}</div>
+                            <div className="text-[10px] sm:text-xs text-[#00D1FF]/70 font-mono mt-1">${priceUSD?.toFixed(4) ?? '—'}</div>
                         </div>
                     </div>
                 </div>
 
                 {/* ── Predictive Chart ── */}
-                <div className="pt-6 border-t border-emerald-500/10">
+                <div className="pt-6 border-t border-[#00D1FF]/10">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                            <Activity size={14} className="text-emerald-500" />
-                            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">Asset Value Trajectory vs 2027 Realistic Band</div>
+                            <Activity size={14} className="text-[#00D1FF]" />
+                            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">Asset Value Trajectory</div>
+                        </div>
+                        <div className="flex items-center p-0.5 bg-black/60 border border-gray-800/50 rounded-lg backdrop-blur-md">
+                            {['Short', 'Mid', '2027'].map((r, i) => {
+                                const labels = ['Short Term', 'Mid Term', 'ALL'];
+                                const actualLabel = labels[i];
+                                return (
+                                    <button
+                                        key={actualLabel}
+                                        type="button"
+                                        onClick={() => setChartRange(actualLabel)}
+                                        className={`px-3 py-1.5 rounded-md text-[10px] sm:text-[11px] font-mono transition-all cursor-pointer relative z-20 whitespace-nowrap ${chartRange === actualLabel ? 'bg-[#00D1FF] text-black font-black' : 'text-gray-500 hover:text-white'}`}
+                                    >
+                                        {r}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                     <div className="h-[240px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <ComposedChart data={chartData} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                            <ComposedChart key={chartRange} data={filteredData} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="bandGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={emerald} stopOpacity={0.15} />
-                                        <stop offset="95%" stopColor={emerald} stopOpacity={0.02} />
+                                        <stop offset="5%" stopColor={bandColor} stopOpacity={0.15} />
+                                        <stop offset="95%" stopColor={bandColor} stopOpacity={0.02} />
                                     </linearGradient>
                                     <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor={neonGreen} stopOpacity={0.8} />
                                         <stop offset="95%" stopColor={neonGreen} stopOpacity={0.2} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(16, 185, 129, 0.05)" vertical={false} />
-                                <XAxis dataKey="shortDate" stroke="rgba(16, 185, 129, 0.2)" fontSize={9} tickLine={false} axisLine={false} dy={5} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 209, 255, 0.05)" vertical={false} />
+                                <XAxis dataKey="displayDate" stroke="rgba(0, 209, 255, 0.2)" fontSize={9} tickLine={false} axisLine={false} dy={5} minTickGap={30} />
                                 <YAxis
                                     domain={['auto', 'auto']}
-                                    stroke="rgba(16, 185, 129, 0.2)"
+                                    stroke="rgba(0, 209, 255, 0.2)"
                                     fontSize={9}
                                     tickLine={false}
                                     axisLine={false}
-                                    tickFormatter={(val) => `₩${(val / 1e6).toFixed(0)}M`}
-                                    width={45}
+                                    tickFormatter={formatKRW}
+                                    width={55}
                                 />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: '#050505', borderColor: 'rgba(16, 185, 129, 0.3)', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }}
+                                    contentStyle={{ backgroundColor: '#050505', borderColor: 'rgba(0, 209, 255, 0.3)', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }}
                                     itemStyle={{ color: neonGreen, fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace' }}
                                     labelStyle={{ color: '#888', fontSize: '10px', marginBottom: '4px', fontFamily: 'monospace', fontWeight: 'bold' }}
                                     formatter={(value, name) => {
-                                        const label = name === 'valueKRW' ? 'Current Value' : name === 'bandLow' ? 'Band Min' : 'Band Max';
-                                        return [`₩${Math.round(value).toLocaleString()}`, label];
+                                         if (name === 'bandLow') return null;
+                                        const label = name === 'valueKRW' ? 'Actual Asset Value' : name === 'bandTarget' ? 'Target Trajectory' : 'Hyzen Labs Prediction Band';
+                                        return [formatKRW(value), label];
                                     }}
                                 />
                                 <Area
                                     type="monotone"
                                     dataKey="bandHigh"
-                                    stroke="transparent"
-                                    fill={emerald}
-                                    fillOpacity={0.1}
-                                    name="Band Projection"
+                                    stroke={bandColor}
+                                    strokeWidth={1}
+                                    fill={bandColor}
+                                    fillOpacity={0.25}
+                                    name="Hyzen Labs Prediction Band"
                                 />
                                 <Area
                                     type="monotone"
@@ -356,6 +409,15 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
                                     stroke="transparent"
                                     fill="#050505"
                                     fillOpacity={1}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="bandTarget"
+                                    stroke={bandColor}
+                                    strokeWidth={1.2}
+                                    strokeDasharray="5 5"
+                                    dot={false}
+                                    name="Target Trajectory"
                                 />
                                 <Line
                                     type="monotone"
@@ -371,8 +433,8 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
                     </div>
                     <div className="flex items-center gap-6 mt-4 justify-center">
                         <div className="flex items-center gap-2">
-                            <div className="w-10 h-3 rounded-sm opacity-20" style={{ backgroundColor: emerald }} />
-                            <span className="text-[10px] text-gray-600 font-mono uppercase tracking-widest underline decoration-emerald-500/30 underline-offset-4">Realistic Band (2026-2027)</span>
+                            <div className="w-10 h-3 rounded-sm opacity-20" style={{ backgroundColor: bandColor }} />
+                            <span className="text-[10px] text-gray-600 font-mono uppercase tracking-widest underline decoration-indigo-500/30 underline-offset-4">Hyzen Labs Prediction Band</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-10 h-1 rounded-full" style={{ backgroundColor: neonGreen }} />
@@ -385,7 +447,7 @@ const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
     );
 };
 
-const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
+const ArbiscanDashboard = () => {
     const [data, setData] = useState({
         market: null, tvlData: null, supply: null,
         histPrice: [], histTvl: [], monthlyPrice: [],
@@ -440,7 +502,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
                         const qRef = query(
                             collection(db, 'artifacts', appId, 'public', 'data', 'treasury_history'),
                             orderBy('timestamp', 'desc'),
-                            limit(90)
+                            limit(2000)
                         );
                         const snap = await getDocs(qRef);
                         const historyDocs = snap.docs.map(d => d.data());
@@ -497,7 +559,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
         return () => clearInterval(interval);
     }, []);
 
-    const isAuthGated = !user;
+    // const isAuthGated = !user; // Removed
 
     if (isLoading || !data.market) {
         return (
@@ -535,45 +597,7 @@ const ArbiscanDashboard = ({ user, onOpenLoginModal, onOpenRegisterModal }) => {
 
     return (
         <section className="relative bg-[#050505] min-h-screen text-gray-200 font-sans pt-20 sm:pt-24 pb-12 sm:pb-20 px-3 sm:px-8 overflow-hidden">
-            {/* ─── Non-member Auth Overlay ─── */}
-            <AnimatePresence>
-                {isAuthGated && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-[#050505]/40 backdrop-blur-sm pointer-events-none"
-                        />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            className="relative z-10 bg-[#111111] border border-gray-800 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl overflow-hidden"
-                        >
-                            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#00D1FF] to-[#6366f1]" />
-                            <Lock className="w-12 h-12 mx-auto mb-5 text-[#00D1FF]" />
-                            <h2 className="text-xl font-black text-white mb-2 uppercase tracking-tight">Exclusive Content</h2>
-                            <p className="text-gray-400 mb-8 text-xs leading-relaxed">Arbiscan On-Chain Terminal은 회원 전용 서비스입니다. 가입 후 실시간 대시보드와 온체인 데이터를 무제한으로 확인하세요.</p>
-
-                            <div className="space-y-3">
-                                <button onClick={onOpenLoginModal} className="w-full py-3.5 bg-[#00D1FF] text-black font-extrabold uppercase tracking-widest text-[11px] rounded-xl hover:bg-[#00b8e6] transition-all shadow-[0_0_20px_rgba(0,209,255,0.2)]">
-                                    Sign In to Access
-                                </button>
-                                <button onClick={onOpenRegisterModal} className="w-full py-3.5 bg-transparent border border-gray-700 text-white font-bold uppercase tracking-widest text-[11px] rounded-xl hover:bg-white/5 transition-all">
-                                    Create Free Account
-                                </button>
-                            </div>
-
-                            <div className="mt-8 pt-6 border-t border-gray-800 flex items-center justify-center gap-4 grayscale opacity-40">
-                                <Activity size={14} className="text-[#00D1FF]" />
-                                <BarChart2 size={14} className="text-indigo-400" />
-                                <Target size={14} className="text-red-400" />
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
-
-            {/* ─── Main Dashboard Content (Blurred if gated) ─── */}
-            <div className={`max-w-[1400px] mx-auto transition-all duration-700 ${isAuthGated ? 'blur-[1px] grayscale-[30%] pointer-events-none select-none opacity-60' : ''}`}>
+            <div className="max-w-[1400px] mx-auto transition-all duration-700">
 
                 {/* === TREASURY STATUS === */}
                 <TreasuryCard

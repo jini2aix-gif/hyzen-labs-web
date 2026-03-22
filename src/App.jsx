@@ -6,18 +6,16 @@ const GamePage = React.lazy(() => import('./components/official/GamePage'));
 const ShoesGallery = React.lazy(() => import('./components/official/ShoesGallery'));
 const ArbiscanDashboard = React.lazy(() => import('./components/dashboard/ArbiscanDashboard'));
 
-const MyPageModal = React.lazy(() => import('./components/modals/MyPageModal'));
 const ZeroGDrift = React.lazy(() => import('./components/games/ZeroGDrift'));
 const PulseDash = React.lazy(() => import('./components/games/PulseDash'));
 const NeonGhostRun = React.lazy(() => import('./components/games/NeonGhostRun'));
 const LikeADino = React.lazy(() => import('./components/games/LikeADino'));
-const AuthModal = React.lazy(() => import('./components/modals/AuthModal'));
 
 import { useFirebase } from './hooks/useFirebase';
 import { compressImage } from './utils/image';
 
 const App = () => {
-  const { user, profile, loginWithGoogle, registerWithEmail, loginWithEmail, appId, db } = useFirebase();
+  const { db, appId } = useFirebase();
 
   // Navigation State
   const [viewIndex, setViewIndex] = useState(0);
@@ -29,19 +27,16 @@ const App = () => {
   const isNavigating = useRef(false);
 
   // Modal State (Global)
-  const [isMyPageOpen, setIsMyPageOpen] = useState(false);
   const [isZeroGOpen, setIsZeroGOpen] = useState(false);
   const [isPulseDashOpen, setIsPulseDashOpen] = useState(false);
   const [isNeonGhostOpen, setIsNeonGhostOpen] = useState(false);
   const [isLikeADinoOpen, setIsLikeADinoOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authInitialMode, setAuthInitialMode] = useState('login');
   const [showSplash, setShowSplash] = useState(true);
   const [isAnyModalOpenFromSections, setIsAnyModalOpenFromSections] = useState(false);
 
   const isAnyModalOpen = React.useMemo(() => {
-    return isMyPageOpen || isZeroGOpen || isPulseDashOpen || isNeonGhostOpen || isLikeADinoOpen || isAuthModalOpen || isAnyModalOpenFromSections;
-  }, [isMyPageOpen, isZeroGOpen, isPulseDashOpen, isNeonGhostOpen, isLikeADinoOpen, isAuthModalOpen, isAnyModalOpenFromSections]);
+    return isZeroGOpen || isPulseDashOpen || isNeonGhostOpen || isLikeADinoOpen || isAnyModalOpenFromSections;
+  }, [isZeroGOpen, isPulseDashOpen, isNeonGhostOpen, isLikeADinoOpen, isAnyModalOpenFromSections]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -50,42 +45,6 @@ const App = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleOpenAuthModal = useCallback(() => {
-    setAuthInitialMode('login');
-    setIsAuthModalOpen(true);
-  }, []);
-
-  const handleOpenRegisterModal = useCallback(() => {
-    setAuthInitialMode('register');
-    setIsAuthModalOpen(true);
-  }, []);
-
-  const handleGoogleLogin = useCallback(async () => {
-    try {
-      await loginWithGoogle();
-      setIsAuthModalOpen(false);
-    } catch (e) {
-      if (e.code === 'auth/popup-blocked') {
-        alert('팝업 차단이 감지되었습니다. 브라우저 설정에서 팝업을 허용해 주세요.');
-      } else if (e.code === 'auth/unauthorized-domain') {
-        alert('인증 도메인 오류가 발생했습니다. 관리자에게 문의하세요.');
-      } else if (e.code === 'auth/popup-closed-by-user') {
-        // User closed the popup, do nothing
-      } else {
-        console.error(e);
-        alert(`로그인 오류: ${e.message}`);
-      }
-    }
-  }, [loginWithGoogle]);
-
-  // Modal Handlers
-  const handleOpenMyPage = useCallback(() => {
-    setIsMyPageOpen(true);
-  }, []);
-
-  const handleCloseMyPage = useCallback(() => {
-    setIsMyPageOpen(false);
-  }, []);
 
   // Game Modal Handlers
   const handleOpenZeroG = useCallback(() => {
@@ -221,8 +180,6 @@ const App = () => {
 
         {!showSplash && (
           <Header
-            onOpenMyPage={handleOpenMyPage}
-            onOpenAuthModal={handleOpenAuthModal}
             currentIndex={viewIndex}
             onNavigate={handleNavigate}
             setViewIndex={setViewIndex}
@@ -295,7 +252,6 @@ const App = () => {
                 {viewIndex === 0 ? (
                   <div className="h-full overflow-y-auto">
                     <GamePage
-                      user={user}
                       onOpenZeroG={handleOpenZeroG}
                       onOpenPulseDash={handleOpenPulseDash}
                       onOpenNeonGhost={handleOpenNeonGhost}
@@ -308,7 +264,7 @@ const App = () => {
                   </div>
                 ) : (
                   <div className="h-full overflow-y-auto bg-[#050505] scroll-smooth">
-                    <ArbiscanDashboard user={user} onOpenLoginModal={handleOpenAuthModal} onOpenRegisterModal={handleOpenRegisterModal} />
+                    <ArbiscanDashboard />
                   </div>
                 )}
               </React.Suspense>
@@ -358,44 +314,24 @@ const App = () => {
         </div>
 
         <React.Suspense fallback={null}>
-          <MyPageModal
-            isOpen={isMyPageOpen}
-            onClose={handleCloseMyPage}
-            user={user}
-            profile={profile}
-          />
-
           <ZeroGDrift
             isOpen={isZeroGOpen}
             onClose={handleCloseZeroG}
-            user={user}
           />
 
           <PulseDash
             isOpen={isPulseDashOpen}
             onClose={handleClosePulseDash}
-            user={user}
           />
 
           <NeonGhostRun
             isOpen={isNeonGhostOpen}
             onClose={handleCloseNeonGhost}
-            user={user}
           />
 
           <LikeADino
             isOpen={isLikeADinoOpen}
             onClose={handleCloseLikeADino}
-            user={user}
-          />
-
-          <AuthModal
-            isOpen={isAuthModalOpen}
-            onClose={() => setIsAuthModalOpen(false)}
-            onGoogleLogin={handleGoogleLogin}
-            onEmailLogin={loginWithEmail}
-            onEmailRegister={registerWithEmail}
-            initialMode={authInitialMode}
           />
         </React.Suspense>
       </div >
