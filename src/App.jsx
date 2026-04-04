@@ -2,9 +2,8 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import Header from './components/layout/Header';
-const GamePage = React.lazy(() => import('./components/official/GamePage'));
-const ShoesGallery = React.lazy(() => import('./components/official/ShoesGallery'));
 const ArbiscanDashboard = React.lazy(() => import('./components/dashboard/ArbiscanDashboard'));
+const ArbiRunDashboard = React.lazy(() => import('./components/dashboard/AviDashboard'));
 
 const ZeroGDrift = React.lazy(() => import('./components/games/ZeroGDrift'));
 const PulseDash = React.lazy(() => import('./components/games/PulseDash'));
@@ -101,7 +100,8 @@ const App = () => {
         // Block right swipe on first page (would trigger browser back)
         if (distanceX < 0 && viewIndex === 0) e.preventDefault();
         // Block left swipe on last page (would trigger browser forward)
-        const maxIndex = 2;
+        // Block left swipe on last page (would trigger browser forward)
+        const maxIndex = 1;
         if (distanceX > 0 && viewIndex === maxIndex) e.preventDefault();
       }
     }
@@ -132,7 +132,7 @@ const App = () => {
       const isRightSwipe = distanceX < -minSwipeDistance;
 
       if (isLeftSwipe) {
-        const maxIndex = 2;
+        const maxIndex = 1;
         if (viewIndex < maxIndex) {
           handleNavigate(viewIndex + 1);
         }
@@ -250,17 +250,8 @@ const App = () => {
             >
               <React.Suspense fallback={<div className="h-screen w-full flex items-center justify-center bg-white text-black font-brand italic uppercase tracking-widest">Initialising Hyzen Systems...</div>}>
                 {viewIndex === 0 ? (
-                  <div className="h-full overflow-y-auto">
-                    <GamePage
-                      onOpenZeroG={handleOpenZeroG}
-                      onOpenPulseDash={handleOpenPulseDash}
-                      onOpenNeonGhost={handleOpenNeonGhost}
-                      onOpenLikeADino={handleOpenLikeADino}
-                    />
-                  </div>
-                ) : viewIndex === 1 ? (
-                  <div className="h-full overflow-y-auto">
-                    <ShoesGallery onModalChange={setIsAnyModalOpenFromSections} />
+                  <div className="h-full overflow-y-auto bg-[#050505] scroll-smooth">
+                    <ArbiRunDashboard />
                   </div>
                 ) : (
                   <div className="h-full overflow-y-auto bg-[#050505] scroll-smooth">
@@ -277,37 +268,24 @@ const App = () => {
           <button
             onClick={() => handleNavigate(0)}
             className={`relative overflow-hidden flex items-center justify-center rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 0 ? 'bg-white text-black px-4 py-1.5' : 'bg-transparent text-white/50 w-8 h-8 hover:bg-white/10'}`}
-            aria-label="Playground"
+            aria-label="Arbi Run"
           >
             <span className={`text-[10px] font-bold tracking-widest uppercase transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 0 ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0 pointer-events-none'}`}>
-              Play
+              Run
             </span>
             <span className={`text-[10px] font-bold transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] absolute ${viewIndex === 0 ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
-              P
+              R
             </span>
           </button>
           <button
             onClick={() => handleNavigate(1)}
             className={`relative overflow-hidden flex items-center justify-center rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 1 ? 'bg-white text-black px-4 py-1.5' : 'bg-transparent text-white/50 w-8 h-8 hover:bg-white/10'}`}
-            aria-label="Hyzen Collection"
-          >
-            <span className={`text-[10px] font-bold tracking-widest uppercase transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 1 ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0 pointer-events-none'}`}>
-              Hyzen
-            </span>
-            <span className={`text-[10px] font-bold transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] absolute ${viewIndex === 1 ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
-              C
-            </span>
-          </button>
-
-          <button
-            onClick={() => handleNavigate(2)}
-            className={`relative overflow-hidden flex items-center justify-center rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 2 ? 'bg-white text-black px-4 py-1.5' : 'bg-transparent text-white/50 w-8 h-8 hover:bg-white/10'}`}
             aria-label="Arbiscan"
           >
-            <span className={`text-[10px] font-bold tracking-widest uppercase transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 2 ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0 pointer-events-none'}`}>
+            <span className={`text-[10px] font-bold tracking-widest uppercase transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${viewIndex === 1 ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0 pointer-events-none'}`}>
               Arbi
             </span>
-            <span className={`text-[10px] font-bold transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] absolute ${viewIndex === 2 ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
+            <span className={`text-[10px] font-bold transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] absolute ${viewIndex === 1 ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
               A
             </span>
           </button>

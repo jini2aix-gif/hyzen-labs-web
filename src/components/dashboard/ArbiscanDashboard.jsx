@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    ComposedChart, Line, PieChart, Pie, Cell, Legend
+    ComposedChart, Line, PieChart, Pie, Cell, Legend, Bar
 } from 'recharts';
 import { doc, setDoc, getDocs, collection, query, orderBy, limit } from 'firebase/firestore';
 import { db, appId } from '../../hooks/useFirebase';
@@ -21,12 +21,10 @@ import {
     fetchArbitrumStablecoins,
     fetchArbitrumYields,
     fetchArbitrumStablecoinHistory,
-    fetchNativeAlphaIndex,
-    fetchGMXSentiment,
     fetchSequencerMargin,
-    fetchM2ArbElasticity,
     fetchArbEthMcapRatio,
     fetchKRWRate,
+    fetchExchangeFlows,
     REFRESH
 } from '../../lib/api-fetcher';
 import { MONTHLY_REALISTIC_BAND, TREASURY_ARB } from '../../constants/simulation-data';
@@ -110,56 +108,7 @@ const ValueMetricCard = ({ title, value, subValue, change, icon: Icon, colorClas
 
 // TREASURY_ARB is now imported from constants/simulation-data.js
 
-// ─── Value Gap Gauge Component ────────────────────────────────────────────────
-const ValueGapGauge = ({ index }) => {
-    // index: opMcapTvl / arbMcapTvl — >1 means ARB is underpriced vs OP
-    const capped = Math.min(Math.max(index, 0), 3);
-    const pct = capped / 3; // 0 to 1
-    const angle = -135 + pct * 270; // -135° to +135°
-    const r = 80;
-    const cx = 110;
-    const cy = 110;
-    // Arc path helper
-    const polarToCart = (deg) => {
-        const rad = (deg - 90) * Math.PI / 180;
-        return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-    };
-    const start = polarToCart(-135);
-    const end = polarToCart(135);
-    const needleEnd = polarToCart(angle);
-    // Colour zones
-    const color = index >= 1.5 ? '#28A745' : index >= 1.0 ? '#F0A500' : '#DC3545';
-    const label = index >= 1.5 ? 'DEEPLY UNDERPRICED' : index >= 1.0 ? 'UNDERPRICED' : 'FAIRLY VALUED';
 
-    return (
-        <div className="flex flex-col items-center">
-            <svg viewBox="0 0 220 150" className="w-full max-w-[200px]">
-                {/* Track */}
-                <path d={`M ${start.x} ${start.y} A ${r} ${r} 0 1 1 ${end.x} ${end.y}`}
-                    fill="none" stroke="#222" strokeWidth="14" strokeLinecap="round" />
-                {/* Active arc */}
-                {pct > 0 && (
-                    <path d={`M ${start.x} ${start.y} A ${r} ${r} 0 ${pct > 0.5 ? 1 : 0} 1 ${needleEnd.x} ${needleEnd.y}`}
-                        fill="none" stroke={color} strokeWidth="14" strokeLinecap="round"
-                        style={{ filter: `drop-shadow(0 0 6px ${color})` }} />
-                )}
-                {/* Needle dot */}
-                <circle cx={needleEnd.x} cy={needleEnd.y} r="7" fill={color}
-                    style={{ filter: `drop-shadow(0 0 8px ${color})` }} />
-                {/* Center value */}
-                <text x={cx} y={cy + 10} textAnchor="middle" fill="white" fontSize="22" fontWeight="900" fontFamily="monospace">
-                    {index.toFixed(2)}x
-                </text>
-                {/* Labels */}
-                <text x="28" y="138" fill="#666" fontSize="9" fontFamily="monospace">FAIR</text>
-                <text x="175" y="138" fill="#28A745" fontSize="9" fontFamily="monospace">MAX</text>
-            </svg>
-            <span className="text-xs font-bold tracking-widest uppercase mt-1" style={{ color }}>
-                {label}
-            </span>
-        </div>
-    );
-};
 
 // ─── Treasury Card ────────────────────────────────────────────────────────────
 const TreasuryCard = ({ priceKRW, priceUSD, krwRate, history }) => {
@@ -453,7 +402,8 @@ const ArbiscanDashboard = () => {
         histPrice: [], histTvl: [], monthlyPrice: [],
         protocols: [], stablecoins: { total: 0, top: [] }, yields: [],
         stablecoinHistory: [],
-        nativeAlpha: [], gmxSentiment: null, seqMargin: null, m2Elasticity: [],
+        exchangeFlows: [],
+        seqMargin: null,
         arbEthRatio: [],
         krwRate: 1350,
         treasuryHistory: []
@@ -467,8 +417,7 @@ const ArbiscanDashboard = () => {
                 const [
                     market, tvlData, supply, histPrice, histTvl, monthlyPrice,
                     protocols, stablecoins, yields, stablecoinHistory,
-                    nativeAlpha, gmxSentiment, seqMargin, m2Elasticity,
-                    arbEthRatio, krwRate
+                    seqMargin, arbEthRatio, krwRate, exchangeFlows
                 ] = await Promise.all([
                     fetchMarketComparison(),
                     fetchChainTVLs(),
@@ -480,12 +429,10 @@ const ArbiscanDashboard = () => {
                     fetchArbitrumStablecoins(),
                     fetchArbitrumYields(),
                     fetchArbitrumStablecoinHistory(),
-                    fetchNativeAlphaIndex(),
-                    fetchGMXSentiment(),
                     fetchSequencerMargin(),
-                    fetchM2ArbElasticity(),
                     fetchArbEthMcapRatio(),
-                    fetchKRWRate()
+                    fetchKRWRate(),
+                    fetchExchangeFlows()
                 ]);
 
                 const today = new Date().toISOString().split('T')[0];
@@ -544,8 +491,8 @@ const ArbiscanDashboard = () => {
                 setData({
                     market, tvlData, supply, histPrice, histTvl, monthlyPrice,
                     protocols, stablecoins, yields, stablecoinHistory,
-                    nativeAlpha, gmxSentiment, seqMargin, m2Elasticity,
-                    arbEthRatio, krwRate: krwRateRes, treasuryHistory: th
+                    seqMargin, arbEthRatio, krwRate: krwRateRes, treasuryHistory: th,
+                    exchangeFlows
                 });
             } catch (e) {
                 console.error("Dashboard Data Load Error", e);
@@ -591,9 +538,6 @@ const ArbiscanDashboard = () => {
         };
     });
 
-    const valueGapIndex = opMcapTvlRatio > 0 && arbMcapTvlRatio > 0
-        ? opMcapTvlRatio / arbMcapTvlRatio
-        : 1;
 
     return (
         <section className="relative bg-[#050505] min-h-screen text-gray-200 font-sans pt-20 sm:pt-24 pb-12 sm:pb-20 px-3 sm:px-8 overflow-hidden">
@@ -849,213 +793,6 @@ const ArbiscanDashboard = () => {
                     </motion.div>
                 </div>
 
-                {/* ─── Value Gap Index + Ecosystem Monitor ─── */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-
-                    {/* Value Gap Index */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}
-                        className="bg-[#111111] border border-gray-800 rounded-3xl p-6 shadow-xl flex flex-col"
-                        style={{ borderColor: valueGapIndex >= 1 ? 'rgba(40,167,69,0.3)' : 'rgba(100,100,100,0.3)' }}
-                    >
-                        <div className="w-full mb-4 border-b border-gray-800 pb-4">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2 tracking-tight">
-                                <Target size={20} className={valueGapIndex >= 1 ? 'text-[#28A745]' : 'text-gray-500'} />
-                                Value Gap Index
-                            </h3>
-                            <p className="text-xs text-gray-500 mt-1 font-mono">OP Mcap/TVL ÷ ARB Mcap/TVL. &gt;1 = ARB Underpriced</p>
-                        </div>
-                        <div className="flex-1 flex flex-col items-center justify-center w-full py-2">
-                            <ValueGapGauge index={valueGapIndex} />
-                            <div className="mt-4 w-full grid grid-cols-2 gap-3">
-                                <div className="rounded-xl p-3 bg-[#0A0A0A] border border-gray-800 text-center">
-                                    <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">ARB Mcap/TVL</div>
-                                    <div className="font-mono font-black text-white">{arbMcapTvlRatio.toFixed(2)}x</div>
-                                </div>
-                                <div className="rounded-xl p-3 bg-[#0A0A0A] border border-gray-800 text-center">
-                                    <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-1">OP Mcap/TVL</div>
-                                    <div className="font-mono font-black text-white">{opMcapTvlRatio.toFixed(2)}x</div>
-                                </div>
-                            </div>
-                            {valueGapIndex >= 1 && (
-                                <div className="mt-3 w-full bg-[#28A745]/10 border border-[#28A745]/30 text-[#28A745] px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-center animate-pulse">
-                                    🟢 {valueGapIndex.toFixed(2)}x Cheaper than OP per TVL $
-                                </div>
-                            )}
-                        </div>
-                    </motion.div>
-
-                    {/* Ecosystem Monitor — 2 cols */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
-                        className="lg:col-span-2 bg-[#111111] border border-gray-800 rounded-3xl p-6 shadow-xl flex flex-col gap-6"
-                    >
-                        {/* Header */}
-                        <div className="border-b border-gray-800 pb-4">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2 tracking-tight">
-                                <Activity size={20} className="text-[#00D1FF]" />
-                                ARB Ecosystem Monitor
-                            </h3>
-                            <p className="text-xs text-gray-500 mt-1 font-mono">Live on-chain metrics · DeFiLlama</p>
-                        </div>
-
-                        {/* ── Stablecoin Inflow Trend Chart ── */}
-                        {(() => {
-                            const days = stableTrendDays;
-                            const sliced = data.stablecoinHistory.slice(-days);
-                            if (sliced.length < 2) return null;
-
-                            const first = sliced[0]?.valueB || 0;
-                            const last = sliced[sliced.length - 1]?.valueB || 0;
-                            const pctChange = first > 0 ? ((last - first) / first) * 100 : 0;
-                            const isUp = pctChange >= 0;
-                            const trendColor = isUp ? '#2ECC71' : '#EF4444';
-                            const trendBg = isUp ? 'rgba(46,204,113,0.08)' : 'rgba(239,68,68,0.08)';
-
-                            // thin ticks: every ~15 days show a label
-                            const tickInterval = days <= 30 ? 6 : 14;
-
-                            return (
-                                <div className="border border-gray-800 rounded-2xl p-4 bg-[#0A0A0A]">
-                                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                                        <div>
-                                            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">Stablecoin Inflow Trend · Arbitrum</div>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-lg font-black text-white font-mono">${last.toFixed(2)}B</span>
-                                                <span
-                                                    className="text-[11px] font-bold px-2 py-0.5 rounded-full font-mono"
-                                                    style={{ color: trendColor, background: trendBg }}
-                                                >
-                                                    {isUp ? '▲' : '▼'} {Math.abs(pctChange).toFixed(1)}% ({days}d)
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-1">
-                                            {[30, 90].map(d => (
-                                                <button
-                                                    key={d}
-                                                    onClick={() => setStableTrendDays(d)}
-                                                    className={`text-[10px] font-mono px-2.5 py-1 rounded-lg border transition-all ${days === d
-                                                        ? 'bg-[#00D1FF]/20 border-[#00D1FF]/50 text-[#00D1FF]'
-                                                        : 'bg-transparent border-gray-700 text-gray-500 hover:border-gray-500'
-                                                        }`}
-                                                >{d}D</button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <ResponsiveContainer width="100%" height={120}>
-                                        <AreaChart data={sliced} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                                            <defs>
-                                                <linearGradient id="stableGrad" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="0%" stopColor={trendColor} stopOpacity={0.35} />
-                                                    <stop offset="100%" stopColor={trendColor} stopOpacity={0.02} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#1A1A1A" />
-                                            <XAxis
-                                                dataKey="date"
-                                                tick={{ fill: '#4B5563', fontSize: 9, fontFamily: 'monospace' }}
-                                                interval={tickInterval}
-                                                tickLine={false}
-                                                axisLine={false}
-                                            />
-                                            <YAxis
-                                                tick={{ fill: '#4B5563', fontSize: 9, fontFamily: 'monospace' }}
-                                                tickFormatter={v => `$${v.toFixed(1)}B`}
-                                                tickLine={false}
-                                                axisLine={false}
-                                                width={50}
-                                            />
-                                            <Tooltip
-                                                content={({ active, payload, label }) => {
-                                                    if (!active || !payload?.length) return null;
-                                                    return (
-                                                        <div className="bg-[#111111] border border-gray-700 rounded-xl px-3 py-2 shadow-2xl">
-                                                            <p className="text-gray-500 text-[10px] font-mono mb-1">{label}</p>
-                                                            <p className="text-white font-black font-mono text-sm">
-                                                                ${payload[0].value?.toFixed(3)}B
-                                                            </p>
-                                                        </div>
-                                                    );
-                                                }}
-                                            />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="valueB"
-                                                name="Stablecoin Supply"
-                                                stroke={trendColor}
-                                                strokeWidth={2}
-                                                fill="url(#stableGrad)"
-                                                dot={false}
-                                                activeDot={{ r: 4, fill: trendColor, strokeWidth: 0 }}
-                                            />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            );
-                        })()}
-
-                        {/* Stablecoins + Yields (full width now) */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-
-                            {/* Stablecoin supply breakdown */}
-                            <div className="flex flex-col gap-4">
-
-                                {/* Stablecoin supply breakdown */}
-                                <div>
-                                    <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-3">Stablecoin Composition</div>
-                                    <div className="text-2xl font-black text-white font-mono">
-                                        ${(data.stablecoins.total / 1e9).toFixed(2)}B
-                                    </div>
-                                    <p className="text-[10px] text-gray-600 font-mono mb-2">Total stablecoins on Arbitrum</p>
-                                    <div className="space-y-1.5">
-                                        {data.stablecoins.top.map((s, i) => {
-                                            const colors = ['#2ECC71', '#3498DB', '#E67E22', '#9B59B6'];
-                                            const pct = data.stablecoins.total > 0
-                                                ? (s.amount / data.stablecoins.total * 100).toFixed(1)
-                                                : 0;
-                                            return (
-                                                <div key={i} className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: colors[i % 4] }} />
-                                                        <span className="text-[11px] text-gray-400 font-mono">{s.symbol}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[11px] text-gray-500 font-mono">${(s.amount / 1e9).toFixed(2)}B</span>
-                                                        <span className="text-[10px] text-gray-700 font-mono">{pct}%</span>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                {/* Top Yields */}
-                                {data.yields.length > 0 && (
-                                    <div>
-                                        <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-3">Top Yield Opportunities</div>
-                                        <div className="space-y-1.5">
-                                            {data.yields.slice(0, 4).map((y, i) => (
-                                                <div key={i} className="flex items-center justify-between bg-[#0A0A0A] rounded-lg px-3 py-2">
-                                                    <div className="min-w-0">
-                                                        <span className="text-[11px] text-white font-mono font-bold truncate block max-w-[120px]">{y.symbol}</span>
-                                                        <span className="text-[9px] text-gray-600 font-mono capitalize">{y.project}</span>
-                                                    </div>
-                                                    <div className="text-right shrink-0 ml-2">
-                                                        <div className="text-sm font-black font-mono text-[#28A745]">{y.apy.toFixed(1)}%</div>
-                                                        <div className="text-[9px] text-gray-700 font-mono">${(y.tvlUsd / 1e6).toFixed(0)}M TVL</div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                            </div>
-                        </div>
-                    </motion.div>
-
-                </div>
             </div>
 
 
@@ -1078,187 +815,85 @@ const ArbiscanDashboard = () => {
                     <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[#00D1FF]/30" />
                 </motion.div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                    {/* ── M2-ARB Elasticity Chart ── */}
+                    {/* ── Global Exchange ARB Net Flow Chart ── */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75 }}
-                        whileHover={{ y: -3, transition: { type: 'spring', stiffness: 400 } }}
-                        className="xl:col-span-2 bg-[#0D0D0D] border border-gray-800 rounded-3xl p-5 shadow-xl"
+                        className="lg:col-span-3 bg-[#0D0D0D] border border-gray-800 rounded-3xl p-6 shadow-xl"
                     >
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center justify-between mb-5 border-b border-gray-800 pb-4">
                             <div>
-                                <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-1">M2-ARB Elasticity</div>
-                                <div className="text-sm font-bold text-white">Global Liquidity vs. ARB TVL Inflow</div>
+                                <h3 className="text-lg font-bold text-white flex items-center gap-2 tracking-tight">
+                                    <TrendingUp size={20} className="text-[#00D1FF]" />
+                                    Global Exchange ARB Net Flow
+                                </h3>
+                                <p className="text-xs text-gray-500 mt-1 font-mono">바이낸스, 업비트 등 주요 거래소 순유입/순유출 통계 (Est. $M)</p>
                             </div>
-                            <div className="text-[10px] font-mono text-[#00D1FF]/60 bg-[#00D1FF]/5 border border-[#00D1FF]/10 px-2 py-1 rounded-lg">Weekly · 30pts</div>
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-[#28A745] rounded-full" /> <span className="text-[10px] text-gray-500 font-mono">INFLOW</span></div>
+                                <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-[#DC3545] rounded-full" /> <span className="text-[10px] text-gray-500 font-mono">OUTFLOW</span></div>
+                                <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 bg-[#00D1FF] rounded-full" /> <span className="text-[10px] text-gray-500 font-mono uppercase">7D Net Trend</span></div>
+                            </div>
                         </div>
-                        {data.m2Elasticity.length > 1 ? (
-                            <ResponsiveContainer width="100%" height={180}>
-                                <ComposedChart data={data.m2Elasticity} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
+
+                        <div className="h-[280px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart data={data.exchangeFlows} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <defs>
-                                        <linearGradient id="tvlGrad" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#00D1FF" stopOpacity={0.3} />
-                                            <stop offset="100%" stopColor="#00D1FF" stopOpacity={0.02} />
+                                        <linearGradient id="inflowGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#28A745" stopOpacity={0.8} />
+                                            <stop offset="100%" stopColor="#28A745" stopOpacity={0.1} />
+                                        </linearGradient>
+                                        <linearGradient id="outflowGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#DC3545" stopOpacity={0.8} />
+                                            <stop offset="100%" stopColor="#DC3545" stopOpacity={0.1} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#1A1A1A" />
-                                    <XAxis dataKey="date" tick={{ fill: '#4B5563', fontSize: 9, fontFamily: 'monospace' }} interval={5} tickLine={false} axisLine={false} />
-                                    <YAxis yAxisId="left" tick={{ fill: '#00D1FF', fontSize: 9, fontFamily: 'monospace' }} tickFormatter={v => `$${v}B`} tickLine={false} axisLine={false} width={42} />
-                                    <YAxis yAxisId="right" orientation="right" tick={{ fill: '#F0A500', fontSize: 9, fontFamily: 'monospace' }} tickFormatter={v => `${v}%`} tickLine={false} axisLine={false} width={36} />
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#1A1A1A" vertical={false} />
+                                    <XAxis dataKey="date" tick={{ fill: '#4B5563', fontSize: 10, fontFamily: 'monospace' }} axisLine={false} tickLine={false} minTickGap={20} />
+                                    <YAxis tick={{ fill: '#4B5563', fontSize: 10, fontFamily: 'monospace' }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}M`} />
                                     <Tooltip
-                                        content={({ active, payload, label }) => {
+                                        content={({ active, payload }) => {
                                             if (!active || !payload?.length) return null;
+                                            const d = payload[0].payload;
                                             return (
-                                                <div className="bg-[#111] border border-gray-700 rounded-xl px-3 py-2 shadow-2xl text-xs font-mono">
-                                                    <p className="text-gray-500 mb-1">{label}</p>
-                                                    {payload.map((p, i) => <p key={i} style={{ color: p.color }}>{p.name}: {p.value}{p.name === 'Elasticity' ? '%' : 'B'}</p>)}
+                                                <div className="bg-[#111] border border-gray-700 rounded-xl px-4 py-3 shadow-2xl text-xs font-mono">
+                                                    <p className="text-gray-500 mb-2">{d.date}</p>
+                                                    <div className="space-y-1">
+                                                        <div className="flex justify-between gap-4">
+                                                            <span className="text-gray-400">Inflow:</span>
+                                                            <span className="text-[#28A745] font-bold">+${d.inflow}M</span>
+                                                        </div>
+                                                        <div className="flex justify-between gap-4">
+                                                            <span className="text-gray-400">Outflow:</span>
+                                                            <span className="text-[#DC3545] font-bold">-${Math.abs(d.outflow).toFixed(2)}M</span>
+                                                        </div>
+                                                        <div className="pt-1 mt-1 border-t border-gray-800 flex justify-between gap-4">
+                                                            <span className="text-white font-bold">Net Flow:</span>
+                                                            <span className={d.net >= 0 ? 'text-[#28A745] font-black' : 'text-[#DC3545] font-black'}>
+                                                                {d.net >= 0 ? '+' : ''}{d.net}M
+                                                            </span>
+                                                        </div>
+                                                        <div className="pt-1 mt-1 border-t border-gray-800 flex justify-between gap-4">
+                                                            <span className="text-[#00D1FF] font-bold">7D Trend:</span>
+                                                            <span className="text-[#00D1FF] font-black">
+                                                                {d.trend >= 0 ? '+' : ''}{d.trend}M
+                                                            </span>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             );
                                         }}
                                     />
-                                    <Area yAxisId="left" type="monotone" dataKey="tvlB" name="ARB TVL" stroke="#00D1FF" strokeWidth={2} fill="url(#tvlGrad)" dot={false} />
-                                    <Line yAxisId="right" type="monotone" dataKey="elasticity" name="Elasticity" stroke="#F0A500" strokeWidth={2} dot={false} strokeDasharray="4 2" />
+                                    <Bar dataKey="inflow" fill="url(#inflowGrad)" radius={[4, 4, 0, 0]} barSize={8} />
+                                    <Bar dataKey="outflow" fill="url(#outflowGrad)" radius={[0, 0, 4, 4]} barSize={8} />
+                                    <Line type="monotone" dataKey="trend" stroke="#00D1FF" strokeWidth={2.5} dot={false} strokeDasharray="5 2" />
                                 </ComposedChart>
                             </ResponsiveContainer>
-                        ) : (
-                            <div className="h-[180px] flex items-center justify-center text-gray-700 text-xs font-mono">Loading data...</div>
-                        )}
-                        <div className="flex gap-4 mt-3 text-[10px] font-mono">
-                            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-[#00D1FF] inline-block" />ARB TVL (B)</span>
-                            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-[#F0A500] inline-block border-dashed" />Elasticity %</span>
                         </div>
                     </motion.div>
 
-                    {/* ── Native Alpha Index (Donut) ── */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}
-                        whileHover={{ y: -3, transition: { type: 'spring', stiffness: 400 } }}
-                        className="bg-[#0D0D0D] border border-gray-800 rounded-3xl p-5 shadow-xl"
-                    >
-                        <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-1">Native Alpha Index</div>
-                        <div className="text-sm font-bold text-white mb-4">ARB-Native TVL Share</div>
-                        {(() => {
-                            const COLORS = ['#00D1FF', '#F0A500', '#28A745', '#9B59B6', '#E74C3C', '#3498DB', '#555'];
-                            const top = data.nativeAlpha.slice(0, 6);
-                            if (!top.length) return <div className="h-[180px] flex items-center justify-center text-gray-700 text-xs font-mono">Loading...</div>;
-                            const totalTvl = top.reduce((s, x) => s + x.tvl, 0) || 1;
-                            return (
-                                <>
-                                    <ResponsiveContainer width="100%" height={160}>
-                                        <PieChart>
-                                            <Pie
-                                                data={top}
-                                                cx="50%" cy="50%"
-                                                innerRadius={48} outerRadius={72}
-                                                dataKey="tvl" paddingAngle={3}
-                                                stroke="none"
-                                            >
-                                                {top.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                                            </Pie>
-                                            <Tooltip
-                                                content={({ active, payload }) => {
-                                                    if (!active || !payload?.length) return null;
-                                                    const d = payload[0].payload;
-                                                    return (
-                                                        <div className="bg-[#111] border border-gray-700 rounded-xl px-3 py-2 text-xs font-mono shadow-2xl">
-                                                            <p className="text-white font-bold">{d.name}</p>
-                                                            <p className="text-gray-400">${(d.tvl / 1e6).toFixed(0)}M · {(d.tvl / totalTvl * 100).toFixed(1)}%</p>
-                                                        </div>
-                                                    );
-                                                }}
-                                            />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                    <div className="space-y-1.5 mt-2">
-                                        {top.slice(0, 5).map((p, i) => (
-                                            <div key={i} className="flex items-center justify-between">
-                                                <div className="flex items-center gap-1.5">
-                                                    <div className="w-2 h-2 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />
-                                                    <span className="text-[10px] text-gray-400 font-mono">{p.name}</span>
-                                                </div>
-                                                <span className="text-[10px] text-gray-500 font-mono">{(p.tvl / totalTvl * 100).toFixed(1)}%</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </>
-                            );
-                        })()}
-                    </motion.div>
-
-                    {/* ── GMX Whale Sentiment + Sequencer Margin ── */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.85 }}
-                        whileHover={{ y: -3, transition: { type: 'spring', stiffness: 400 } }}
-                        className="bg-[#0D0D0D] border border-gray-800 rounded-3xl p-5 shadow-xl flex flex-col gap-5"
-                    >
-                        {/* GMX Whale Sentiment */}
-                        <div>
-                            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-1">GMX Whale Sentiment</div>
-                            <div className="text-sm font-bold text-white mb-3">Long / Short OI</div>
-                            {data.gmxSentiment ? (() => {
-                                const { longPct, longOI, shortOI, bullish } = data.gmxSentiment;
-                                const shortPct = 100 - longPct;
-                                const sentColor = bullish ? '#28A745' : '#DC3545';
-                                return (
-                                    <div>
-                                        {/* SVG arc gauge */}
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-xl sm:text-2xl font-black font-mono" style={{ color: sentColor }}>{longPct}%</span>
-                                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold" style={{ color: sentColor, background: `${sentColor}18` }}>
-                                                {bullish ? '🟢 LONG BIAS' : '🔴 SHORT BIAS'}
-                                            </span>
-                                        </div>
-                                        <div className="relative h-3 rounded-full bg-[#1A1A1A] overflow-hidden">
-                                            <div className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
-                                                style={{ width: `${longPct}%`, background: `linear-gradient(90deg, #28A745, #2ECC71)`, boxShadow: '0 0 8px #28A74560' }} />
-                                        </div>
-                                        <div className="flex justify-between mt-1.5">
-                                            <span className="text-[9px] font-mono text-[#28A745]">Long ${longOI}M</span>
-                                            <span className="text-[9px] font-mono text-[#DC3545]">Short ${shortOI}M</span>
-                                        </div>
-                                        {/* Mini segments */}
-                                        <div className="flex gap-0.5 mt-2">
-                                            {Array.from({ length: 20 }).map((_, i) => (
-                                                <div key={i} className="flex-1 h-1 rounded-full"
-                                                    style={{ background: i < Math.round(longPct / 5) ? '#28A745' : '#DC3545', opacity: 0.7 }} />
-                                            ))}
-                                        </div>
-                                    </div>
-                                );
-                            })() : <div className="text-gray-700 text-xs font-mono">Loading...</div>}
-                        </div>
-
-                        <div className="border-t border-gray-800" />
-
-                        {/* Sequencer Margin */}
-                        <div>
-                            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-1">Sequencer Margin</div>
-                            <div className="text-sm font-bold text-white mb-3">L2 Revenue vs L1 Cost</div>
-                            {data.seqMargin ? (() => {
-                                const { revenue24h, cost24h, marginPct, trend } = data.seqMargin;
-                                const marginColor = marginPct >= 55 ? '#28A745' : marginPct >= 35 ? '#F0A500' : '#DC3545';
-                                return (
-                                    <div>
-                                        <div className="flex items-end justify-between mb-2">
-                                            <span className="text-xl sm:text-2xl font-black font-mono" style={{ color: marginColor }}>{marginPct}%</span>
-                                            <span className="text-[10px] font-mono text-gray-500">
-                                                {trend === 'up' ? '↑' : '↓'} 24h rev: ${(revenue24h / 1000).toFixed(1)}K
-                                            </span>
-                                        </div>
-                                        <div className="relative h-3 rounded-full bg-[#1A1A1A] overflow-hidden">
-                                            <div className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
-                                                style={{ width: `${marginPct}%`, background: `linear-gradient(90deg, ${marginColor}99, ${marginColor})`, boxShadow: `0 0 8px ${marginColor}60` }} />
-                                        </div>
-                                        <div className="flex justify-between mt-1.5">
-                                            <span className="text-[9px] font-mono text-[#00D1FF]">Revenue ${(revenue24h / 1000).toFixed(1)}K</span>
-                                            <span className="text-[9px] font-mono text-gray-600">L1 Cost ${(cost24h / 1000).toFixed(1)}K</span>
-                                        </div>
-                                    </div>
-                                );
-                            })() : <div className="text-gray-700 text-xs font-mono">Loading...</div>}
-                        </div>
-                    </motion.div>
 
                 </div>
             </div>

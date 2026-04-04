@@ -56,9 +56,8 @@ const Header = ({ currentIndex, onNavigate, hidden }) => {
     };
 
     const navItems = [
-        { label: 'Playground', index: 0 },
-        { label: 'Hyzen Collection', index: 1 },
-        { label: 'Arbiscan', index: 2 },
+        { label: 'Arbility', index: 0 },
+        { label: 'Arbiscan', index: 1 },
     ];
 
     return (
