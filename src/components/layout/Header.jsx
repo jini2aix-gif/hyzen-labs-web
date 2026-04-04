@@ -56,7 +56,7 @@ const Header = ({ currentIndex, onNavigate, hidden }) => {
     };
 
     const navItems = [
-        { label: 'Arbility', index: 0 },
+        { label: 'RUN', index: 0 },
         { label: 'Arbiscan', index: 1 },
     ];
 

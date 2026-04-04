@@ -335,7 +335,7 @@ const AviDashboard = () => {
                     Hyzen Labs · Asset Navigator
                 </h1>
                 <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight">
-                    Arbility<span className="text-[#00D1FF] animate-pulse">.</span>
+                    RUN<span className="text-[#00D1FF] animate-pulse">.</span>
                 </h2>
                 <p className="text-xs font-mono text-gray-500 mt-2 tracking-widest uppercase">
                     Real-time Gap vs. Scenario Target
