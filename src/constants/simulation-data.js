@@ -1,4 +1,4 @@
-export const TREASURY_ARB = 138061;
+export const TREASURY_ARB = 130767;
 
 export const MONTHLY_REALISTIC_BAND = [
   { date: '2026-03', priceLow: 140, priceTarget: 154, priceHigh: 180 },
