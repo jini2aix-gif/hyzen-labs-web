@@ -397,15 +397,15 @@ const AviDashboard = () => {
             {/* Asset Performance Bands */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7, duration: 0.8 }}
-                className="relative z-10 w-full max-w-[560px] flex flex-col gap-5 mt-2">
+                className="relative z-10 w-full max-w-[560px] flex flex-col gap-6 mt-4">
                 
                 {/* Scenario Band */}
-                <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-4 backdrop-blur-md">
-                    <p className="text-[9px] font-mono text-gray-400 uppercase tracking-widest mb-3 text-center">
-                        {todayStr} · Scenario Band
+                <div className="bg-white/[0.02] border border-white/[0.05] rounded-3xl p-5 backdrop-blur-xl">
+                    <p className="text-[10px] font-mono text-white/40 uppercase tracking-[0.3em] mb-4 text-center">
+                        {todayStr} · Market Scenario
                     </p>
-                    <div className="relative h-2.5 rounded-full overflow-visible bg-white/10"
-                        style={{ background: 'linear-gradient(to right, #FF4444 0%, #FFaa00 50%, #39FF14 100%)' }}>
+                    <div className="relative h-2 rounded-full overflow-visible bg-white/5"
+                        style={{ background: 'linear-gradient(to right, #222228 0%, #555560 50%, #AAAAAF 100%)' }}>
                         {priceKRW != null && (() => {
                             const pPos = Math.max(0, Math.min(100, ((priceKRW - scenarioLow) / (scenarioHigh - scenarioLow)) * 100));
                             return (
@@ -413,12 +413,12 @@ const AviDashboard = () => {
                                     initial={false}
                                     animate={{ left: `${pPos}%` }}
                                     transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-black shadow-[0_0_10px_rgba(255,255,255,0.5)] z-20"
+                                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-black shadow-[0_0_15px_rgba(255,255,255,0.3)] z-20"
                                     style={{ background: '#FFFFFF' }}>
                                     {/* Current Price Label under the point */}
-                                    <div className="absolute top-[18px] left-1/2 -translate-x-1/2 whitespace-nowrap">
-                                        <span className="text-[10px] font-black font-mono text-white tracking-tighter"
-                                            style={{ textShadow: '0 0 10px rgba(0,0,0,0.8)' }}>
+                                    <div className="absolute top-[20px] left-1/2 -translate-x-1/2 whitespace-nowrap">
+                                        <span className="text-[10px] font-black font-mono text-white tracking-widest"
+                                            style={{ textShadow: '0 0 10px rgba(0,0,0,0.9)' }}>
                                             ₩{Math.round(priceKRW).toLocaleString()}
                                         </span>
                                     </div>
@@ -426,52 +426,49 @@ const AviDashboard = () => {
                             );
                         })()}
                     </div>
-                    <div className="flex justify-between mt-2.5 px-0.5">
-                        <div className="flex flex-col items-start gap-0.5">
-                            <span className="text-[7.5px] text-gray-500 font-mono uppercase">Low</span>
-                            <span className="text-[10px] text-red-400/80 font-mono font-bold">₩{scenarioLow.toLocaleString()}</span>
+                    <div className="flex justify-between mt-4 px-1">
+                        <div className="flex flex-col items-start gap-1">
+                            <span className="text-[8px] text-white/30 font-mono uppercase tracking-widest">Floor</span>
+                            <span className="text-[10px] text-white/60 font-mono font-bold">₩{scenarioLow.toLocaleString()}</span>
                         </div>
-                        <div className="flex flex-col items-center gap-0.5">
-                            <span className="text-[7.5px] text-gray-500 font-mono uppercase">Target</span>
-                            <span className="text-[10px] text-[#00D1FF] font-mono font-bold">₩{scenarioTarget.toLocaleString()}</span>
+                        <div className="flex flex-col items-center gap-1">
+                            <span className="text-[8px] text-white/30 font-mono uppercase tracking-widest">Mid</span>
+                            <span className="text-[10px] text-white font-mono font-bold">₩{scenarioTarget.toLocaleString()}</span>
                         </div>
-                        <div className="flex flex-col items-end gap-0.5">
-                            <span className="text-[7.5px] text-gray-500 font-mono uppercase">High</span>
-                            <span className="text-[10px] text-green-400/80 font-mono font-bold">₩{scenarioHigh.toLocaleString()}</span>
+                        <div className="flex flex-col items-end gap-1">
+                            <span className="text-[8px] text-white/30 font-mono uppercase tracking-widest">Peak</span>
+                            <span className="text-[10px] text-white/60 font-mono font-bold">₩{scenarioHigh.toLocaleString()}</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Principal Growth Progress (Profit-Based Dynamic Target) */}
-                <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-4 backdrop-blur-md">
+                <div className="bg-white/[0.02] border border-white/[0.05] rounded-3xl p-5 backdrop-blur-xl">
                     {assetKRW != null && (() => {
                         const principal = 20000000;
-                        // Profit percentage relative to 20M
                         const currentProfitPct = ((assetKRW - principal) / principal) * 100;
-
-                        // Dynamic maxPct: 100, 200, 300, etc.
                         const maxPctLimit = Math.max(100, Math.ceil(currentProfitPct / 100) * 100);
                         const progress = Math.max(0, Math.min(100, (currentProfitPct / maxPctLimit) * 100));
                         
                         return (
                             <>
-                                <p className="text-[9px] font-mono text-gray-400 uppercase tracking-widest mb-3 text-center">
-                                    Principal Growth Progress (Profit % vs. 20M)
+                                <p className="text-[10px] font-mono text-white/40 uppercase tracking-[0.3em] mb-4 text-center">
+                                    Principal Growth Progress
                                 </p>
-                                <div className="relative h-2.5 rounded-full overflow-visible bg-white/10"
-                                    style={{ background: 'linear-gradient(to right, #FFFFFF 0%, #39FF14 100%)' }}>
+                                <div className="relative h-2 rounded-full overflow-visible bg-white/5"
+                                    style={{ background: 'linear-gradient(to right, #111115 0%, #FFFFFF 100%)' }}>
                                     
                                     {/* Progress indicator point */}
                                     <motion.div 
                                         initial={false}
                                         animate={{ left: `${progress}%` }}
                                         transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                                        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-black shadow-[0_0_10px_rgba(255,255,255,0.5)] z-20"
+                                        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-black shadow-[0_0_15px_rgba(255,255,255,0.3)] z-20"
                                         style={{ background: '#FFFFFF' }}>
                                         {/* Current Percentage Label under the point */}
-                                        <div className="absolute top-[18px] left-1/2 -translate-x-1/2 whitespace-nowrap">
-                                            <span className="text-[10px] font-black font-mono text-white tracking-tighter"
-                                                style={{ textShadow: '0 0 10px rgba(0,0,0,0.8)' }}>
+                                        <div className="absolute top-[20px] left-1/2 -translate-x-1/2 whitespace-nowrap">
+                                            <span className="text-[10px] font-black font-mono text-white tracking-widest"
+                                                style={{ textShadow: '0 0 10px rgba(0,0,0,0.9)' }}>
                                                 {currentProfitPct > 0 && <span className="mr-0.5 text-[7px] align-top relative top-[1px] opacity-80">▲</span>}
                                                 {currentProfitPct.toFixed(0)}%
                                             </span>
@@ -479,14 +476,14 @@ const AviDashboard = () => {
                                     </motion.div>
                                 </div>
                                 {/* Percentage Labels on the axis */}
-                                <div className="flex justify-between mt-5 px-0.5 relative">
+                                <div className="flex justify-between mt-6 px-1 relative">
                                     {[0, 25, 50, 75, 100].map((step) => {
                                         const labelPct = (maxPctLimit * (step / 100)).toFixed(0);
                                         const labelValue = principal + (principal * (parseInt(labelPct) / 100));
                                         return (
-                                            <div key={step} className="flex flex-col items-center gap-0.5">
-                                                <span className="text-[7.5px] text-gray-500 font-mono uppercase">{labelPct}%</span>
-                                                <span className="text-[9px] text-white/30 font-mono">
+                                            <div key={step} className="flex flex-col items-center gap-1">
+                                                <span className="text-[8px] text-white/30 font-mono uppercase">{labelPct}%</span>
+                                                <span className="text-[9px] text-white/20 font-mono">
                                                     {labelValue >= 1000000000 ? `${(labelValue / 1000000000).toFixed(1)}B` : `${(labelValue / 1000000).toFixed(0)}M`}
                                                 </span>
                                             </div>
