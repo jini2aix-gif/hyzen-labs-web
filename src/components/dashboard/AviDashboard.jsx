@@ -452,18 +452,18 @@ const AviDashboard = () => {
                                     Principal Growth Progress (Profit % vs. 20M)
                                 </p>
                                 <div className="relative h-2.5 rounded-full overflow-visible bg-white/10"
-                                    style={{ background: 'linear-gradient(to right, #FFFFFF 0%, #FF0000 100%)' }}>
+                                    style={{ background: 'linear-gradient(to right, #FFFFFF 0%, #39FF14 100%)' }}>
                                     
                                     {/* Progress indicator point */}
                                     <motion.div 
                                         initial={false}
                                         animate={{ left: `${progress}%` }}
                                         transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                                        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow-[0_0_10px_rgba(255,0,0,0.5)] z-20"
-                                        style={{ background: '#FF0000' }}>
+                                        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow-[0_0_10px_rgba(57,255,20,0.5)] z-20"
+                                        style={{ background: '#39FF14' }}>
                                         {/* Current Percentage Label under the point */}
                                         <div className="absolute top-[18px] left-1/2 -translate-x-1/2 whitespace-nowrap">
-                                            <span className="text-[10px] font-black font-mono text-white tracking-tighter"
+                                            <span className="text-[10px] font-black font-mono text-[#39FF14] tracking-tighter"
                                                 style={{ textShadow: '0 0 10px rgba(0,0,0,0.8)' }}>
                                                 {currentProfitPct.toFixed(0)}%
                                             </span>
