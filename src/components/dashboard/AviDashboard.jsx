@@ -435,48 +435,50 @@ const AviDashboard = () => {
                     </div>
                 </div>
 
-                {/* Asset Growth Band (Dynamic Target) */}
+                {/* Principal Growth Progress (Profit-Based Dynamic Target) */}
                 <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-4 backdrop-blur-md">
                     {assetKRW != null && (() => {
                         const principal = 20000000;
-                        const baseTarget = 1000000000; // 1B is 100%
-                        const targetDistance = baseTarget - principal;
-                        const currentDistance = assetKRW - principal;
-                        const currentPct = (currentDistance / targetDistance) * 100;
+                        // Profit percentage relative to 20M
+                        const currentProfitPct = ((assetKRW - principal) / principal) * 100;
 
                         // Dynamic maxPct: 100, 200, 300, etc.
-                        const maxPctLimit = Math.max(100, Math.ceil(currentPct / 100) * 100);
-                        const progress = Math.max(0, Math.min(100, (currentPct / maxPctLimit) * 100));
+                        const maxPctLimit = Math.max(100, Math.ceil(currentProfitPct / 100) * 100);
+                        const progress = Math.max(0, Math.min(100, (currentProfitPct / maxPctLimit) * 100));
                         
                         return (
                             <>
                                 <p className="text-[9px] font-mono text-gray-400 uppercase tracking-widest mb-3 text-center">
-                                    Principal Growth Progress (Current: {currentPct.toFixed(1)}%)
+                                    Principal Growth Progress (Profit % vs. 20M)
                                 </p>
-                                <div className="relative h-2.5 rounded-full overflow-visible bg-white/10">
-                                    {/* Progress fill */}
-                                    <motion.div 
-                                        initial={false}
-                                        animate={{ width: `${progress}%` }}
-                                        className="absolute inset-y-0 left-0 rounded-full"
-                                        style={{ background: 'linear-gradient(to right, #00D1FF, #39FF14)' }} 
-                                    />
+                                <div className="relative h-2.5 rounded-full overflow-visible bg-white/10"
+                                    style={{ background: 'linear-gradient(to right, #FFFFFF 0%, #FF0000 100%)' }}>
+                                    
+                                    {/* Progress indicator point */}
                                     <motion.div 
                                         initial={false}
                                         animate={{ left: `${progress}%` }}
                                         transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                                        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.5)] z-20"
-                                        style={{ background: '#39FF14' }} />
+                                        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow-[0_0_10px_rgba(255,0,0,0.5)] z-20"
+                                        style={{ background: '#FF0000' }}>
+                                        {/* Current Percentage Label under the point */}
+                                        <div className="absolute top-[18px] left-1/2 -translate-x-1/2 whitespace-nowrap">
+                                            <span className="text-[10px] font-black font-mono text-white tracking-tighter"
+                                                style={{ textShadow: '0 0 10px rgba(0,0,0,0.8)' }}>
+                                                {currentProfitPct.toFixed(0)}%
+                                            </span>
+                                        </div>
+                                    </motion.div>
                                 </div>
-                                {/* Percentage Labels */}
-                                <div className="flex justify-between mt-2.5 px-0.5 relative">
+                                {/* Percentage Labels on the axis */}
+                                <div className="flex justify-between mt-5 px-0.5 relative">
                                     {[0, 25, 50, 75, 100].map((step) => {
                                         const labelPct = (maxPctLimit * (step / 100)).toFixed(0);
-                                        const labelValue = principal + (targetDistance * (parseInt(labelPct) / 100));
+                                        const labelValue = principal + (principal * (parseInt(labelPct) / 100));
                                         return (
                                             <div key={step} className="flex flex-col items-center gap-0.5">
                                                 <span className="text-[7.5px] text-gray-500 font-mono uppercase">{labelPct}%</span>
-                                                <span className="text-[9px] text-white/40 font-mono">
+                                                <span className="text-[9px] text-white/30 font-mono">
                                                     {labelValue >= 1000000000 ? `${(labelValue / 1000000000).toFixed(1)}B` : `${(labelValue / 1000000).toFixed(0)}M`}
                                                 </span>
                                             </div>
