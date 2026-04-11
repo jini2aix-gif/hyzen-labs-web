@@ -335,18 +335,17 @@ const AviDashboard = () => {
                     style={{ backgroundImage: 'linear-gradient(rgba(0,209,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,209,255,1) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
             </div>
 
-            {/* Title */}
+            {/* Header Title */}
             <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}
-                className="relative z-10 text-center mb-6">
-                <h1 className="text-[10px] font-mono tracking-[0.5em] text-[#00D1FF] uppercase mb-2 opacity-70">
-                    Hyzen Labs · Asset Navigator
-                </h1>
-                <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight">
-                    RUN<span className="text-[#00D1FF] animate-pulse">.</span>
-                </h2>
-                <p className="text-xs font-mono text-gray-500 mt-2 tracking-widest uppercase">
-                    Real-time Gap vs. Scenario Target
-                </p>
+                className="relative z-10 text-center mb-10">
+                <div className="flex flex-col items-center gap-1">
+                    <span className="text-[9px] md:text-[10px] font-mono tracking-[0.4em] text-[#00D1FF] uppercase mb-2 opacity-60">
+                        CFO Kyle AI Prediction Scenario Tool
+                    </span>
+                    <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-none italic">
+                        RUN<span className="text-[#00D1FF] animate-pulse non-italic">.</span>
+                    </h1>
+                </div>
             </motion.div>
 
             {/* Gauge */}
