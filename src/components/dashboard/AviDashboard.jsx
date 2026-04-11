@@ -52,8 +52,8 @@ const DrumCell = ({ digit, delay = 0 }) => {
                         height: `${CELL_H}px`,
                         lineHeight: `${CELL_H}px`,
                         textAlign: 'center',
-                        fontSize: '13px',
-                        fontFamily: '"Courier New", Courier, monospace',
+                        fontSize: '14px',
+                        fontFamily: '"Share Tech Mono", monospace',
                         fontWeight: 900,
                         color: '#e8f0ff',
                         userSelect: 'none',
@@ -127,7 +127,7 @@ const OdometerStrip = ({ assetKRW }) => {
                     <div style={{ display:'flex', alignItems:'center', justifyContent:'center',
                         height:`${CELL_H}px`, padding:'0 16px',
                         background:'linear-gradient(180deg,#06060e,#0d0d1c)',
-                        fontSize:'11px', fontFamily:'monospace', color:'#ffffff22', letterSpacing:'0.15em' }}>
+                        fontSize:'11px', fontFamily:'"Share Tech Mono", monospace', color:'#ffffff22', letterSpacing:'0.15em' }}>
                         — — — — —
                     </div>
                 )
@@ -248,7 +248,7 @@ const GaugeFace = ({ gapPct, isLive, indicatorColor }) => {
                     {t.label && (
                         <text x={t.lx} y={t.ly} textAnchor="middle" dominantBaseline="middle"
                             fill={t.isZero ? '#00D1FF' : t.value < 0 ? '#FF8888' : '#88FF88'}
-                            fontSize={t.isZero ? 11 : 9} fontFamily="monospace"
+                            fontSize={t.isZero ? 11 : 9} fontFamily='"Share Tech Mono", monospace'
                             fontWeight={t.isZero ? '900' : '600'}>
                             {t.label}%
                         </text>
@@ -256,8 +256,8 @@ const GaugeFace = ({ gapPct, isLive, indicatorColor }) => {
                 </g>
             ))}
 
-            <text x={cx - 130} y={cy + 60} textAnchor="middle" fill="#FF8888" fontSize="22" fontFamily="monospace" fontWeight="900" opacity="0.8">−</text>
-            <text x={cx + 130} y={cy + 60} textAnchor="middle" fill="#88FF88" fontSize="22" fontFamily="monospace" fontWeight="900" opacity="0.8">+</text>
+            <text x={cx - 130} y={cy + 60} textAnchor="middle" fill="#FF8888" fontSize="22" fontFamily='"Share Tech Mono", monospace' fontWeight="900" opacity="0.8">−</text>
+            <text x={cx + 130} y={cy + 60} textAnchor="middle" fill="#88FF88" fontSize="22" fontFamily='"Share Tech Mono", monospace' fontWeight="900" opacity="0.8">+</text>
             <line x1={cx} y1={cy - r + 5} x2={cx} y2={cy - r + 28} stroke="#00D1FF" strokeWidth="3" />
             <circle cx={cx} cy={cy} r={r - 25} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
 
@@ -351,10 +351,10 @@ const AviDashboard = () => {
             <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}
                 className="relative z-10 text-center mb-10">
                 <div className="flex flex-col items-center gap-1">
-                    <span className="text-[9px] md:text-[10px] font-mono tracking-[0.4em] text-[#00D1FF] uppercase mb-2 opacity-60">
+                    <span className="text-[10px] md:text-[11px] font-medium tracking-[0.5em] text-[#00D1FF] uppercase mb-1 opacity-60" style={{ fontFamily: 'Outfit, sans-serif' }}>
                         CFO Kyle AI Prediction Scenario Tool
                     </span>
-                    <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-none italic">
+                    <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-none italic" style={{ fontFamily: 'Outfit, sans-serif' }}>
                         RUN<span className="text-[#00D1FF] animate-pulse non-italic">.</span>
                     </h1>
                 </div>
@@ -370,54 +370,64 @@ const AviDashboard = () => {
 
                 <GaugeFace gapPct={displayPct} isLive={!isLoading} indicatorColor={indicatorColor} />
 
-                {/* Center readout overlay — gap % + single odometer */}
-                <div className="absolute inset-0 flex flex-col items-center justify-end pb-[15%] pointer-events-none">
-                    {isLoading
-                        ? <Activity className="animate-spin text-[#00D1FF]" size={24} />
-                        : (
-                            <div className="flex flex-col items-center gap-1.5">
-                                {/* Gap percentage */}
-                                <span className="font-black font-mono tabular-nums tracking-tight leading-none"
+                {/* Simplified Hub overlay (no readout here) */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-12 h-12 rounded-full border border-white/10 bg-[#111] shadow-[0_0_20px_rgba(0,0,0,0.8)]" />
+                </div>
+            </motion.div>
+
+            {/* NEW: Dedicated Readout Panel below gauge */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+                className="relative z-10 -mt-10 mb-8 flex flex-col items-center gap-4">
+                
+                {isLoading 
+                    ? <Activity className="animate-spin text-[#00D1FF]" size={24} />
+                    : (
+                        <div className="flex flex-col items-center">
+                            {/* Gap percentage block */}
+                            <div className="flex flex-col items-center mb-6">
+                                <span className="text-[10px] font-bold tracking-[0.4em] text-gray-500 uppercase mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                                    Performance vs. Target
+                                </span>
+                                <span className="font-black tabular-nums tracking-tighter leading-none"
                                     style={{
-                                        fontSize: 'clamp(20px, 5.5vw, 32px)',
+                                        fontSize: 'clamp(40px, 10vw, 64px)',
+                                        fontFamily: '"Share Tech Mono", monospace',
                                         color: gapColor,
-                                        textShadow: `0 0 20px ${gapColor}88`,
+                                        textShadow: `0 0 30px ${gapColor}55`,
                                         transition: 'color 0.5s',
                                     }}>
                                     {displayPct >= 0 ? '+' : ''}{displayPct.toFixed(1)}%
                                 </span>
-
-                                <span className="text-[8px] font-mono text-gray-500 tracking-widest uppercase">
-                                    vs. Target
-                                </span>
-
-                                {/* ── Car odometer — single source ── */}
-                                <div className="flex flex-col items-center gap-0.5 mt-1">
-                                    <span className="text-[6.5px] font-mono text-[#00D1FF]/35 uppercase tracking-[0.3em] mb-0.5">
-                                        Total Asset
-                                    </span>
-                                    <OdometerStrip assetKRW={assetKRW} />
-                                    <span className="text-[6px] font-mono text-gray-700 uppercase tracking-widest mt-0.5">
-                                        {TREASURY_ARB.toLocaleString('en-US')} ARB
-                                    </span>
-
-                                    {/* Real-time Status Message */}
-                                    <motion.div 
-                                        initial={{ opacity: 0 }} 
-                                        animate={{ opacity: 1 }}
-                                        className="mt-3 px-3 py-1 rounded-full border border-white/5 bg-white/[0.02] backdrop-blur-md"
-                                        style={{ borderColor: `${indicatorColor}33` }}
-                                    >
-                                        <span className="text-[8px] md:text-[9px] font-bold tracking-tight" style={{ color: indicatorColor }}>
-                                            {priceKRW < scenarioLow && "예측 밴드 하단 이탈"}
-                                            {priceKRW > scenarioHigh && "예측 밴드 상단 돌파"}
-                                            {priceKRW >= scenarioLow && priceKRW <= scenarioHigh && "예측 밴드 내 순항 중"}
-                                        </span>
-                                    </motion.div>
-                                </div>
                             </div>
-                        )}
-                </div>
+
+                            {/* Odometer & Asset block */}
+                            <div className="flex flex-col items-center gap-1 px-8 py-4 rounded-[2rem] bg-white/[0.03] border border-white/10 backdrop-blur-xl">
+                                <span className="text-[9px] font-bold text-[#00D1FF]/50 uppercase tracking-[0.4em] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                                    Total Asset Value
+                                </span>
+                                <OdometerStrip assetKRW={assetKRW} />
+                                <span className="text-[9px] font-medium text-gray-600 uppercase tracking-widest mt-2" style={{ fontFamily: '"Share Tech Mono", monospace' }}>
+                                    {TREASURY_ARB.toLocaleString('en-US')} ARB
+                                </span>
+                            </div>
+
+                            {/* Real-time Status Message */}
+                            <motion.div 
+                                initial={{ opacity: 0 }} 
+                                animate={{ opacity: 1 }}
+                                className="mt-6 px-5 py-2 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-md"
+                                style={{ borderColor: `${indicatorColor}44`, boxShadow: `0 8px 32px rgba(0,0,0,0.4), 0 0 15px ${indicatorColor}11` }}
+                            >
+                                <span className="text-[11px] md:text-[12px] font-bold tracking-tight" style={{ color: indicatorColor, fontFamily: 'Outfit, sans-serif' }}>
+                                    {priceKRW < scenarioLow && "예측 밴드 하단 이탈"}
+                                    {priceKRW > scenarioHigh && "예측 밴드 상단 돌파"}
+                                    {priceKRW >= scenarioLow && priceKRW <= scenarioHigh && "예측 밴드 내 순항 중"}
+                                </span>
+                            </motion.div>
+                        </div>
+                    )}
             </motion.div>
 
             {/* Asset Performance Bands */}
@@ -426,8 +436,8 @@ const AviDashboard = () => {
                 className="relative z-10 w-full max-w-[560px] flex flex-col gap-6 mt-4">
                 
                 {/* Scenario Band */}
-                <div className="bg-white/[0.02] border border-white/[0.05] rounded-3xl p-5 backdrop-blur-xl">
-                    <p className="text-[10px] font-mono text-white/40 uppercase tracking-[0.3em] mb-4 text-center">
+                <div className="bg-white/[0.03] border border-white/[0.08] rounded-[2rem] p-6 backdrop-blur-2xl shadow-2xl">
+                    <p className="text-[11px] font-bold text-white/50 uppercase tracking-[0.4em] mb-5 text-center" style={{ fontFamily: 'Outfit, sans-serif' }}>
                         {todayStr} · Market Scenario
                     </p>
                     <div className="relative h-2 rounded-full overflow-visible bg-white/5"
@@ -442,9 +452,9 @@ const AviDashboard = () => {
                                     className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-black shadow-[0_0_15px_rgba(255,255,255,0.3)] z-20"
                                     style={{ background: '#FFFFFF' }}>
                                     {/* Current Price Label under the point */}
-                                    <div className="absolute top-[20px] left-1/2 -translate-x-1/2 whitespace-nowrap">
-                                        <span className="text-[10px] font-black font-mono text-white tracking-widest"
-                                            style={{ textShadow: '0 0 10px rgba(0,0,0,0.9)' }}>
+                                    <div className="absolute top-[28px] left-1/2 -translate-x-1/2 whitespace-nowrap">
+                                        <span className="text-[14px] font-black text-white tracking-widest"
+                                            style={{ textShadow: '0 0 15px rgba(0,0,0,1)', fontFamily: '"Share Tech Mono", monospace' }}>
                                             ₩{Math.round(priceKRW).toLocaleString()}
                                         </span>
                                     </div>
@@ -452,18 +462,18 @@ const AviDashboard = () => {
                             );
                         })()}
                     </div>
-                    <div className="flex justify-between mt-4 px-1">
+                    <div className="flex justify-between mt-6 px-1">
                         <div className="flex flex-col items-start gap-1">
-                            <span className="text-[8px] text-white/30 font-mono uppercase tracking-widest">Floor</span>
-                            <span className="text-[10px] text-white/60 font-mono font-bold">₩{scenarioLow.toLocaleString()}</span>
+                            <span className="text-[9px] text-white/30 font-bold uppercase tracking-widest" style={{ fontFamily: 'Outfit, sans-serif' }}>Floor</span>
+                            <span className="text-[12px] text-white/60 font-bold" style={{ fontFamily: '"Share Tech Mono", monospace' }}>₩{scenarioLow.toLocaleString()}</span>
                         </div>
                         <div className="flex flex-col items-center gap-1">
-                            <span className="text-[8px] text-white/30 font-mono uppercase tracking-widest">Mid</span>
-                            <span className="text-[10px] text-white font-mono font-bold">₩{scenarioTarget.toLocaleString()}</span>
+                            <span className="text-[9px] text-white/30 font-bold uppercase tracking-widest" style={{ fontFamily: 'Outfit, sans-serif' }}>Mid</span>
+                            <span className="text-[12px] text-white font-bold" style={{ fontFamily: '"Share Tech Mono", monospace' }}>₩{scenarioTarget.toLocaleString()}</span>
                         </div>
                         <div className="flex flex-col items-end gap-1">
-                            <span className="text-[8px] text-white/30 font-mono uppercase tracking-widest">Peak</span>
-                            <span className="text-[10px] text-white/60 font-mono font-bold">₩{scenarioHigh.toLocaleString()}</span>
+                            <span className="text-[9px] text-white/30 font-bold uppercase tracking-widest" style={{ fontFamily: 'Outfit, sans-serif' }}>Peak</span>
+                            <span className="text-[12px] text-white/60 font-bold" style={{ fontFamily: '"Share Tech Mono", monospace' }}>₩{scenarioHigh.toLocaleString()}</span>
                         </div>
                     </div>
                 </div>
@@ -478,7 +488,7 @@ const AviDashboard = () => {
                         
                         return (
                             <>
-                                <p className="text-[10px] font-mono text-white/40 uppercase tracking-[0.3em] mb-4 text-center">
+                                <p className="text-[11px] font-bold text-white/50 uppercase tracking-[0.4em] mb-5 text-center" style={{ fontFamily: 'Outfit, sans-serif' }}>
                                     Principal Growth Progress
                                 </p>
                                 <div className="relative h-2 rounded-full overflow-visible bg-white/5"
@@ -492,24 +502,24 @@ const AviDashboard = () => {
                                         className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-black shadow-[0_0_15px_rgba(255,255,255,0.3)] z-20"
                                         style={{ background: '#FFFFFF' }}>
                                         {/* Current Percentage Label under the point */}
-                                        <div className="absolute top-[20px] left-1/2 -translate-x-1/2 whitespace-nowrap">
-                                            <span className="text-[10px] font-black font-mono text-white tracking-widest"
-                                                style={{ textShadow: '0 0 10px rgba(0,0,0,0.9)' }}>
-                                                {currentProfitPct > 0 && <span className="mr-0.5 text-[7px] align-top relative top-[1px] opacity-80">▲</span>}
+                                        <div className="absolute top-[28px] left-1/2 -translate-x-1/2 whitespace-nowrap">
+                                            <span className="text-[14px] font-black text-white tracking-widest"
+                                                style={{ textShadow: '0 0 15px rgba(0,0,0,1)', fontFamily: '"Share Tech Mono", monospace' }}>
+                                                {currentProfitPct > 0 && <span className="mr-0.5 text-[10px] align-top relative top-[1px] opacity-80">▲</span>}
                                                 {currentProfitPct.toFixed(0)}%
                                             </span>
                                         </div>
                                     </motion.div>
                                 </div>
                                 {/* Percentage Labels on the axis */}
-                                <div className="flex justify-between mt-6 px-1 relative">
+                                <div className="flex justify-between mt-8 px-1 relative">
                                     {[0, 25, 50, 75, 100].map((step) => {
                                         const labelPct = (maxPctLimit * (step / 100)).toFixed(0);
                                         const labelValue = principal + (principal * (parseInt(labelPct) / 100));
                                         return (
                                             <div key={step} className="flex flex-col items-center gap-1">
-                                                <span className="text-[8px] text-white/30 font-mono uppercase">{labelPct}%</span>
-                                                <span className="text-[9px] text-white/20 font-mono">
+                                                <span className="text-[10px] text-white/40 font-bold uppercase" style={{ fontFamily: 'Outfit, sans-serif' }}>{labelPct}%</span>
+                                                <span className="text-[11px] text-white/20 font-bold" style={{ fontFamily: '"Share Tech Mono", monospace' }}>
                                                     {labelValue >= 1000000000 ? `${(labelValue / 1000000000).toFixed(1)}B` : `${(labelValue / 1000000).toFixed(0)}M`}
                                                 </span>
                                             </div>
