@@ -214,14 +214,26 @@ const GaugeFace = ({ gapPct, isLive, indicatorColor }) => {
                     <feGaussianBlur stdDeviation="6" result="blur" />
                     <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                 </filter>
-                <radialGradient id="ringGrad" cx="50%" cy="30%" r="70%">
-                    <stop offset="0%"   stopColor="#555" />
-                    <stop offset="100%" stopColor="#111" />
+                {/* Dynamic Ring Gradient based on indicator color */}
+                <radialGradient id="dynamicRingGrad" cx="50%" cy="30%" r="70%">
+                    <stop offset="0%"   stopColor={indicatorColor} stopOpacity="0.8" />
+                    <stop offset="100%" stopColor="#0a0a14" />
                 </radialGradient>
             </defs>
 
-            <circle cx={cx} cy={cy} r="195" fill="url(#ringGrad)" />
-            <circle cx={cx} cy={cy} r="190" fill="none" stroke="#333" strokeWidth="1" />
+            {/* Outermost Indicator Ring */}
+            <circle cx={cx} cy={cy} r="198" fill={indicatorColor} opacity="0.15">
+                {indicatorColor === '#39FF14' && (
+                    <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />
+                )}
+            </circle>
+            <circle cx={cx} cy={cy} r="195" fill="url(#dynamicRingGrad)">
+                {indicatorColor === '#39FF14' && (
+                    <animate attributeName="opacity" values="1;0.6;1" dur="3s" repeatCount="indefinite" />
+                )}
+            </circle>
+            
+            <circle cx={cx} cy={cy} r="190" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
             <circle cx={cx} cy={cy} r="185" fill="url(#bgGrad)" />
 
             <path d={arcPath(r - 20, r, GAUGE_START_DEG, negEnd - 1)} fill="url(#negGrad)" opacity="0.7" />
