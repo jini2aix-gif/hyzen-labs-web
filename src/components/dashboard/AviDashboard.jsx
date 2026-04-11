@@ -400,6 +400,20 @@ const AviDashboard = () => {
                                     <span className="text-[6px] font-mono text-gray-700 uppercase tracking-widest mt-0.5">
                                         {TREASURY_ARB.toLocaleString('en-US')} ARB
                                     </span>
+
+                                    {/* Real-time Status Message */}
+                                    <motion.div 
+                                        initial={{ opacity: 0 }} 
+                                        animate={{ opacity: 1 }}
+                                        className="mt-3 px-3 py-1 rounded-full border border-white/5 bg-white/[0.02] backdrop-blur-md"
+                                        style={{ borderColor: `${indicatorColor}33` }}
+                                    >
+                                        <span className="text-[8px] md:text-[9px] font-bold tracking-tight" style={{ color: indicatorColor }}>
+                                            {priceKRW < scenarioLow && "시나리오 하단 이탈: 주의 요망"}
+                                            {priceKRW > scenarioHigh && "시나리오 상단 돌파: 과열 주의"}
+                                            {priceKRW >= scenarioLow && priceKRW <= scenarioHigh && "예측 밴드 내 순항 중"}
+                                        </span>
+                                    </motion.div>
                                 </div>
                             </div>
                         )}
