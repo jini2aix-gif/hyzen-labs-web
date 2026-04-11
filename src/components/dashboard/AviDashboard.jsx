@@ -143,7 +143,7 @@ const OdometerStrip = ({ assetKRW }) => {
 
 
 // ─── SVG Gauge Face (no asset text inside) ────────────────────────────────────
-const GaugeFace = ({ gapPct, isLive }) => {
+const GaugeFace = ({ gapPct, isLive, indicatorColor }) => {
     const cx = 200, cy = 200, r = 155;
     const needleAngleDeg = pctToAngle(gapPct);
     const needleAngleRad = (needleAngleDeg - 90) * (Math.PI / 180);
@@ -257,7 +257,7 @@ const GaugeFace = ({ gapPct, isLive }) => {
             <circle cx={cx} cy={cy} r="5"  fill="#fff"      opacity="0.8" />
 
             {isLive && (
-                <circle cx={cx + 130} cy={cy - 130} r="6" fill="#39FF14" opacity="0.9">
+                <circle cx={cx + 130} cy={cy - 130} r="6" fill={indicatorColor} opacity="0.9">
                     <animate attributeName="opacity" values="0.9;0.3;0.9" dur="1.5s" repeatCount="indefinite" />
                 </circle>
             )}
@@ -317,6 +317,13 @@ const AviDashboard = () => {
     const isPositive = displayPct >= 0;
     const gapColor   = isPositive ? '#39FF14' : '#FF4444';
 
+    const indicatorColor = (() => {
+        if (priceKRW == null) return '#555';
+        if (priceKRW < scenarioLow) return '#FF4444'; // Red
+        if (priceKRW > scenarioHigh) return '#00D1FF'; // Blue
+        return '#39FF14'; // Green
+    })();
+
     return (
         <main className="relative min-h-screen bg-[#050510] flex flex-col items-center justify-center overflow-hidden px-4 py-24">
 
@@ -350,7 +357,7 @@ const AviDashboard = () => {
                 <div className="absolute inset-0 rounded-full opacity-20 blur-3xl"
                     style={{ background: `radial-gradient(circle, ${gapColor}55 0%, transparent 60%)`, transition: 'background 1s' }} />
 
-                <GaugeFace gapPct={displayPct} isLive={!isLoading} />
+                <GaugeFace gapPct={displayPct} isLive={!isLoading} indicatorColor={indicatorColor} />
 
                 {/* Center readout overlay — gap % + single odometer */}
                 <div className="absolute inset-0 flex flex-col items-center justify-end pb-[15%] pointer-events-none">
@@ -388,68 +395,94 @@ const AviDashboard = () => {
                 </div>
             </motion.div>
 
-            {/* Info cards */}
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.8 }}
-                className="relative z-10 w-full max-w-[600px] mt-8 grid grid-cols-3 gap-3">
-
-                <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center backdrop-blur-md">
-                    <span className="text-[9px] text-gray-500 font-mono uppercase tracking-widest mb-1">Current Price</span>
-                    <span className="text-lg font-black text-white font-mono tabular-nums">
-                        {priceKRW != null ? `₩${Math.round(priceKRW).toLocaleString()}` : '—'}
-                    </span>
-                    <span className="text-[9px] text-[#00D1FF]/60 font-mono mt-0.5">Live · ARB</span>
-                </div>
-
-                <div className="bg-white/[0.04] border border-[#00D1FF]/20 rounded-2xl p-4 flex flex-col items-center text-center backdrop-blur-md">
-                    <span className="text-[9px] text-gray-500 font-mono uppercase tracking-widest mb-1">Scenario Target</span>
-                    <span className="text-lg font-black text-[#00D1FF] font-mono tabular-nums">
-                        ₩{scenarioTarget.toLocaleString()}
-                    </span>
-                    <span className="text-[9px] text-gray-600 font-mono mt-0.5">{todayStr}</span>
-                </div>
-
-                <div className="bg-white/[0.04] rounded-2xl p-4 flex flex-col items-center text-center backdrop-blur-md"
-                    style={{ border: `1px solid ${gapColor}33`, transition: 'border 0.5s' }}>
-                    <span className="text-[9px] text-gray-500 font-mono uppercase tracking-widest mb-1">Gap (Absolute)</span>
-                    <span className="text-lg font-black font-mono tabular-nums"
-                        style={{ color: gapColor, transition: 'color 0.5s' }}>
-                        {priceKRW != null
-                            ? `${priceKRW >= scenarioTarget ? '+' : ''}₩${Math.round(priceKRW - scenarioTarget).toLocaleString()}`
-                            : '—'}
-                    </span>
-                    <span className="text-[9px] text-gray-600 font-mono mt-0.5">Current − Target</span>
-                </div>
-            </motion.div>
-
-            {/* Scenario band */}
+            {/* Asset Performance Bands */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7, duration: 0.8 }}
-                className="relative z-10 w-full max-w-[600px] mt-3">
+                className="relative z-10 w-full max-w-[560px] flex flex-col gap-5 mt-2">
+                
+                {/* Scenario Band */}
                 <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-4 backdrop-blur-md">
-                    <p className="text-[9px] font-mono text-gray-600 uppercase tracking-widest mb-3 text-center">
+                    <p className="text-[9px] font-mono text-gray-400 uppercase tracking-widest mb-3 text-center">
                         {todayStr} · Scenario Band
                     </p>
-                    <div className="relative h-2 rounded-full overflow-visible"
-                        style={{ background: 'linear-gradient(to right, #FF4444, #FFaa00, #39FF14)' }}>
+                    <div className="relative h-2.5 rounded-full overflow-visible bg-white/10"
+                        style={{ background: 'linear-gradient(to right, #FF4444 0%, #FFaa00 50%, #39FF14 100%)' }}>
                         {priceKRW != null && (() => {
                             const pPos = Math.max(0, Math.min(100, ((priceKRW - scenarioLow) / (scenarioHigh - scenarioLow)) * 100));
                             return (
-                                <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow-lg"
-                                    style={{ left: `${pPos}%`, background: gapColor, transition: 'left 1s ease, background 0.5s' }} />
+                                <motion.div 
+                                    initial={false}
+                                    animate={{ left: `${pPos}%` }}
+                                    transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.5)] z-20"
+                                    style={{ background: indicatorColor }} />
                             );
                         })()}
                     </div>
-                    <div className="flex justify-between mt-2">
-                        <span className="text-[9px] text-red-400 font-mono">Low ₩{scenarioLow.toLocaleString()}</span>
-                        <span className="text-[9px] text-[#00D1FF] font-mono">Target ₩{scenarioTarget.toLocaleString()}</span>
-                        <span className="text-[9px] text-green-400 font-mono">High ₩{scenarioHigh.toLocaleString()}</span>
+                    <div className="flex justify-between mt-2.5 px-0.5">
+                        <div className="flex flex-col items-start gap-0.5">
+                            <span className="text-[7.5px] text-gray-500 font-mono uppercase">Low</span>
+                            <span className="text-[10px] text-red-400/80 font-mono font-bold">₩{scenarioLow.toLocaleString()}</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-0.5">
+                            <span className="text-[7.5px] text-gray-500 font-mono uppercase">Target</span>
+                            <span className="text-[10px] text-[#00D1FF] font-mono font-bold">₩{scenarioTarget.toLocaleString()}</span>
+                        </div>
+                        <div className="flex flex-col items-end gap-0.5">
+                            <span className="text-[7.5px] text-gray-500 font-mono uppercase">High</span>
+                            <span className="text-[10px] text-green-400/80 font-mono font-bold">₩{scenarioHigh.toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Asset Growth Band (20M to 1B) */}
+                <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-4 backdrop-blur-md">
+                    <p className="text-[9px] font-mono text-gray-400 uppercase tracking-widest mb-3 text-center">
+                        Principal Growth Target (20M → 1B)
+                    </p>
+                    <div className="relative h-2.5 rounded-full overflow-visible bg-white/10">
+                        {/* Progress fill */}
+                        {assetKRW != null && (() => {
+                            const minVal = 20000000;
+                            const maxVal = 1000000000;
+                            const progress = Math.max(0, Math.min(100, ((assetKRW - minVal) / (maxVal - minVal)) * 100));
+                            return (
+                                <>
+                                    <motion.div 
+                                        initial={false}
+                                        animate={{ width: `${progress}%` }}
+                                        className="absolute inset-y-0 left-0 rounded-full"
+                                        style={{ background: 'linear-gradient(to right, #00D1FF, #39FF14)' }} 
+                                    />
+                                    <motion.div 
+                                        initial={false}
+                                        animate={{ left: `${progress}%` }}
+                                        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                                        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.5)] z-20"
+                                        style={{ background: '#39FF14' }} />
+                                </>
+                            );
+                        })()}
+                    </div>
+                    {/* Percentage Labels */}
+                    <div className="flex justify-between mt-2.5 px-0.5 relative">
+                        {[0, 25, 50, 75, 100].map((step) => {
+                            const val = 20000000 + (1000000000 - 20000000) * (step / 100);
+                            return (
+                                <div key={step} className="flex flex-col items-center gap-0.5">
+                                    <span className="text-[7.5px] text-gray-500 font-mono uppercase">{step}%</span>
+                                    <span className="text-[9px] text-white/40 font-mono">
+                                        {step === 0 ? '20M' : step === 100 ? '1B' : `${(val / 1000000).toFixed(0)}M`}
+                                    </span>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </motion.div>
 
             {/* Status */}
-            <div className="relative z-10 mt-4 text-[9px] text-gray-700 font-mono tracking-widest uppercase">
+            <div className="relative z-10 mt-6 text-[9px] text-gray-700 font-mono tracking-widest uppercase">
                 {lastUpdated ? `Last sync · ${lastUpdated.toLocaleTimeString('en-US', { hour12: false })}` : 'Connecting...'}
                 {!isLoading && <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#39FF14] ml-2 animate-pulse align-middle" />}
             </div>
