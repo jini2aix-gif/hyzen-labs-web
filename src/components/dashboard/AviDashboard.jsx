@@ -473,7 +473,8 @@ const AviDashboard = () => {
                                         <div className="absolute top-[18px] left-1/2 -translate-x-1/2 whitespace-nowrap">
                                             <span className="text-[10px] font-black font-mono text-white tracking-tighter"
                                                 style={{ textShadow: '0 0 10px rgba(0,0,0,0.8)' }}>
-                                                {currentProfitPct > 0 && '▲'}{currentProfitPct.toFixed(0)}%
+                                                {currentProfitPct > 0 && <span className="mr-0.5 text-[7px] align-top relative top-[1px] opacity-80">▲</span>}
+                                                {currentProfitPct.toFixed(0)}%
                                             </span>
                                         </div>
                                     </motion.div>
