@@ -409,8 +409,8 @@ const AviDashboard = () => {
                                         style={{ borderColor: `${indicatorColor}33` }}
                                     >
                                         <span className="text-[8px] md:text-[9px] font-bold tracking-tight" style={{ color: indicatorColor }}>
-                                            {priceKRW < scenarioLow && "시나리오 하단 이탈: 주의 요망"}
-                                            {priceKRW > scenarioHigh && "시나리오 상단 돌파: 과열 주의"}
+                                            {priceKRW < scenarioLow && "예측 밴드 하단 이탈"}
+                                            {priceKRW > scenarioHigh && "예측 밴드 상단 돌파"}
                                             {priceKRW >= scenarioLow && priceKRW <= scenarioHigh && "예측 밴드 내 순항 중"}
                                         </span>
                                     </motion.div>
