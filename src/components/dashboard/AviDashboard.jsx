@@ -415,7 +415,15 @@ const AviDashboard = () => {
                                     animate={{ left: `${pPos}%` }}
                                     transition={{ type: "spring", stiffness: 100, damping: 20 }}
                                     className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.5)] z-20"
-                                    style={{ background: indicatorColor }} />
+                                    style={{ background: indicatorColor }}>
+                                    {/* Current Price Label under the point */}
+                                    <div className="absolute top-[18px] left-1/2 -translate-x-1/2 whitespace-nowrap">
+                                        <span className="text-[10px] font-black font-mono text-white tracking-tighter"
+                                            style={{ textShadow: '0 0 10px rgba(0,0,0,0.8)' }}>
+                                            ₩{Math.round(priceKRW).toLocaleString()}
+                                        </span>
+                                    </div>
+                                </motion.div>
                             );
                         })()}
                     </div>
@@ -465,7 +473,7 @@ const AviDashboard = () => {
                                         <div className="absolute top-[18px] left-1/2 -translate-x-1/2 whitespace-nowrap">
                                             <span className="text-[10px] font-black font-mono text-[#39FF14] tracking-tighter"
                                                 style={{ textShadow: '0 0 10px rgba(0,0,0,0.8)' }}>
-                                                {currentProfitPct.toFixed(0)}%
+                                                {currentProfitPct > 0 && '▲'}{currentProfitPct.toFixed(0)}%
                                             </span>
                                         </div>
                                     </motion.div>
